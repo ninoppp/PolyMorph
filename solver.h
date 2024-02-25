@@ -25,10 +25,13 @@ struct LinearDegradation : Reaction {
 
 struct Solver {    
     Grid u; // concentration of the morphogen
-    double D; // diffusion coefficient
+    double D; // diffusion coefficient. later also a grid
+    double dx; // grid spacing
+    // dt comes from polyhoop main program
 
-    void step(Grid &u, double dt, double dx, double D, Reaction R) { // D later changes to a grid too
+    void step(Grid &u, double dt, double dx, double D, Reaction R) { 
         Grid unew;
+        // Forward Euler with central differences ToDo: adapt for variable diffusion coefficient
         for (int i = 1; i < N - 1; i++) {
             for (int j = 1; j < N - 1; j++) {
                 unew(i, j) = u(i, j) + dt * (
@@ -48,7 +51,8 @@ struct Solver {
     }
 
     void output(int frame) {    // f: frame number
-        std::string filename = "frame" + std::to_string(frame) + ".vts";
+        char filename [16]; 
+        snprintf(filename, 16, "rd_frame%06zu.vts", frame);        
         std::ofstream file(filename);
         // TODO write VTK file
     }
