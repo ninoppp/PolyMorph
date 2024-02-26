@@ -3,7 +3,6 @@
 #include <iomanip> // Add this line
 
 // #include <gtest/gtest.h>
-constexpr double dt = 1e-4; // dt from polyhoop
 
 void print(std::string s) {
     std::cout << s << std::endl;
@@ -17,15 +16,6 @@ void print_grid(Grid u, int N) {
         std::cout << std::endl;
     }
     std::cout << std::endl;
-}
-
-Grid create_gaussian() {
-    Grid u;
-    for(int i = 0; i < N; i++)
-        for(int j = 0; j < N; j++)
-            u(i, j) = std::exp(-((i - N/2)*(i - N/2) + (j - N/2)*(j - N/2)) / 10.0);
-    u(N/2, N/2) = 1.0;
-    return u;
 }
 
 int main() {
@@ -44,7 +34,7 @@ int main() {
     // ToDo: create plot of u_gauss
 
     print("Stepping previous grid once");
-    Solver s(u_gauss, 1.0, 0.1);
+    Solver s(u_gauss, 1.0, 0.1, 1e-4);
     s.step(u_gauss, dt, s.dx, s.D, LinearDegradation(0.1));
     print_grid(u_gauss, N);
 

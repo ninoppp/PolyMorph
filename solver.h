@@ -28,13 +28,14 @@ struct Solver {
     Grid u; // concentration of the morphogen
     double D; // diffusion coefficient. Later also a grid datastructure
     double dx; // grid spacing
-    // dt comes from polyhoop main program
+    double dt; // time step
 
     // initialize the grid with a given initial condition
-    Solver(const Grid u0, const double D = 1.0, const double dx = 0.1) {
+    Solver(const Grid u0, const double D = 1.0, const double dx = 0.1, double dt = 1e-4) {
         this->u = u0;
         this->D = D;
         this->dx = dx;
+        this->dt = dt;
     }
 
     void step(Grid &u, const double dt, double dx, double D, Reaction R) { 
