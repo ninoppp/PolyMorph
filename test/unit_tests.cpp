@@ -35,8 +35,10 @@ int main() {
 
     print("Stepping previous grid once");
     Solver s(u_gauss, 1.0, 0.1, 1e-4);
-    s.step(u_gauss, s.dt, s.dx, s.D, LinearDegradation(0.1));
-    print_grid(u_gauss, N);
+    s.step(s.u, s.dt, s.dx, s.D, LinearDegradation(0.1));
+    print_grid(s.u, N);
+
+    s.output(42); 
 
     return 0;
 }

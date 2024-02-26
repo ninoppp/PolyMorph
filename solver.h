@@ -59,11 +59,11 @@ struct Solver {
         u = unew; 
     }
 
-    void output(const size_t frame) {    // f: frame number
-        char filename [16]; 
-        snprintf(filename, 16, "rd_frame%06zu.vts", frame);        
+    void output(const std::size_t frame) {    // f: frame number
+        char filename [19]; 
+        snprintf(filename, 19, "rd_frame%06zu.vts", frame);        
         std::ofstream file(filename);
-        
+
         // TODO write VTK file
 
         file << "<?xml version=\"1.0\"?>" << std::endl;
