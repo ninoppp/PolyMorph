@@ -10,6 +10,8 @@
 #include <random>
 #include <algorithm>
 
+#include "solver.h"
+
 constexpr double h = 0.01; // [L] edge thickness
 constexpr double lmin = 0.02; // [L] minimum edge length
 constexpr double lmax = 0.2; // [L] maximum edge length
@@ -50,7 +52,7 @@ std::lognormal_distribution<> Amax_dist(std::log(Amax_mu) - Amax_lnCV/2, std::sq
 std::lognormal_distribution<> alpha_dist(std::log(alpha_mu) - alpha_lnCV/2, std::sqrt(alpha_lnCV)); // area growth rate distribution
 std::uniform_real_distribution<> uni_dist;
 
-struct Point
+struct Point  // basically a 2D vector
 {
   double x, y; // coordinates
   Point operator+(const Point& r) const { return {x + r.x, y + r.y}; } // vector sum
@@ -711,10 +713,19 @@ int main()
 {
   Ensemble ensemble("ensemble.off"); // read the input file
   ensemble.output(0); // print the initial state
+  
+  Grid u0 = create_gaussian();  // initial condition for RD solver
+  Solver solver(u0, 1.0, 0.1, dt, LinearDegradation(0.1));
+  solver.output(0); // print the initial state
+  
   for (std::size_t f = 1; f <= Nf; ++f)
   {
-    for (std::size_t s = 0; s < Ns; ++s)
+    for (std::size_t s = 0; s < Ns; ++s) 
+    {
       ensemble.step();
+      solver.step();
+    }
     ensemble.output(f); // print a frame
+    solver.output(f); // print a frame
   }
 }

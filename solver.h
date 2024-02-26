@@ -3,7 +3,7 @@
 #include <fstream>
 #include <cmath>
 
-constexpr int N = 10; // size of the FD grid. Question: does N stay constant or does dx stay constant?
+constexpr int N = 50; // size of the FD grid. Question: does N stay constant or does dx stay constant?
 
 struct Grid {
     double G[N][N]; // ToDo: change datastructure to std::vector
@@ -29,16 +29,19 @@ struct Solver {
     double D; // diffusion coefficient. Later also a grid datastructure
     double dx; // grid spacing
     double dt; // time step
+    Reaction R; // reaction term
 
     // initialize the grid with a given initial condition
-    Solver(const Grid u0, const double D = 1.0, const double dx = 0.1, double dt = 1e-4) {
+    Solver(const Grid u0, const double D = 1.0, const double dx = 0.1, 
+            double dt = 1e-4, Reaction R = LinearDegradation(0.1)) {
         this->u = u0;
         this->D = D;
         this->dx = dx;
         this->dt = dt;
+        this->R = R;
     }
 
-    void step(Grid &u, const double dt, double dx, double D, Reaction R) { 
+    void step() { 
         Grid unew;
         // Forward Euler with central differences ToDo: adapt for variable diffusion coefficient
         for (int i = 1; i < N - 1; i++) {
@@ -49,7 +52,8 @@ struct Solver {
                 );
             }
         }
-        // Zero-flux boundary conditions
+        // Zero-flux boundary conditions 
+        // ToDo: move to separate function
         for (int i = 0; i < N; i++) {
             unew(i, 0) = unew(i, 1);
             unew(i, N - 1) = unew(i, N - 2);
@@ -63,8 +67,6 @@ struct Solver {
         char filename [19]; 
         snprintf(filename, 19, "rd_frame%06zu.vts", frame);        
         std::ofstream file(filename);
-
-        // TODO write VTK file
 
         file << "<?xml version=\"1.0\"?>" << std::endl;
         file << "<VTKFile type=\"StructuredGrid\" version=\"0.1\">" << std::endl;
