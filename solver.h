@@ -63,7 +63,36 @@ struct Solver {
         char filename [16]; 
         snprintf(filename, 16, "rd_frame%06zu.vts", frame);        
         std::ofstream file(filename);
+        
         // TODO write VTK file
+
+        file << "<?xml version=\"1.0\"?>" << std::endl;
+        file << "<VTKFile type=\"StructuredGrid\" version=\"0.1\">" << std::endl;
+        file << "<StructuredGrid WholeExtent=\"0 " << N-1 << " 0 " << N-1 << " 0 0\">" << std::endl;
+        file << "<Piece Extent=\"0 " << N-1 << " 0 " << N-1 << " 0 0\">" << std::endl;
+        file << "<Points>" << std::endl;
+        file << "<DataArray type=\"Float64\" NumberOfComponents=\"3\" format=\"ascii\">" << std::endl;
+        for (int i = 0; i < N; i++) {
+            for (int j = 0; j < N; j++) {
+                file << i << " " << j << " 0" << std::endl;
+            }
+        }
+        file << "</DataArray>" << std::endl;
+        file << "</Points>" << std::endl;
+        file << "<PointData Scalars=\"scalars\">" << std::endl;
+        file << "<DataArray type=\"Float64\" Name=\"u\" format=\"ascii\">" << std::endl;
+        for (int i = 0; i < N; i++) {
+            for (int j = 0; j < N; j++) {
+                file << u(i, j) << " ";
+            }
+            file << std::endl;
+        }
+        file << "</DataArray>" << std::endl;
+        file << "</PointData>" << std::endl;
+        file << "</Piece>" << std::endl;
+        file << "</StructuredGrid>" << std::endl;
+        file << "</VTKFile>" << std::endl;
+        file.close();         
     }
 };
 
