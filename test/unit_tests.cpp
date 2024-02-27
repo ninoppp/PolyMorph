@@ -34,8 +34,8 @@ int main() {
     // ToDo: create plot of u_gauss
 
     print("Stepping previous grid once");
-    Solver s(u_gauss, 1.0, 0.1, 1e-4);
-    s.step(s.u, s.dt, s.dx, s.D, LinearDegradation(0.1));
+    Solver s(u_gauss, 1.0, 0.1, 1e-4, LinearDegradation(0.1));
+    s.step();
     print_grid(s.u, N);
 
     s.output(42); 
