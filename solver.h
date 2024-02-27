@@ -56,7 +56,7 @@ struct Solver {
         // Zero-flux boundary conditions 
         #pragma omp parallel for
         for (int i = 0; i < N; i++) {
-            unew(i, 0) = unew(i, 1);
+            unew(i, 0) = 1; //unew(i, 1); // left boundary is bottom in ParaView. Problem with vts file?
             unew(i, N - 1) = unew(i, N - 2);
             unew(0, i) = unew(1, i);
             unew(N - 1, i) = unew(N - 2, i);
@@ -104,7 +104,7 @@ Grid create_gaussian() {
     Grid u;
     for(int i = 0; i < N; i++)
         for(int j = 0; j < N; j++)
-            u(i, j) = std::exp(-((i - N/2)*(i - N/2) + (j - N/2)*(j - N/2)) / 10.0);
+            u(i, j) = std::exp(-((i - N/2)*(i - N/2) + (j - N/2)*(j - N/2)) / 100.0);
     u(N/2, N/2) = 1.0;
     return u;
 }
