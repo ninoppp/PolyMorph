@@ -714,15 +714,15 @@ int main()
   Ensemble ensemble("ensemble.off"); // read the input file
   ensemble.output(0); // print the initial state
   
-  Grid u0 = create_gaussian();  // initial condition for RD solver
-  Solver solver(u0, 1.0, 0.1, dt, LinearDegradation(0.1));
+  Grid u0 = create_gaussian();  // initial condition
+  Solver solver(u0, 0.3, 0.1, dt, LinearDegradation(0.1));  // init solver
   solver.output(0); // print the initial state
   
   for (std::size_t f = 1; f <= Nf; ++f)
   {
     for (std::size_t s = 0; s < Ns; ++s) 
     {
-      ensemble.step();
+      ensemble.step();  
       solver.step();
     }
     ensemble.output(f); // print a frame
