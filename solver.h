@@ -44,6 +44,7 @@ struct Solver {
     void step() { 
         Grid unew;
         // Forward Euler with central differences ToDo: adapt for variable diffusion coefficient
+        #pragma omp parallel for
         for (int i = 1; i < N - 1; i++) {
             for (int j = 1; j < N - 1; j++) {
                 unew(i, j) = u(i, j) + dt * (
@@ -53,7 +54,7 @@ struct Solver {
             }
         }
         // Zero-flux boundary conditions 
-        // ToDo: move to separate function
+        #pragma omp parallel for
         for (int i = 0; i < N; i++) {
             unew(i, 0) = unew(i, 1);
             unew(i, N - 1) = unew(i, N - 2);
