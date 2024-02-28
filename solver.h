@@ -3,10 +3,13 @@
 #include <fstream>
 #include <cmath>
 
-constexpr int N = 50; // size of the FD grid. Question: does N stay constant or does dx stay constant?
+// size of the FD grid. 
+// Question: does N stay constant or does dx stay constant? 
+// Probably also want Nx and Ny independent
+constexpr int N = 100; 
 
 struct Grid {
-    double G[N][N]; // ToDo: change datastructure to std::vector
+    double G[N][N]; // ToDo: change datastructure to std::vector. Maybe on heap for memory?
     double& operator()(int i, int j) { return G[i][j]; }
 };
 
@@ -24,7 +27,9 @@ struct LinearDegradation : Reaction {
     }
 };
 
-struct Solver {    
+struct Solver { 
+    double box_position_x;  // TODO: change this ugly datastruct. Maybe a dimensions struct
+    double box_position_y;   
     Grid u; // concentration of the morphogen
     double D; // diffusion coefficient. Later also a grid datastructure
     double dx; // grid spacing
@@ -39,6 +44,8 @@ struct Solver {
         this->dx = dx;
         this->dt = dt;
         this->R = R;
+        box_position_x = - N/2 * dx; // midpoint at 0
+        box_position_y = - N/2 * dx;
     }
 
     void step() { 
@@ -77,7 +84,9 @@ struct Solver {
         file << "<DataArray type=\"Float64\" NumberOfComponents=\"3\" format=\"ascii\">" << std::endl;
         for (int i = 0; i < N; i++) {
             for (int j = 0; j < N; j++) {
-                file << i << " " << j << " 0" << std::endl;
+                double x = box_position_x + i * dx;
+                double y = box_position_y + j * dx;
+                file << x << " " << y << " 0" << std::endl;
             }
         }
         file << "</DataArray>" << std::endl;
