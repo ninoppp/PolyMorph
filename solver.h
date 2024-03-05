@@ -9,8 +9,9 @@
 constexpr int N = 100; 
 
 struct Grid {
-    double G[N][N]; // ToDo: change datastructure to std::vector. Maybe on heap for memory?
-    double& operator()(int i, int j) { return G[i][j]; }
+    std::vector<std::vector<double>> data;
+    Grid () : data(N, std::vector<double>(N, 0.0)) {}
+    double& operator()(int i, int j) { return data[i][j]; }
 };
 
 struct Reaction {
