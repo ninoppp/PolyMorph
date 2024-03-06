@@ -714,7 +714,7 @@ int main()
   Ensemble ensemble("ensemble.off"); // read the input file
   ensemble.output(0); // print the initial state
   
-  Grid u0 = create_gaussian();  // initial condition
+  Grid u0; // initial condition, just 0
   Solver solver(u0, 0.3, 0.1, dt, LinearDegradation(0.1));  // init solver
   solver.output(0); // print the initial state
   
