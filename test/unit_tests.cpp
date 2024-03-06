@@ -18,28 +18,21 @@ void print_grid(Grid u, int N) {
     std::cout << std::endl;
 }
 
-int main() {
-    print("2x2 test grid");
+// only run solver same as in polyhoop
+void run_solver() {
     Grid u;
-    u(0, 0) = 1.0;
-    u(0, 1) = 2.0;
-    u(1, 0) = 3.0;
-    u(1, 1) = 4.0;
-    print_grid(u, 2);
+    Solver solver(u, 1.0, 0.1, 1e-4, LinearDegradation(0.1));
+    for (int f = 0; f < 100; f++) {
+        for (int s = 0; s < 100; s++) {
+            solver.step();
+        }
+        solver.output(f);
+        std::cout << "frame " << f << std::endl;
+    }
+}
 
-    print("Gaussian test grid");
-    Grid u_gauss = create_gaussian();
-    print_grid(u_gauss, N);
-
-    // ToDo: create plot of u_gauss
-
-    print("Stepping previous grid once");
-    Solver s(u_gauss, 1.0, 0.1, 1e-4, LinearDegradation(0.1));
-    s.step();
-    print_grid(s.u, N);
-
-    s.output(42); 
-
+int main() {    
+    run_solver();
     return 0;
 }
 
