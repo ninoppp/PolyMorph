@@ -4,13 +4,13 @@
 #include <cmath>
 
 // size of the FD grid. 
-// Question: does N stay constant or does dx stay constant? 
-// Probably also want Nx and Ny independent
-constexpr int N = 100; 
+// x always corresponds to i and y to j.
+constexpr int Nx = 100; 
+constexpr int Ny = 100;
 
 struct Grid {
     std::vector<std::vector<double>> data;
-    Grid () : data(N, std::vector<double>(N, 0.0)) {}
+    Grid () : data(Nx, std::vector<double>(Ny, 0.0)) {}
     double& operator()(int i, int j) { return data[i][j]; }
 };
 
@@ -45,16 +45,16 @@ struct Solver {
         this->dx = dx;
         this->dt = dt;
         this->R = R;
-        box_position_x = - N/2 * dx; // midpoint at 0
-        box_position_y = - N/2 * dx;
+        box_position_x = - Nx/2 * dx; // midpoint at 0
+        box_position_y = - Ny/2 * dx;
     }
 
     void step() { 
         Grid unew;
         // Forward Euler with central differences ToDo: adapt for variable diffusion coefficient
         #pragma omp parallel for
-        for (int i = 1; i < N - 1; i++) {
-            for (int j = 1; j < N - 1; j++) {
+        for (int i = 1; i < Nx - 1; i++) {
+            for (int j = 1; j < Ny - 1; j++) {
                 unew(i, j) = u(i, j) + dt * (
                     D / (dx*dx) * (u(i + 1, j) + u(i - 1, j) + u(i, j + 1) + u(i, j - 1) - 4 * u(i, j))
                     + R(u(i, j), i, j)
@@ -63,11 +63,11 @@ struct Solver {
         }
         // Zero-flux boundary conditions 
         #pragma omp parallel for
-        for (int i = 0; i < N; i++) {
+        for (int i = 0; i < Nx; i++) {  // TODOOOO
             unew(i, 0) = 1; //unew(i, 1); // left boundary is bottom in ParaView. Problem with vts file?
-            unew(i, N - 1) = unew(i, N - 2);
+            unew(i, Nx - 1) = unew(i, Nx - 2);
             unew(0, i) = unew(1, i);
-            unew(N - 1, i) = unew(N - 2, i);
+            unew(Nx - 1, i) = unew(Nx - 2, i);
         }
         u = unew; 
     }
@@ -79,12 +79,12 @@ struct Solver {
 
         file << "<?xml version=\"1.0\"?>" << std::endl;
         file << "<VTKFile type=\"StructuredGrid\" version=\"0.1\">" << std::endl;
-        file << "<StructuredGrid WholeExtent=\"0 " << N-1 << " 0 " << N-1 << " 0 0\">" << std::endl;
-        file << "<Piece Extent=\"0 " << N-1 << " 0 " << N-1 << " 0 0\">" << std::endl;
+        file << "<StructuredGrid WholeExtent=\"0 " << Nx-1 << " 0 " << Ny-1 << " 0 0\">" << std::endl;
+        file << "<Piece Extent=\"0 " << Nx-1 << " 0 " << Ny-1 << " 0 0\">" << std::endl;
         file << "<Points>" << std::endl;
         file << "<DataArray type=\"Float64\" NumberOfComponents=\"3\" format=\"ascii\">" << std::endl;
-        for (int i = 0; i < N; i++) {
-            for (int j = 0; j < N; j++) {
+        for (int i = 0; i < Nx; i++) {
+            for (int j = 0; j < Ny; j++) {
                 double x = box_position_x + i * dx;
                 double y = box_position_y + j * dx;
                 file << x << " " << y << " 0" << std::endl;
@@ -94,8 +94,8 @@ struct Solver {
         file << "</Points>" << std::endl;
         file << "<PointData Scalars=\"scalars\">" << std::endl;
         file << "<DataArray type=\"Float64\" Name=\"u\" format=\"ascii\">" << std::endl;
-        for (int i = 0; i < N; i++) {
-            for (int j = 0; j < N; j++) {
+        for (int i = 0; i < Nx; i++) {
+            for (int j = 0; j < Ny; j++) {
                 file << u(i, j) << " ";
             }
             file << std::endl;
@@ -110,11 +110,13 @@ struct Solver {
 };
 
 // helper function for IC
+/*
 Grid create_gaussian() {
     Grid u;
-    for(int i = 0; i < N; i++)
-        for(int j = 0; j < N; j++)
+    for(int i = 0; i < Nx; i++)
+        for(int j = 0; j < Ny; j++)
             u(i, j) = std::exp(-((i - N/2)*(i - N/2) + (j - N/2)*(j - N/2)) / 100.0);
     u(N/2, N/2) = 1.0;
     return u;
 }
+*/
