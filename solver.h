@@ -10,7 +10,7 @@ constexpr int Ny = 100;
 
 struct Grid {
     std::vector<std::vector<double>> data;
-    Grid () : data(Nx, std::vector<double>(Ny, 0.0)) {}
+    Grid () : data(Nx, std::vector<double>(Ny, 0.0)) {} // constructor always creates Nx x Ny grid
     double& operator()(int i, int j) { return data[i][j]; }
 };
 
