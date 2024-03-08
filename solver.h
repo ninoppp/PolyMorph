@@ -5,8 +5,8 @@
 
 // size of the FD grid. 
 // x always corresponds to i and y to j.
-constexpr int Nx = 100; 
-constexpr int Ny = 100;
+constexpr int Nx = 3; 
+constexpr int Ny = 1000;
 
 struct Grid {
     std::vector<std::vector<double>> data;
@@ -47,6 +47,7 @@ struct Solver {
         this->R = R;
         box_position_x = - Nx/2 * dx; // midpoint at 0
         box_position_y = - Ny/2 * dx;
+        enforce_bc(u);
     }
 
     void step() { 
@@ -61,15 +62,20 @@ struct Solver {
                 );
             }
         }
-        // Zero-flux boundary conditions 
-        #pragma omp parallel for
-        for (int i = 0; i < Nx; i++) {  // TODOOOO
-            unew(i, 0) = 1; //unew(i, 1); // left boundary is bottom in ParaView. Problem with vts file?
-            unew(i, Nx - 1) = unew(i, Nx - 2);
-            unew(0, i) = unew(1, i);
-            unew(Nx - 1, i) = unew(Nx - 2, i);
-        }
+        enforce_bc(unew);
         u = unew; 
+    }
+
+    void enforce_bc(Grid& u) {
+        // Zero-flux boundary conditions 
+        for (int i = 0; i < Nx; i++) {
+            u(i, 0) = 1;
+            u(i, Ny - 1) = 2 * u(i, Ny - 2);
+        }
+        for (int j = 0; j < Ny; j++) {
+            u(0, j) = 2 * u(1, j);
+            u(Nx - 1, j) = 2 * u(Nx - 2, j);
+        }
     }
 
     void output(const std::size_t frame) {    // f: frame number
