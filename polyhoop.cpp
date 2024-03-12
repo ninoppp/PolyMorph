@@ -93,8 +93,9 @@ struct Vertex
 struct Polygon
 {
   std::vector<Vertex> vertices; // vertex list in counter-clockwise orientation
-  bool phase; // phase of the enclosed medium
+  bool phase; // phase of the enclosed medium // NM: can extend this to label source cells
   double A0, A, Amax, alpha; // target, actual & division area, area growth rate
+  double D, k; // NM: Polymorph extension. Diffusion constant and reaction rate. HOW TO INITIALIZE THESE?
   double area()
   {
     A = 0;
@@ -159,7 +160,7 @@ struct Ensemble
         file >> j;
         polygons[p].vertices.push_back({points[j], {0, 0}, {0, 0}, p});
       }
-      polygons[p].phase = std::abs(z[j]) % 2; // the z coordinate is used as the phase
+      polygons[p].phase = std::abs(z[j]) % 2; // the z coordinate is used as the phase 
       polygons[p].A0 = polygons[p].area(); // use the initial area as target area
       polygons[p].Amax = Amax_dist(rng);
       polygons[p].alpha = alpha_dist(rng);
@@ -529,7 +530,7 @@ struct Ensemble
       polygons[p].area(); // compute the new polygon area
     }
     t += dt; // advance the time
-  }
+  } // NM: end step()
   
   void boxes()
   {
