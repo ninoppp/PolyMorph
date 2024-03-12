@@ -23,13 +23,13 @@ struct Reaction {
 struct LinearDegradation : Reaction {
     double k;
     LinearDegradation(double k): k(k) {}
-    double operator()(double u, int i, int j) {
+    double operator()(double u, int i, int j) { // ToDo: make inline?
         return -k * u;
     }
 };
 
 struct Solver { 
-    double box_position_x;  // TODO: change this ugly datastruct. Maybe a dimensions struct
+    double box_position_x;  // ToDo: change this ugly datastruct. Maybe a dimensions struct
     double box_position_y;   
     Grid u; // concentration of the morphogen
     double D; // diffusion coefficient. Later also a grid datastructure
@@ -47,36 +47,29 @@ struct Solver {
         this->R = R;
         box_position_x = - Nx/2 * dx; // midpoint at 0
         box_position_y = - Ny/2 * dx;
-        enforce_bc(u);
     }
 
     void step() { 
         Grid unew;
         // Forward Euler with central differences ToDo: adapt for variable diffusion coefficient
-        #pragma omp parallel for
-        for (int i = 1; i < Nx - 1; i++) {
-            for (int j = 1; j < Ny - 1; j++) {   
+        // maybe separate inner nodes and boundary to efficiently parallelize and vectorize inner nodes
+        #pragma omp parallel for collapse(2)
+        for (int i = 0; i < Nx; i++) {
+            for (int j = 0; j < Ny; j++) {   
+                // mirror past-boundary nodes
+                double n = (j == Ny-1) ? u(i, j-1) : u(i, j+1);
+                double s = (j == 0)    ? 1         : u(i, j-1); // dirichlet boundary condition
+                double e = (i == Nx-1) ? u(i-1, j) : u(i+1, j);
+                double w = (i == 0)    ? u(i+1, j) : u(i-1, j);
                 unew(i, j) = u(i, j) + dt * (
-                    D / (dx*dx) * (u(i + 1, j) + u(i - 1, j) + u(i, j + 1) + u(i, j - 1) - 4 * u(i, j))
+                    D / (dx*dx) * (n + s + e + w - 4 * u(i, j))
                     + R(u(i, j), i, j)
-                );
+                ); 
             }
-        }
-        enforce_bc(unew);
+        }      
         u = unew; 
     }
     
-    void enforce_bc(Grid& u) {
-        // Zero-flux boundary conditions 
-        for (int i = 0; i < Nx; i++) {
-            u(i, 0) = 1;
-            u(i, Ny - 1) = 2 * u(i, Ny - 2);
-        }
-        for (int j = 0; j < Ny; j++) {
-            u(0, j) = 2 * u(1, j);
-            u(Nx - 1, j) = 2 * u(Nx - 2, j);
-        }
-    }
 
     void output(const std::size_t frame) {    // f: frame number
         char filename [19]; 
