@@ -12,7 +12,7 @@ def u(x):
     return c0 * math.exp(-x/lam)
 
 # Read the values from final_frame.txt
-with open('final_frame.txt', 'r') as file:
+with open('test/final_frame.txt', 'r') as file:
     values = [float(line.strip()) for line in file]
 
 # Generate x values for the analytical solution
@@ -29,4 +29,4 @@ plt.plot(x_values, values, label='Numerical Solution')
 # Set the legend
 plt.legend()
 # Save the plot as a PDF file
-plt.savefig('/home/uranus/PolyMorph/test/analytical_solution.pdf')
+plt.savefig('/home/uranus/PolyMorph/test/solution_plot.pdf')

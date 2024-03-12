@@ -24,7 +24,7 @@ void run_solver() {
     Grid u;
     Solver solver(u, 0.03, 0.01, 1e-4, LinearDegradation(0.01));
     for (int f = 0; f < 100; f++) {
-        for (int s = 0; s < 1000; s++) {
+        for (int s = 0; s < 3000; s++) {
             solver.step();
         }
         //solver.output(f);

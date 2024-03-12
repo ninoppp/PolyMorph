@@ -36,13 +36,18 @@ run_test() {
     ./test/a.out
 }
 
+plot_steady_state() {
+    echo "plotting steady state ..."
+    python3 test/plot.py
+}
+
 if [ "$1" = "c" ]; then
     echo "running cleanup only ..."
     cleanup_files
 elif [ "$1" = "t" ]; then
     echo "running test only ..."
     run_test
-    move_files
+    plot_steady_state
 else
     echo "running full pipeline ..."
     compile_polyhoop
