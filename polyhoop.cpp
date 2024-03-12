@@ -715,7 +715,7 @@ int main()
   ensemble.output(0); // print the initial state
   
   Grid u0; // initial condition, just 0
-  Solver solver(u0, 0.3, 0.1, dt, LinearDegradation(0.1));  // init solver
+  Solver solver(u0, 0.3, 0.01, dt, LinearDegradation(0.1));  // init solver
   solver.output(0); // print the initial state
   
   for (std::size_t f = 1; f <= Nf; ++f)
