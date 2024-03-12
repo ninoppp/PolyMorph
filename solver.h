@@ -5,13 +5,15 @@
 
 // size of the FD grid. 
 // x always corresponds to i and y to j.
-constexpr int Nx = 3; 
-constexpr int Ny = 1000;
+// ToDo: make members of grid
+constexpr int Nx = 100; 
+constexpr int Ny = 100;
 
+template<typename T>
 struct Grid {
-    std::vector<std::vector<double>> data;
-    Grid () : data(Nx, std::vector<double>(Ny, 0.0)) {} // constructor always creates Nx x Ny grid
-    double& operator()(int i, int j) { return data[i][j]; }
+    std::vector<std::vector<T>> data;
+    Grid () : data(Nx, std::vector<T>(Ny, T(0))) {} // constructor always creates Nx x Ny grid
+    T& operator()(int i, int j) { return data[i][j]; }
 };
 
 struct Reaction {
@@ -23,7 +25,7 @@ struct Reaction {
 struct LinearDegradation : Reaction {
     double k;
     LinearDegradation(double k): k(k) {}
-    double operator()(double u, int i, int j) { // ToDo: make inline?
+    double operator()(double u, int i, int j) {
         return -k * u;
     }
 };
@@ -31,14 +33,15 @@ struct LinearDegradation : Reaction {
 struct Solver { 
     double box_position_x;  // ToDo: change this ugly datastruct. Maybe a dimensions struct
     double box_position_y;   
-    Grid u; // concentration of the morphogen
+    Grid<double> u; // concentration of the morphogen
     double D; // diffusion coefficient. Later also a grid datastructure
     double dx; // grid spacing
     double dt; // time step
     Reaction R; // reaction term
+    Grid<int> parent_idx; // polygon idx
 
     // initialize the grid with a given initial condition
-    Solver(const Grid u0, const double D = 1.0, const double dx = 0.1, 
+    Solver(const Grid<double> u0, const double D = 1.0, const double dx = 0.1, 
             double dt = 1e-4, Reaction R = LinearDegradation(0.1)) {
         this->u = u0;
         this->D = D;
@@ -50,7 +53,7 @@ struct Solver {
     }
 
     void step() { 
-        Grid unew;
+        Grid<double> unew;
         // Forward Euler with central differences ToDo: adapt for variable diffusion coefficient
         // maybe separate inner nodes and boundary to efficiently parallelize and vectorize inner nodes
         #pragma omp parallel for collapse(2)
@@ -69,7 +72,7 @@ struct Solver {
         }      
         u = unew; 
     }
-    
+
 
     void output(const std::size_t frame) {    // f: frame number
         char filename [19]; 
@@ -92,6 +95,7 @@ struct Solver {
         file << "</DataArray>" << std::endl;
         file << "</Points>" << std::endl;
         file << "<PointData Scalars=\"scalars\">" << std::endl;
+        // u
         file << "<DataArray type=\"Float64\" Name=\"u\" format=\"ascii\">" << std::endl;
         for (int i = 0; i < Nx; i++) {
             for (int j = 0; j < Ny; j++) {
@@ -100,7 +104,17 @@ struct Solver {
             file << std::endl;
         }
         file << "</DataArray>" << std::endl;
+        // parent_idx
+        file << "<DataArray type=\"Int32\" Name=\"parent_idx\" format=\"ascii\">" << std::endl;
+        for (int i = 0; i < Nx; i++) {
+            for (int j = 0; j < Ny; j++) {
+                file << parent_idx(i, j) << " ";
+            }
+            file << std::endl;
+        }
+        file << "</DataArray>" << std::endl;
         file << "</PointData>" << std::endl;
+
         file << "</Piece>" << std::endl;
         file << "</StructuredGrid>" << std::endl;
         file << "</VTKFile>" << std::endl;

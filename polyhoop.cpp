@@ -40,7 +40,7 @@ constexpr double cc = 30; // [1/T] collision damping rate
 constexpr double dt = 1e-4; // [T] time step
 
 constexpr std::size_t Nf = 100; // number of output frames
-constexpr std::size_t Ns = 1000; // number of time steps between frames
+constexpr std::size_t Ns = 500; // number of time steps between frames // default 1000
 constexpr std::size_t Nr = 0; // number of rigid polygons
 
 constexpr double drmax = h + sh + ss; // maximum interaction distance
@@ -55,6 +55,8 @@ std::uniform_real_distribution<> uni_dist;
 struct Point  // basically a 2D vector
 {
   double x, y; // coordinates
+  Point () : x(0), y(0) {} // default constructor
+  Point (const double x, const double y) : x(x), y(y) {} // constructor
   Point operator+(const Point& r) const { return {x + r.x, y + r.y}; } // vector sum
   Point operator-(const Point& r) const { return {x - r.x, y - r.y}; } // vector difference
   Point cross() const { return {-y, x}; } // perpendicular vector
@@ -95,7 +97,7 @@ struct Polygon
   std::vector<Vertex> vertices; // vertex list in counter-clockwise orientation
   bool phase; // phase of the enclosed medium // NM: can extend this to label source cells
   double A0, A, Amax, alpha; // target, actual & division area, area growth rate
-  double D, k; // NM: Polymorph extension. Diffusion constant and reaction rate. HOW TO INITIALIZE THESE?
+  double D, k, u; // NM: Polymorph extension. HOW TO INITIALIZE THESE?
   double area()
   {
     A = 0;
@@ -510,9 +512,9 @@ struct Ensemble
       {
         const std::size_t bxi = (polygons[p].vertices[i].r.x - x0) / bs + 1; // box index in x direction
         const std::size_t byi = (polygons[p].vertices[i].r.y - y0) / bs + 1; // box index in y direction
-        for (std::size_t bxj = bxi - 1; bxj <= bxi + 1; ++bxj)
+        for (std::size_t bxj = bxi - 1; bxj <= bxi + 1; ++bxj)  //NM: interaction within 1 box in each direction
           for (std::size_t byj = byi - 1; byj <= byi + 1; ++byj)
-            for (Vertex* v = first[bxj * Ny + byj]; v; v = v->next)
+            for (Vertex* v = first[bxj * Ny + byj]; v; v = v->next) //NM: in first we get the starting vertex from each
               if (v != &polygons[p].vertices[k] && v != &polygons[p].vertices[i] && v != &polygons[p].vertices[j])
                 interaction(v, &polygons[p].vertices[i], &polygons[p].vertices[k], &polygons[p].vertices[j]);
       }
@@ -710,13 +712,31 @@ struct Ensemble
   }
 };
 
+// naive approach. optimize with using previous parent, neighbour nodes, and boxes
+Grid<int> parent_id_matrix(Ensemble ensemble, Solver solver, Grid<int> prev){
+  Grid<int> parent_idx;
+  double dx = solver.dx;
+  for (int i = 0; i < Nx; i++) {
+    for (int j = 0; j < Ny; j++) {
+      parent_idx(i, j) = -1;
+      for (int p = 0; p < ensemble.polygons.size(); p++) {
+        if (ensemble.polygons[p].contains(Point(solver.box_position_x + i*dx, solver.box_position_y + j*dx))) {
+          parent_idx(i, j) = p;
+          break;
+        }
+      }
+    }
+  }
+  return parent_idx;
+}
+
 int main()
 {
   Ensemble ensemble("ensemble.off"); // read the input file
   ensemble.output(0); // print the initial state
   
-  Grid u0; // initial condition, just 0
-  Solver solver(u0, 0.3, 0.01, dt, LinearDegradation(0.1));  // init solver
+  Grid<double> u0; // initial condition, just 0
+  Solver solver(u0, 0.3, 0.1, dt, LinearDegradation(0.1));  // init solver // dx should be 0.01 for stability
   solver.output(0); // print the initial state
   
   for (std::size_t f = 1; f <= Nf; ++f)
@@ -727,6 +747,7 @@ int main()
       solver.step();
     }
     ensemble.output(f); // print a frame
+    solver.parent_idx = parent_id_matrix(ensemble, solver, solver.parent_idx); // only calculate parent every frame
     solver.output(f); // print a frame
   }
 }
