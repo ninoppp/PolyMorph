@@ -716,6 +716,7 @@ struct Ensemble
 Grid<int> parent_idx_matrix(Ensemble ensemble, Solver solver, Grid<int> prev_idx){
   Grid<int> parent_idx;
   double dx = solver.dx;
+  #pragma omp parallel for collapse(2)
   for (int i = 0; i < Nx; i++) {
     for (int j = 0; j < Ny; j++) {  // maybe make this block its own function
       Point grid_point(solver.box_position_x + i * dx, solver.box_position_y + j * dx);
@@ -757,7 +758,7 @@ int main()
     ensemble.output(f); // print a frame
     // instead of parent idx we can pass D and k to the solver
     // with the parent index we can calculate u for each cell
-    solver.parent_idx = parent_idx_matrix(ensemble, solver, solver.parent_idx); // only calculate parent every frame
+    //solver.parent_idx = parent_idx_matrix(ensemble, solver, solver.parent_idx); // only calculate parent every frame
     solver.output(f); // print a frame
   }
 }
