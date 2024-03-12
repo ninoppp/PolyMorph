@@ -32,7 +32,7 @@ move_files() {
 }
 
 run_test() {
-    g++ test/unit_tests.cpp -o test/a.out
+    g++ -fopenmp -O3 -o test/a.out test/unit_tests.cpp 
     ./test/a.out
 }
 
