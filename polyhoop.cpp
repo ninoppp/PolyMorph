@@ -712,15 +712,23 @@ struct Ensemble
   }
 };
 
-// naive approach. optimize with using previous parent, neighbour nodes, and boxes
-Grid<int> parent_id_matrix(Ensemble ensemble, Solver solver, Grid<int> prev){
+// maps grid points to their "parent" polygon which they lie inside of
+Grid<int> parent_idx_matrix(Ensemble ensemble, Solver solver, Grid<int> prev_idx){
   Grid<int> parent_idx;
   double dx = solver.dx;
   for (int i = 0; i < Nx; i++) {
-    for (int j = 0; j < Ny; j++) {
+    for (int j = 0; j < Ny; j++) {  // maybe make this block its own function
+      Point grid_point(solver.box_position_x + i * dx, solver.box_position_y + j * dx);
       parent_idx(i, j) = -1;
+      // check if still the same parent
+      if (ensemble.polygons[prev_idx(i, j)].contains(grid_point)) { 
+        parent_idx(i, j) = prev_idx(i, j);
+        continue; 
+      }
+      // ToDo: either boxes (3x3) or grid neighbourhood or both
+      // naive full search
       for (int p = 0; p < ensemble.polygons.size(); p++) {
-        if (ensemble.polygons[p].contains(Point(solver.box_position_x + i*dx, solver.box_position_y + j*dx))) {
+        if (ensemble.polygons[p].contains(grid_point)) {
           parent_idx(i, j) = p;
           break;
         }
@@ -747,7 +755,9 @@ int main()
       solver.step();
     }
     ensemble.output(f); // print a frame
-    solver.parent_idx = parent_id_matrix(ensemble, solver, solver.parent_idx); // only calculate parent every frame
+    // instead of parent idx we can pass D and k to the solver
+    // with the parent index we can calculate u for each cell
+    solver.parent_idx = parent_idx_matrix(ensemble, solver, solver.parent_idx); // only calculate parent every frame
     solver.output(f); // print a frame
   }
 }
