@@ -55,7 +55,7 @@ struct Solver {
         // Forward Euler with central differences ToDo: adapt for variable diffusion coefficient
         #pragma omp parallel for
         for (int i = 1; i < Nx - 1; i++) {
-            for (int j = 1; j < Ny - 1; j++) {
+            for (int j = 1; j < Ny - 1; j++) {   
                 unew(i, j) = u(i, j) + dt * (
                     D / (dx*dx) * (u(i + 1, j) + u(i - 1, j) + u(i, j + 1) + u(i, j - 1) - 4 * u(i, j))
                     + R(u(i, j), i, j)
@@ -65,7 +65,7 @@ struct Solver {
         enforce_bc(unew);
         u = unew; 
     }
-
+    
     void enforce_bc(Grid& u) {
         // Zero-flux boundary conditions 
         for (int i = 0; i < Nx; i++) {
