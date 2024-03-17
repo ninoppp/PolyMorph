@@ -10,8 +10,8 @@ constexpr int Nx = 100;
 constexpr int Ny = 100;
 
 struct Index {
-  int i; 
-  int j;
+  const int i; 
+  const int j;
   Index(int i, int j): i(i), j(j) {}
 };
 
@@ -69,10 +69,10 @@ struct Solver {
         for (int i = 0; i < Nx; i++) {
             for (int j = 0; j < Ny; j++) {   
                 // mirror past-boundary nodes
-                double n = (j == Ny-1) ? u(i, j-1) : u(i, j+1);
-                double s = (j == 0)    ? 1         : u(i, j-1); // dirichlet boundary condition
-                double e = (i == Nx-1) ? u(i-1, j) : u(i+1, j);
-                double w = (i == 0)    ? u(i+1, j) : u(i-1, j);
+                const double n = (j == Ny-1) ? u(i, j-1) : u(i, j+1);
+                const double s = (j == 0)    ? 1         : u(i, j-1); // dirichlet boundary condition
+                const double e = (i == Nx-1) ? u(i-1, j) : u(i+1, j);
+                const double w = (i == 0)    ? u(i+1, j) : u(i-1, j);
                 unew(i, j) = u(i, j) + dt * (
                     D / (dx*dx) * (n + s + e + w - 4 * u(i, j))
                     + R(u(i, j), i, j)

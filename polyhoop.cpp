@@ -724,7 +724,7 @@ struct Ensemble
 
 // takes care of the data scattering and gathering between ensemble and solver
 struct Interpolator {
-  Ensemble& ensemble; // ToDo: advantage of pointer over reference?
+  Ensemble& ensemble;
   Solver& solver;
   Interpolator(Ensemble& ensemble, Solver& solver) : ensemble(ensemble), solver(solver) {}
   
@@ -733,12 +733,12 @@ struct Interpolator {
     Grid<int> prev_idx = solver.parent_idx; // stores the polygon index of the cell in which a grid point lies (its parent)
     Grid<int> new_idx(-1); // -1 indicates a background node
     
-    //#pragma omp parallel for collapse(2)
+    #pragma omp parallel for collapse(2)
     for (int i = 0; i < Nx; i++) {
       for (int j = 0; j < Ny; j++) { 
-        double x = solver.box_position_x + i * solver.dx;
-        double y = solver.box_position_y + j * solver.dx;
-        Point grid_point(x, y);
+        const double x = solver.box_position_x + i * solver.dx;
+        const double y = solver.box_position_y + j * solver.dx;
+        const Point grid_point(x, y);
         // check if still the same parent
         if (prev_idx(i,j) != -1 && ensemble.polygons[prev_idx(i, j)].contains(grid_point)) { 
           new_idx(i, j) = prev_idx(i, j);
@@ -747,7 +747,7 @@ struct Interpolator {
         // ToDo: search boxes in spiral outwards. Maybe check also grid neighbours 
         // naive full search
         for (int p = 0; p < ensemble.polygons.size(); p++) {
-          Polygon cell = ensemble.polygons[p];
+          const auto& cell = ensemble.polygons[p];
           if (cell.contains(grid_point)) {
             new_idx(i, j) = p;
             //solver.D(i, j) = cell.D;
@@ -764,22 +764,22 @@ struct Interpolator {
   // important: depends on scatter being called every iteration to build the parent_idx
   void gather() {
     // get all children from parent idx built during scatter()
-    for (auto cell : ensemble.polygons) {
+    for (auto& cell : ensemble.polygons) {
       cell.children.clear();
     }
     for (int i = 0; i < Nx; i++) {
       for (int j = 0; j < Ny; j++) {
         if (solver.parent_idx(i, j) != -1) { // skip background nodes
-          auto cell = ensemble.polygons[solver.parent_idx(i, j)]; 
+          auto& cell = ensemble.polygons[solver.parent_idx(i, j)]; 
           cell.children.push_back(Index(i, j)); 
         }
       }
     }
     // accumulate data from children
-    for (auto cell : ensemble.polygons) {
+    for (auto& cell : ensemble.polygons) {
       // average concentration
       cell.u = 0;
-      for (Index idx : cell.children) {
+      for (const Index& idx : cell.children) {
         cell.u += solver.u(idx);
       }
       cell.u /= cell.children.size();
