@@ -9,16 +9,24 @@
 constexpr int Nx = 100; 
 constexpr int Ny = 100;
 
+struct Index {
+  int i; 
+  int j;
+  Index(int i, int j): i(i), j(j) {}
+};
+
 template<typename T>
 struct Grid {
     std::vector<std::vector<T>> data;
     Grid () : data(Nx, std::vector<T>(Ny, T(0))) {} // constructor always creates Nx x Ny grid
+    Grid (double value) : data(Nx, std::vector<T>(Ny, value)) {}
     T& operator()(int i, int j) { return data[i][j]; }
+    T& operator()(Index idx) { return data[idx.i][idx.j]; }
 };
 
 struct Reaction {
     double operator()(double u, int i, int j) {
-        return 0.0; // ToDo: implement reaction function
+        return 0.0;
     }
 };
 
@@ -33,11 +41,11 @@ struct LinearDegradation : Reaction {
 struct Solver { 
     double box_position_x;  // ToDo: change this ugly datastruct. Maybe a dimensions struct
     double box_position_y;   
-    Grid<double> u; // concentration of the morphogen
     double D; // diffusion coefficient. Later also a grid datastructure
     double dx; // grid spacing
     double dt; // time step
     Reaction R; // reaction term
+    Grid<double> u; // concentration of the morphogen
     Grid<int> parent_idx; // polygon idx
 
     // initialize the grid with a given initial condition
@@ -50,6 +58,7 @@ struct Solver {
         this->R = R;
         box_position_x = - Nx/2 * dx; // midpoint at 0
         box_position_y = - Ny/2 * dx;
+        parent_idx = Grid<int>(-1); // initialize as all background nodes. Maybe change to std::map?
     }
 
     void step() { 
@@ -123,13 +132,12 @@ struct Solver {
 };
 
 // helper function for IC
-/*
-Grid create_gaussian() {
-    Grid u;
+
+Grid<double> create_gaussian() {
+    Grid<double> u;
     for(int i = 0; i < Nx; i++)
         for(int j = 0; j < Ny; j++)
-            u(i, j) = std::exp(-((i - N/2)*(i - N/2) + (j - N/2)*(j - N/2)) / 100.0);
-    u(N/2, N/2) = 1.0;
+            u(i, j) = std::exp(-((i - Nx/2)*(i - Nx/2) + (j - Ny/2)*(j - Ny/2)) / 100.0);
+    u(Nx/2, Ny/2) = 1.0;
     return u;
 }
-*/
