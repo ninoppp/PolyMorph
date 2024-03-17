@@ -44,13 +44,13 @@ void run_1d_solver() {
     int n = 2000;
     std::vector<double> u0(n, 0.0);
     u0[0] = 1.0; // dirichlet boundary condition
-    Solver1D solver(u0, 0.03, 0.01, 1e-5, LinearDegradation(0.01));
+    Solver1D solver(u0, 0.03, 0.01, 1e-4, LinearDegradation(0.01));
     for (int f = 0; f < 100; f++) {
-        for (int s = 0; s < 300000; s++) {
+        for (int s = 0; s < 100000; s++) {
             solver.step();
         }
         //solver.output(f);
-        std::cout << "frame " << f << std::endl;
+        std::cout << "frame " << f << " norm: " << solver.norm << std::endl;
     }
     // final (hopefully steady) state
     std::ofstream file("test/final_frame.txt");
