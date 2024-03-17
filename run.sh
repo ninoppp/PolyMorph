@@ -1,6 +1,15 @@
 
 #!/bin/bash
 
+move_files() {
+    echo "moving output files to desktop ..."
+    local timestamp=$(date +%Y-%m-%d_%H-%M)
+    local path="/mnt/c/Users/muell/Desktop/PolymorphOutput" # change this to your desktop path
+    mkdir $path/$timestamp
+    mv *.vtp $path/$timestamp/
+    mv *.vts $path/$timestamp/ 
+}
+
 cleanup_files() {
     echo "cleaning up leftover output files ..."
     rm *.vtp
@@ -18,17 +27,8 @@ generate_ensemble() {
 }
 
 run_polyhoop() {
-    echo "running polyhoop ... "
+    echo "running polyhoop in parallel... "
     OMP_NUM_THREADS=8 ./polyhoop.out
-}
-
-move_files() {
-    echo "moving output files to desktop ..."
-    local timestamp=$(date +%Y-%m-%d_%H-%M)
-    local path="/mnt/c/Users/muell/Desktop/PolymorphOutput" # change this to your desktop path
-    mkdir $path/$timestamp
-    mv *.vtp $path/$timestamp/
-    mv *.vts $path/$timestamp/ 
 }
 
 run_test() {
@@ -44,10 +44,12 @@ plot_steady_state() {
 if [ "$1" = "c" ]; then
     echo "running cleanup only ..."
     cleanup_files
+
 elif [ "$1" = "t" ]; then
     echo "running test only ..."
     run_test
     plot_steady_state
+    
 else
     echo "running full pipeline ..."
     compile_polyhoop
