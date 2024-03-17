@@ -97,7 +97,10 @@ struct Polygon
   std::vector<Vertex> vertices; // vertex list in counter-clockwise orientation
   bool phase; // phase of the enclosed medium // NM: can extend this to label source cells
   double A0, A, Amax, alpha; // target, actual & division area, area growth rate
-  double D, k, u; // NM: Polymorph extension. HOW TO INITIALIZE THESE?
+  // Polymorph extension. 
+  double D, k, u; // ToDo: initialize these
+  std::vector<Index> children; // stores the indices of the grid points within the polygon
+  // END Polymorph extension
   double area()
   {
     A = 0;
@@ -654,6 +657,13 @@ struct Ensemble
       file << p.A << " ";
     file << "\n";
     file << "        </DataArray>\n";
+    // polymorph extension
+    file << "        <DataArray type=\"Float64\" Name=\"u\" format=\"ascii\">\n";
+    for (auto& p : polygons)
+      file << p.u << " ";
+    file << "\n";
+    file << "        </DataArray>\n";
+
     file << "        <DataArray type=\"Float64\" Name=\"perimeter\" format=\"ascii\">\n";
     for (auto& p : polygons)
       file << p.perimeter() << " ";
@@ -712,53 +722,95 @@ struct Ensemble
   }
 };
 
-// maps grid points to their "parent" polygon which they lie inside of
-Grid<int> parent_idx_matrix(Ensemble ensemble, Solver solver, Grid<int> prev_idx){
-  Grid<int> parent_idx;
-  double dx = solver.dx;
-  #pragma omp parallel for collapse(2)
-  for (int i = 0; i < Nx; i++) {
-    for (int j = 0; j < Ny; j++) {  // maybe make this block its own function
-      Point grid_point(solver.box_position_x + i * dx, solver.box_position_y + j * dx);
-      parent_idx(i, j) = -1;
-      // check if still the same parent
-      if (ensemble.polygons[prev_idx(i, j)].contains(grid_point)) { 
-        parent_idx(i, j) = prev_idx(i, j);
-        continue; 
-      }
-      // ToDo: either boxes (3x3) or grid neighbourhood or both
-      // naive full search
-      for (int p = 0; p < ensemble.polygons.size(); p++) {
-        if (ensemble.polygons[p].contains(grid_point)) {
-          parent_idx(i, j) = p;
-          break;
+// takes care of the data scattering and gathering between ensemble and solver
+struct Interpolator {
+  Ensemble& ensemble; // ToDo: advantage of pointer over reference?
+  Solver& solver;
+  Interpolator(Ensemble& ensemble, Solver& solver) : ensemble(ensemble), solver(solver) {}
+  
+  // scatter coefficients D, k from polygons to grid points
+  void scatter() {
+    Grid<int> prev_idx = solver.parent_idx; // stores the polygon index of the cell in which a grid point lies (its parent)
+    Grid<int> new_idx(-1); // -1 indicates a background node
+    
+    //#pragma omp parallel for collapse(2)
+    for (int i = 0; i < Nx; i++) {
+      for (int j = 0; j < Ny; j++) { 
+        double x = solver.box_position_x + i * solver.dx;
+        double y = solver.box_position_y + j * solver.dx;
+        Point grid_point(x, y);
+        // check if still the same parent
+        if (prev_idx(i,j) != -1 && ensemble.polygons[prev_idx(i, j)].contains(grid_point)) { 
+          new_idx(i, j) = prev_idx(i, j);
+          continue; 
+        } 
+        // ToDo: search boxes in spiral outwards. Maybe check also grid neighbours 
+        // naive full search
+        for (int p = 0; p < ensemble.polygons.size(); p++) {
+          Polygon cell = ensemble.polygons[p];
+          if (cell.contains(grid_point)) {
+            new_idx(i, j) = p;
+            //solver.D(i, j) = cell.D;
+            //solver.k(i, j) = cell.k;
+            break;
+          }
         }
       }
     }
+    solver.parent_idx = new_idx;
   }
-  return parent_idx;
-}
+
+  // gather concentration u from grid points to polygons
+  // important: depends on scatter being called every iteration to build the parent_idx
+  void gather() {
+    // get all children from parent idx built during scatter()
+    for (auto cell : ensemble.polygons) {
+      cell.children.clear();
+    }
+    for (int i = 0; i < Nx; i++) {
+      for (int j = 0; j < Ny; j++) {
+        if (solver.parent_idx(i, j) != -1) { // skip background nodes
+          auto cell = ensemble.polygons[solver.parent_idx(i, j)]; 
+          cell.children.push_back(Index(i, j)); 
+        }
+      }
+    }
+    // accumulate data from children
+    for (auto cell : ensemble.polygons) {
+      // average concentration
+      cell.u = 0;
+      for (Index idx : cell.children) {
+        cell.u += solver.u(idx);
+      }
+      cell.u /= cell.children.size();
+    }
+  }
+};
+
 
 int main()
 {
   Ensemble ensemble("ensemble.off"); // read the input file
   ensemble.output(0); // print the initial state
   
-  Grid<double> u0; // initial condition, just 0
+  Grid<double> u0 = create_gaussian(); // initial condition, just 0
   Solver solver(u0, 0.3, 0.1, dt, LinearDegradation(0.1));  // init solver // dx should be 0.01 for stability
   solver.output(0); // print the initial state
   
+  Interpolator interpolator(ensemble, solver);
+
   for (std::size_t f = 1; f <= Nf; ++f)
   {
     for (std::size_t s = 0; s < Ns; ++s) 
     {
-      ensemble.step();  
+      ensemble.step(); 
       solver.step();
     }
+    // for testing purposes only every frame. no interaction yet. 
+    interpolator.scatter(); 
+    interpolator.gather();
+    
     ensemble.output(f); // print a frame
-    // instead of parent idx we can pass D and k to the solver
-    // with the parent index we can calculate u for each cell
-    //solver.parent_idx = parent_idx_matrix(ensemble, solver, solver.parent_idx); // only calculate parent every frame
     solver.output(f); // print a frame
   }
 }
