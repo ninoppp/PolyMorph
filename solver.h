@@ -10,8 +10,8 @@ constexpr int Nx = 100;
 constexpr int Ny = 100;
 
 struct Index {
-  const int i; 
-  const int j;
+  int i; 
+  int j;
   Index(int i, int j): i(i), j(j) {}
 };
 

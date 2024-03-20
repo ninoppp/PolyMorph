@@ -40,7 +40,7 @@ constexpr double cc = 30; // [1/T] collision damping rate
 constexpr double dt = 1e-4; // [T] time step
 
 constexpr std::size_t Nf = 100; // number of output frames
-constexpr std::size_t Ns = 500; // number of time steps between frames // default 1000
+constexpr std::size_t Ns = 100; // number of time steps between frames // default 1000
 constexpr std::size_t Nr = 0; // number of rigid polygons
 
 constexpr double drmax = h + sh + ss; // maximum interaction distance
@@ -731,7 +731,7 @@ struct Interpolator {
   // scatter coefficients D, k from polygons to grid points
   void scatter() {
     Grid<int> prev_idx = solver.parent_idx; // stores the polygon index of the cell in which a grid point lies (its parent)
-    Grid<int> new_idx(-1); // -1 indicates a background node
+    Grid<int> new_idx(-1); // negative indices indicate a background node
 
     #pragma omp parallel for collapse(2)
     for (int i = 0; i < Nx; i++) {
@@ -739,17 +739,17 @@ struct Interpolator {
         const double x = solver.box_position_x + i * solver.dx;
         const double y = solver.box_position_y + j * solver.dx;
         const Point grid_point(x, y);
-        // check if still the same parent
-        if (prev_idx(i,j) != -1 && ensemble.polygons[prev_idx(i, j)].contains(grid_point)) { 
-          new_idx(i, j) = prev_idx(i, j);
-          continue; 
-        } 
         // check if outside the ensemble box
         const double ensemble_max_x = ensemble.x0 + ensemble.bs * ensemble.Nx;
         const double ensemble_max_y = ensemble.y0 + ensemble.bs * ensemble.Ny;
         if (x < ensemble.x0 || x > ensemble_max_x || y < ensemble.y0 || y > ensemble_max_y) {
           new_idx(i, j) = -2; // external background node
         }
+        // check if still the same parent
+        if (prev_idx(i,j) >= 0 && ensemble.polygons[prev_idx(i, j)].contains(grid_point)) { 
+          new_idx(i, j) = prev_idx(i, j);
+          continue; 
+        } 
         // naive full search
         // ToDo: search boxes in spiral outwards. Maybe check also grid neighbours 
         for (int p = 0; p < ensemble.polygons.size(); p++) {
@@ -775,7 +775,7 @@ struct Interpolator {
     }
     for (int i = 0; i < Nx; i++) {
       for (int j = 0; j < Ny; j++) {
-        if (solver.parent_idx(i, j) != -1) { // skip background nodes
+        if (solver.parent_idx(i, j) >= 0) { // skip background nodes
           auto& cell = ensemble.polygons[solver.parent_idx(i, j)]; 
           cell.children.push_back(Index(i, j)); 
         }
