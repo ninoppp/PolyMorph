@@ -732,7 +732,7 @@ struct Interpolator {
   void scatter() {
     Grid<int> prev_idx = solver.parent_idx; // stores the polygon index of the cell in which a grid point lies (its parent)
     Grid<int> new_idx(-1); // -1 indicates a background node
-    
+
     #pragma omp parallel for collapse(2)
     for (int i = 0; i < Nx; i++) {
       for (int j = 0; j < Ny; j++) { 
@@ -744,8 +744,14 @@ struct Interpolator {
           new_idx(i, j) = prev_idx(i, j);
           continue; 
         } 
-        // ToDo: search boxes in spiral outwards. Maybe check also grid neighbours 
+        // check if outside the ensemble box
+        const double ensemble_max_x = ensemble.x0 + ensemble.bs * ensemble.Nx;
+        const double ensemble_max_y = ensemble.y0 + ensemble.bs * ensemble.Ny;
+        if (x < ensemble.x0 || x > ensemble_max_x || y < ensemble.y0 || y > ensemble_max_y) {
+          new_idx(i, j) = -2; // external background node
+        }
         // naive full search
+        // ToDo: search boxes in spiral outwards. Maybe check also grid neighbours 
         for (int p = 0; p < ensemble.polygons.size(); p++) {
           const auto& cell = ensemble.polygons[p];
           if (cell.contains(grid_point)) {
