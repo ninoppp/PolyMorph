@@ -41,7 +41,7 @@ struct LinearDegradation : Reaction {
 struct Solver { 
     double box_position_x;  // ToDo: change this ugly datastruct. Maybe a dimensions struct
     double box_position_y;   
-    double D; // diffusion coefficient. Later also a grid datastructure
+    double D0; // diffusion coefficient. Later also a grid datastructure
     double dx; // grid spacing
     double dt; // time step
     Reaction R; // reaction term
@@ -49,10 +49,10 @@ struct Solver {
     Grid<int> parent_idx; // polygon idx
 
     // initialize the grid with a given initial condition
-    Solver(const Grid<double> u0, const double D = 1.0, const double dx = 0.1, 
+    Solver(const Grid<double> u0, const double D0 = 1.0, const double dx = 0.1, 
             double dt = 1e-4, Reaction R = LinearDegradation(0.1)) {
         this->u = u0;
-        this->D = D;
+        this->D0 = D0;
         this->dx = dx;
         this->dt = dt;
         this->R = R;
@@ -74,7 +74,7 @@ struct Solver {
                 const double e = (i == Nx-1) ? u(i-1, j) : u(i+1, j);
                 const double w = (i == 0)    ? u(i+1, j) : u(i-1, j);
                 unew(i, j) = u(i, j) + dt * (
-                    D / (dx*dx) * (n + s + e + w - 4 * u(i, j))
+                    D0 / (dx*dx) * (n + s + e + w - 4 * u(i, j))
                     + R(u(i, j), i, j)
                 ); 
             }

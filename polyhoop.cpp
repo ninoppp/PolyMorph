@@ -40,10 +40,15 @@ constexpr double cc = 30; // [1/T] collision damping rate
 constexpr double dt = 1e-4; // [T] time step
 
 constexpr std::size_t Nf = 100; // number of output frames
-constexpr std::size_t Ns = 100; // number of time steps between frames // default 1000
+constexpr std::size_t Ns = 500; // number of time steps between frames // default 1000
 constexpr std::size_t Nr = 0; // number of rigid polygons
 
 constexpr double drmax = h + sh + ss; // maximum interaction distance
+
+// PolyMorh extension
+constexpr double D0 = 3.0; // [L^2/T] diffusion coefficient
+constexpr double k0 = 1.0; // [1/T] reaction rate
+constexpr double dx = 0.1; // [L] grid spacing for solver
 
 std::mt19937 rng; // random number generator
 const double Amax_lnCV = std::log(1 + Amax_CV*Amax_CV);
@@ -51,6 +56,9 @@ const double alpha_lnCV = std::log(1 + alpha_CV*alpha_CV);
 std::lognormal_distribution<> Amax_dist(std::log(Amax_mu) - Amax_lnCV/2, std::sqrt(Amax_lnCV)); // division area distribution
 std::lognormal_distribution<> alpha_dist(std::log(alpha_mu) - alpha_lnCV/2, std::sqrt(alpha_lnCV)); // area growth rate distribution
 std::uniform_real_distribution<> uni_dist;
+// PolyMorph extension
+std::lognormal_distribution<> D_dist(std::log(D0), 0.2); // diffusion coefficient distribution ToDo: "magic numer sigma"
+std::lognormal_distribution<> k_dist(std::log(k0), 0.2); // reaction rate distribution
 
 struct Point  // basically a 2D vector
 {
@@ -98,7 +106,8 @@ struct Polygon
   bool phase; // phase of the enclosed medium // NM: can extend this to label source cells
   double A0, A, Amax, alpha; // target, actual & division area, area growth rate
   // Polymorph extension. 
-  double D, k, u; // ToDo: initialize these
+  double D, k; // diffusion coefficient and reaction rate of the cell
+  double u = 0; // local morphogen concentration
   std::vector<Index> children; // stores the indices of the grid points within the polygon
   // END Polymorph extension
   double area()
@@ -169,6 +178,10 @@ struct Ensemble
       polygons[p].A0 = polygons[p].area(); // use the initial area as target area
       polygons[p].Amax = Amax_dist(rng);
       polygons[p].alpha = alpha_dist(rng);
+      // PolyMorph extension
+      polygons[p].D = D_dist(rng);
+      polygons[p].k = k_dist(rng);
+      // end PolyMorph extension
       for (std::size_t i = Nv - 1, j = 0; j < Nv; i = j++)
         polygons[p].vertices[i].l0 = (polygons[p].vertices[j].r - polygons[p].vertices[i].r).length(); // edge rest length
     }
@@ -422,8 +435,8 @@ struct Ensemble
         const double A0 = polygons[p].A0;
         std::vector<Vertex> vold;
         vold.swap(v);
-        polygons[p] = {{vold[vend[2]]}, polygons[p].phase, 0, 0, Amax_dist(rng), alpha_dist(rng)};
-        polygons.push_back({{vold[vend[0]]}, polygons[p].phase, 0, 0, Amax_dist(rng), alpha_dist(rng)});
+        polygons[p] = {{vold[vend[2]]}, polygons[p].phase, 0, 0, Amax_dist(rng), alpha_dist(rng), D_dist(rng), k_dist(rng)}; // new polygon 1
+        polygons.push_back({{vold[vend[0]]}, polygons[p].phase, 0, 0, Amax_dist(rng), alpha_dist(rng), D_dist(rng), k_dist(rng)}); // new polygon 2
         for (std::size_t i = vend[1]; i != vend[2]; i = (i + 1) % vold.size())
           polygons[p].vertices.push_back(vold[i]);
         for (std::size_t i = vend[3]; i != vend[0]; i = (i + 1) % vold.size())
@@ -663,7 +676,17 @@ struct Ensemble
       file << p.u << " ";
     file << "\n";
     file << "        </DataArray>\n";
-
+    file << "        <DataArray type=\"Float64\" Name=\"D\" format=\"ascii\">\n";
+    for (auto& p : polygons)
+      file << p.D << " ";
+    file << "\n";
+    file << "        </DataArray>\n";
+    file << "        <DataArray type=\"Float64\" Name=\"k\" format=\"ascii\">\n";
+    for (auto& p : polygons)
+      file << p.k << " ";
+    file << "\n";
+    file << "        </DataArray>\n";
+    // end polymorph extension
     file << "        <DataArray type=\"Float64\" Name=\"perimeter\" format=\"ascii\">\n";
     for (auto& p : polygons)
       file << p.perimeter() << " ";
@@ -799,8 +822,8 @@ int main()
   Ensemble ensemble("ensemble.off"); // read the input file
   ensemble.output(0); // print the initial state
   
-  Grid<double> u0 = create_gaussian(); // initial condition, just 0
-  Solver solver(u0, 0.3, 0.1, dt, LinearDegradation(0.1));  // init solver // dx should be 0.01 for stability
+  Grid<double> u0; // initial condition, just 0
+  Solver solver(u0, D0, dx, dt, LinearDegradation(k0));  // init solver // dx should be 0.01 for stability
   solver.output(0); // print the initial state
   
   Interpolator interpolator(ensemble, solver);
