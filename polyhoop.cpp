@@ -673,16 +673,19 @@ struct Ensemble
     file << "\n";
     file << "        </DataArray>\n";
     // polymorph extension
+    // u
     file << "        <DataArray type=\"Float64\" Name=\"u\" format=\"ascii\">\n";
     for (auto& p : polygons)
       file << p.u << " ";
     file << "\n";
     file << "        </DataArray>\n";
+    // D
     file << "        <DataArray type=\"Float64\" Name=\"D\" format=\"ascii\">\n";
     for (auto& p : polygons)
       file << p.D << " ";
     file << "\n";
     file << "        </DataArray>\n";
+    // k
     file << "        <DataArray type=\"Float64\" Name=\"k\" format=\"ascii\">\n";
     for (auto& p : polygons)
       file << p.k << " ";
@@ -755,18 +758,19 @@ struct Interpolator {
   
   // scatter coefficients D, k from polygons to grid points
   void scatter() { // ToDo: make this function prettier
-    Grid<int> prev_idx = solver.parent_idx; // stores the polygon index of the cell in which a grid point lies (its parent)
+    Grid<int>& prev_idx = solver.parent_idx; // stores the polygon index of the cell in which a grid point lies (its parent)
     Grid<int> new_idx(-1); // negative indices indicate a background node
-
+    const double ensemble_max_x = ensemble.x0 + ensemble.bs * ensemble.Nx; // bounding box
+    const double ensemble_max_y = ensemble.y0 + ensemble.bs * ensemble.Ny; // bounding box
+    
     #pragma omp parallel for collapse(2)
     for (int i = 0; i < Nx; i++) {
       for (int j = 0; j < Ny; j++) { 
+        // spatial coordinates of grid point
         const double x = solver.box_position_x + i * solver.dx;
         const double y = solver.box_position_y + j * solver.dx;
         const Point grid_point(x, y);
         // check if outside the ensemble box
-        const double ensemble_max_x = ensemble.x0 + ensemble.bs * ensemble.Nx;
-        const double ensemble_max_y = ensemble.y0 + ensemble.bs * ensemble.Ny;
         if (x < ensemble.x0 || x > ensemble_max_x || y < ensemble.y0 || y > ensemble_max_y) {
           new_idx(i, j) = -2; // external background node
           solver.D(i, j) = D0; // background diffusion
@@ -776,7 +780,9 @@ struct Interpolator {
         // check if still the same parent
         if (prev_idx(i,j) >= 0 && ensemble.polygons[prev_idx(i, j)].contains(grid_point)) { 
           new_idx(i, j) = prev_idx(i, j);
-          // don't have to change D or k
+          const auto& cell = ensemble.polygons[new_idx(i, j)];
+          solver.D(i, j) = cell.D;
+          solver.k(i, j) = cell.k;
           continue; 
         } 
         // naive full search

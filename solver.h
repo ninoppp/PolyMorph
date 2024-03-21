@@ -94,6 +94,7 @@ struct Solver {
         file << "<VTKFile type=\"StructuredGrid\" version=\"0.1\">" << std::endl;
         file << "<StructuredGrid WholeExtent=\"0 " << Nx-1 << " 0 " << Ny-1 << " 0 0\">" << std::endl;
         file << "<Piece Extent=\"0 " << Nx-1 << " 0 " << Ny-1 << " 0 0\">" << std::endl;
+        // define points
         file << "<Points>" << std::endl;
         file << "<DataArray type=\"Float64\" NumberOfComponents=\"3\" format=\"ascii\">" << std::endl;
         for (int i = 0; i < Nx; i++) {
@@ -105,7 +106,7 @@ struct Solver {
         }
         file << "</DataArray>" << std::endl;
         file << "</Points>" << std::endl;
-        file << "<PointData Scalars=\"scalars\">" << std::endl;
+        file << "<PointData Scalars=\"scalars\">" << std::endl; // start point data
         // u
         file << "<DataArray type=\"Float64\" Name=\"u\" format=\"ascii\">" << std::endl;
         for (int i = 0; i < Nx; i++) {
@@ -124,7 +125,6 @@ struct Solver {
             file << std::endl;
         }
         file << "</DataArray>" << std::endl;
-        /*
         // D
         file << "<DataArray type=\"Float64\" Name=\"D\" format=\"ascii\">" << std::endl;
         for (int i = 0; i < Nx; i++) {
@@ -142,10 +142,8 @@ struct Solver {
             }
             file << std::endl;
         }
-        */
         file << "</DataArray>" << std::endl;
-        file << "</PointData>" << std::endl;
-
+        file << "</PointData>" << std::endl;    // end of point data
         file << "</Piece>" << std::endl;
         file << "</StructuredGrid>" << std::endl;
         file << "</VTKFile>" << std::endl;
