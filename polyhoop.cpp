@@ -779,8 +779,8 @@ struct Interpolator {
           const auto& cell = ensemble.polygons[p];
           if (cell.contains(grid_point)) {
             new_idx(i, j) = p;
-            //solver.D(i, j) = cell.D;
-            //solver.k(i, j) = cell.k;
+            solver.D(i, j) = cell.D;
+            solver.k(i, j) = cell.k;
             break;
           }
         }

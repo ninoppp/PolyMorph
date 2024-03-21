@@ -47,6 +47,8 @@ struct Solver {
     Reaction R; // reaction term
     Grid<double> u; // concentration of the morphogen
     Grid<int> parent_idx; // polygon idx
+    Grid<double> D; // diffusion coefficient
+    Grid<double> k; // reaction rate
 
     // initialize the grid with a given initial condition
     Solver(const Grid<double> u0, const double D0 = 1.0, const double dx = 0.1, 
