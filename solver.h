@@ -124,6 +124,26 @@ struct Solver {
             file << std::endl;
         }
         file << "</DataArray>" << std::endl;
+        /*
+        // D
+        file << "<DataArray type=\"Float64\" Name=\"D\" format=\"ascii\">" << std::endl;
+        for (int i = 0; i < Nx; i++) {
+            for (int j = 0; j < Ny; j++) {
+                file << D(i, j) << " ";
+            }
+            file << std::endl;
+        }
+        file << "</DataArray>" << std::endl;
+        // k
+        file << "<DataArray type=\"Float64\" Name=\"k\" format=\"ascii\">" << std::endl;
+        for (int i = 0; i < Nx; i++) {
+            for (int j = 0; j < Ny; j++) {
+                file << k(i, j) << " ";
+            }
+            file << std::endl;
+        }
+        */
+        file << "</DataArray>" << std::endl;
         file << "</PointData>" << std::endl;
 
         file << "</Piece>" << std::endl;

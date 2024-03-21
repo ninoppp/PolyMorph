@@ -9,6 +9,7 @@
 #include <set>
 #include <random>
 #include <algorithm>
+#include <cassert>
 
 #include "solver.h"
 
@@ -49,6 +50,7 @@ constexpr double drmax = h + sh + ss; // maximum interaction distance
 constexpr double D0 = 3.0; // [L^2/T] diffusion coefficient
 constexpr double k0 = 1.0; // [1/T] reaction rate
 constexpr double dx = 0.1; // [L] grid spacing for solver
+// Todo: background constants
 
 std::mt19937 rng; // random number generator
 const double Amax_lnCV = std::log(1 + Amax_CV*Amax_CV);
@@ -752,7 +754,7 @@ struct Interpolator {
   Interpolator(Ensemble& ensemble, Solver& solver) : ensemble(ensemble), solver(solver) {}
   
   // scatter coefficients D, k from polygons to grid points
-  void scatter() {
+  void scatter() { // ToDo: make this function prettier
     Grid<int> prev_idx = solver.parent_idx; // stores the polygon index of the cell in which a grid point lies (its parent)
     Grid<int> new_idx(-1); // negative indices indicate a background node
 
@@ -767,10 +769,14 @@ struct Interpolator {
         const double ensemble_max_y = ensemble.y0 + ensemble.bs * ensemble.Ny;
         if (x < ensemble.x0 || x > ensemble_max_x || y < ensemble.y0 || y > ensemble_max_y) {
           new_idx(i, j) = -2; // external background node
+          solver.D(i, j) = D0; // background diffusion
+          solver.k(i, j) = k0; // background degradation
+          continue;
         }
         // check if still the same parent
         if (prev_idx(i,j) >= 0 && ensemble.polygons[prev_idx(i, j)].contains(grid_point)) { 
           new_idx(i, j) = prev_idx(i, j);
+          // don't have to change D or k
           continue; 
         } 
         // naive full search
@@ -783,6 +789,10 @@ struct Interpolator {
             solver.k(i, j) = cell.k;
             break;
           }
+        }
+        if (new_idx(i, j) < 0) {
+          solver.D(i, j) = D0; // background diffusion
+          solver.k(i, j) = k0; // background degradation
         }
       }
     }
