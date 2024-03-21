@@ -49,6 +49,7 @@ struct Solver {
     Grid<int> parent_idx; // polygon idx
     Grid<double> D; // diffusion coefficient
     Grid<double> k; // reaction rate
+    Grid<double> p; // production rate
 
     // initialize the grid with a given initial condition
     Solver(const Grid<double> u0, const double D0 = 1.0, const double dx = 0.1, 
@@ -76,8 +77,9 @@ struct Solver {
                 const double e = (i == Nx-1) ? u(i-1, j) : u(i+1, j);
                 const double w = (i == 0)    ? u(i+1, j) : u(i-1, j);
                 unew(i, j) = u(i, j) + dt * (
-                    D0 / (dx*dx) * (n + s + e + w - 4 * u(i, j))
-                    + R(u(i, j), i, j)
+                    D(i, j) / (dx*dx) * (n + s + e + w - 4 * u(i, j))
+                    - k(i, j) * u(i, j) //+ R(u(i, j), i, j)
+                    + p(i, j)
                 ); 
             }
         }      
@@ -139,6 +141,15 @@ struct Solver {
         for (int i = 0; i < Nx; i++) {
             for (int j = 0; j < Ny; j++) {
                 file << k(i, j) << " ";
+            }
+            file << std::endl;
+        }
+        file << "</DataArray>" << std::endl;
+        // p
+        file << "<DataArray type=\"Float64\" Name=\"p\" format=\"ascii\">" << std::endl;
+        for (int i = 0; i < Nx; i++) {
+            for (int j = 0; j < Ny; j++) {
+                file << p(i, j) << " ";
             }
             file << std::endl;
         }

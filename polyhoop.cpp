@@ -49,6 +49,7 @@ constexpr double drmax = h + sh + ss; // maximum interaction distance
 // PolyMorh extension
 constexpr double D0 = 3.0; // [L^2/T] diffusion coefficient
 constexpr double k0 = 1.0; // [1/T] reaction rate
+constexpr double p0 = 3.0; // [1/T] production rate
 constexpr double dx = 0.1; // [L] grid spacing for solver
 // Todo: background constants
 
@@ -61,6 +62,7 @@ std::uniform_real_distribution<> uni_dist;
 // PolyMorph extension
 std::lognormal_distribution<> D_dist(std::log(D0), 0.2); // diffusion coefficient distribution ToDo: "magic numer sigma"
 std::lognormal_distribution<> k_dist(std::log(k0), 0.2); // reaction rate distribution
+std::lognormal_distribution<> p_dist(std::log(p0), 0.2); // production rate distribution
 
 struct Point  // basically a 2D vector
 {
@@ -108,7 +110,7 @@ struct Polygon
   bool phase; // phase of the enclosed medium // NM: can extend this to label source cells
   double A0, A, Amax, alpha; // target, actual & division area, area growth rate
   // Polymorph extension. 
-  double D, k; // diffusion coefficient and reaction rate of the cell
+  double D, k, p; // diffusion coefficient, degradation rate, production rate
   double u = 0; // local morphogen concentration
   std::vector<Index> children; // stores the indices of the grid points within the polygon
   // END Polymorph extension
@@ -770,7 +772,7 @@ struct Interpolator {
         const double x = solver.box_position_x + i * solver.dx;
         const double y = solver.box_position_y + j * solver.dx;
         const Point grid_point(x, y);
-        // check if outside the ensemble box
+        // check if outside the ensemble box ToDo: Limit loop to those boundaries
         if (x < ensemble.x0 || x > ensemble_max_x || y < ensemble.y0 || y > ensemble_max_y) {
           new_idx(i, j) = -2; // external background node
           solver.D(i, j) = D0; // background diffusion
