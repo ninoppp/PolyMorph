@@ -151,7 +151,7 @@ struct Ensemble
   std::vector<Polygon> polygons; // list of polygons
   std::vector<Vertex*> first; // pointer to first vertex in each box
   std::size_t Nx, Ny; // number of boxes in x,y direction
-  double x0, y0, bs; // box offset and size
+  double x0, y0, x1, y1, bs; // box offset, box end, and size
   double t; // time
   
   Ensemble(const char* name) : t(0)
@@ -530,11 +530,11 @@ struct Ensemble
     for (std::size_t p = Nr; p < polygons.size(); ++p)
       for (std::size_t i = polygons[p].vertices.size() - 1, k = i - 1, j = 0; j < polygons[p].vertices.size(); k = i, i = j++)
       {
-        const std::size_t bxi = (polygons[p].vertices[i].r.x - x0) / bs + 1; // box index in x direction
+        const std::size_t bxi = (polygons[p].vertices[i].r.x - x0) / bs + 1; // box index in x direction // NM: is the +1 because of extra boxes?
         const std::size_t byi = (polygons[p].vertices[i].r.y - y0) / bs + 1; // box index in y direction
         for (std::size_t bxj = bxi - 1; bxj <= bxi + 1; ++bxj)  //NM: interaction within 1 box in each direction
           for (std::size_t byj = byi - 1; byj <= byi + 1; ++byj)
-            for (Vertex* v = first[bxj * Ny + byj]; v; v = v->next) //NM: in first we get the starting vertex from each
+            for (Vertex* v = first[bxj * Ny + byj]; v; v = v->next) //NM: in first we get the starting vertex from each box
               if (v != &polygons[p].vertices[k] && v != &polygons[p].vertices[i] && v != &polygons[p].vertices[j])
                 interaction(v, &polygons[p].vertices[i], &polygons[p].vertices[k], &polygons[p].vertices[j]);
       }
@@ -574,6 +574,8 @@ struct Ensemble
     }
     x0 = xmin;
     y0 = ymin;
+    x1 = xmax;
+    y1 = ymax;
     
     // place vertices in boxes
     bs = std::sqrt(l2max) + drmax; // box size
@@ -762,8 +764,6 @@ struct Interpolator {
   void scatter() { // ToDo: make this function prettier
     Grid<int>& prev_idx = solver.parent_idx; // stores the polygon index of the cell in which a grid point lies (its parent)
     Grid<int> new_idx(-1); // negative indices indicate a background node
-    const double ensemble_max_x = ensemble.x0 + ensemble.bs * ensemble.Nx; // bounding box
-    const double ensemble_max_y = ensemble.y0 + ensemble.bs * ensemble.Ny; // bounding box
     
     #pragma omp parallel for collapse(2)
     for (int i = 0; i < Nx; i++) {
@@ -773,7 +773,7 @@ struct Interpolator {
         const double y = solver.box_position_y + j * solver.dx;
         const Point grid_point(x, y);
         // check if outside the ensemble box ToDo: Limit loop to those boundaries
-        if (x < ensemble.x0 || x > ensemble_max_x || y < ensemble.y0 || y > ensemble_max_y) {
+        if (x < ensemble.x0 || x > ensemble.x1 || y < ensemble.y0 || y > ensemble.y1) {
           new_idx(i, j) = -2; // external background node
           solver.D(i, j) = D0; // background diffusion
           solver.k(i, j) = k0; // background degradation
