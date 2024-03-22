@@ -47,11 +47,13 @@ constexpr std::size_t Nr = 0; // number of rigid polygons
 constexpr double drmax = h + sh + ss; // maximum interaction distance
 
 // PolyMorh extension
-constexpr double D0 = 3.0; // [L^2/T] diffusion coefficient
-constexpr double k0 = 1.0; // [1/T] reaction rate
-constexpr double p0 = 3.0; // [1/T] production rate
 constexpr double dx = 0.1; // [L] grid spacing for solver
-// Todo: background constants
+constexpr double D_mu = 3.0; // [L^2/T] diffusion coefficient mean
+constexpr double k_mu = 1.0; // [1/T] reaction rate mean 
+constexpr double p_mu = 3.0; // [1/T] production rate mean
+constexpr double D0 = 3.0; // [L^2/T] diffusion coefficient background
+constexpr double k0 = 1.0; // [1/T] reaction rate background
+constexpr double p0 = 0.0; // [1/T] reaction rate background
 
 std::mt19937 rng; // random number generator
 const double Amax_lnCV = std::log(1 + Amax_CV*Amax_CV);
@@ -60,9 +62,9 @@ std::lognormal_distribution<> Amax_dist(std::log(Amax_mu) - Amax_lnCV/2, std::sq
 std::lognormal_distribution<> alpha_dist(std::log(alpha_mu) - alpha_lnCV/2, std::sqrt(alpha_lnCV)); // area growth rate distribution
 std::uniform_real_distribution<> uni_dist;
 // PolyMorph extension
-std::lognormal_distribution<> D_dist(std::log(D0), 0.2); // diffusion coefficient distribution ToDo: "magic numer sigma"
-std::lognormal_distribution<> k_dist(std::log(k0), 0.2); // reaction rate distribution
-std::lognormal_distribution<> p_dist(std::log(p0), 0.2); // production rate distribution
+std::lognormal_distribution<> D_dist(std::log(D_mu), 0.2); // diffusion coefficient distribution ToDo: "magic numer sigma"
+std::lognormal_distribution<> k_dist(std::log(k_mu), 0.2); // reaction rate distribution
+std::lognormal_distribution<> p_dist(std::log(p_mu), 0.2); // production rate distribution
 
 struct Point  // basically a 2D vector
 {
@@ -185,6 +187,7 @@ struct Ensemble
       // PolyMorph extension
       polygons[p].D = D_dist(rng);
       polygons[p].k = k_dist(rng);
+      polygons[p].p = 0; // ToDo: pull from distribution with lambda
       // end PolyMorph extension
       for (std::size_t i = Nv - 1, j = 0; j < Nv; i = j++)
         polygons[p].vertices[i].l0 = (polygons[p].vertices[j].r - polygons[p].vertices[i].r).length(); // edge rest length
@@ -760,6 +763,18 @@ struct Interpolator {
   Solver& solver;
   Interpolator(Ensemble& ensemble, Solver& solver) : ensemble(ensemble), solver(solver) {}
   
+  // search algorithm to find parent polygon for a grid point
+  std::size_t find_parent(Point grid_point) {
+    // ToDo: use boxes, make sure to not check all vertices of same polygon. 
+    // naive full search
+    for (std::size_t p = 0; p < ensemble.polygons.size(); p++) {
+      if (ensemble.polygons[p].contains(grid_point)) {
+        return p;
+      }
+    }
+    return -1; // background node
+  }
+
   // scatter coefficients D, k from polygons to grid points
   void scatter() { // ToDo: make this function prettier
     Grid<int>& prev_idx = solver.parent_idx; // stores the polygon index of the cell in which a grid point lies (its parent)
@@ -775,32 +790,24 @@ struct Interpolator {
         // check if outside the ensemble box ToDo: Limit loop to those boundaries
         if (x < ensemble.x0 || x > ensemble.x1 || y < ensemble.y0 || y > ensemble.y1) {
           new_idx(i, j) = -2; // external background node
-          solver.D(i, j) = D0; // background diffusion
-          solver.k(i, j) = k0; // background degradation
-          continue;
-        }
-        // check if still the same parent
-        if (prev_idx(i,j) >= 0 && ensemble.polygons[prev_idx(i, j)].contains(grid_point)) { 
-          new_idx(i, j) = prev_idx(i, j);
-          const auto& cell = ensemble.polygons[new_idx(i, j)];
-          solver.D(i, j) = cell.D;
-          solver.k(i, j) = cell.k;
-          continue; 
         } 
-        // naive full search
-        // ToDo: search boxes in spiral outwards. Maybe check also grid neighbours 
-        for (int p = 0; p < ensemble.polygons.size(); p++) {
-          const auto& cell = ensemble.polygons[p];
-          if (cell.contains(grid_point)) {
-            new_idx(i, j) = p;
-            solver.D(i, j) = cell.D;
-            solver.k(i, j) = cell.k;
-            break;
-          }
+        // check if still the same parent
+        else if (prev_idx(i, j) >= 0 && ensemble.polygons[prev_idx(i, j)].contains(grid_point)) { 
+          new_idx(i, j) = prev_idx(i, j);
+        } 
+        // search algorithm
+        else {
+          new_idx(i, j) = find_parent(grid_point);
         }
-        if (new_idx(i, j) < 0) {
+        // scatter values
+        if (new_idx(i, j) < 0) { // is background node
           solver.D(i, j) = D0; // background diffusion
           solver.k(i, j) = k0; // background degradation
+          solver.p(i, j) = p0; // background production (should be zero)
+        } else {
+          solver.D(i, j) = ensemble.polygons[new_idx(i, j)].D;
+          solver.k(i, j) = ensemble.polygons[new_idx(i, j)].k;
+          solver.p(i, j) = ensemble.polygons[new_idx(i, j)].p;
         }
       }
     }
@@ -841,7 +848,7 @@ int main()
   ensemble.output(0); // print the initial state
   
   Grid<double> u0; // initial condition, just 0
-  Solver solver(u0, D0, dx, dt, LinearDegradation(k0));  // init solver // dx should be 0.01 for stability
+  Solver solver(u0, D_mu, dx, dt, LinearDegradation(k_mu));  // init solver // dx should be 0.01 for stability
   solver.output(0); // print the initial state
   
   Interpolator interpolator(ensemble, solver);
