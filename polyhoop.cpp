@@ -41,7 +41,7 @@ constexpr double cc = 30; // [1/T] collision damping rate
 constexpr double dt = 1e-4; // [T] time step
 
 constexpr std::size_t Nf = 100; // number of output frames
-constexpr std::size_t Ns = 500; // number of time steps between frames // default 1000
+constexpr std::size_t Ns = 1000; // number of time steps between frames // default 1000
 constexpr std::size_t Nr = 0; // number of rigid polygons
 
 constexpr double drmax = h + sh + ss; // maximum interaction distance
@@ -769,7 +769,7 @@ struct Interpolator {
   Solver& solver;
   Interpolator(Ensemble& ensemble, Solver& solver) : ensemble(ensemble), solver(solver) {}
   
-  // search algorithm to find parent polygon for a grid point
+  // helper function for scatter. search algorithm to find parent polygon for a grid point
   std::size_t find_parent(Point grid_point) {
     // ToDo: use boxes, make sure to not check all vertices of same polygon. 
     // naive full search
@@ -863,12 +863,14 @@ int main()
   {
     for (std::size_t s = 0; s < Ns; ++s) 
     {
-      ensemble.step(); 
+      ensemble.step();
+      interpolator.scatter(); 
       solver.step();
+      interpolator.gather();
     }
     // for testing purposes only every frame. no interaction yet. 
-    interpolator.scatter(); 
-    interpolator.gather();
+    //interpolator.scatter(); 
+    //interpolator.gather();
     
     ensemble.output(f); // print a frame
     solver.output(f); // print a frame
