@@ -698,6 +698,12 @@ struct Ensemble
       file << p.k << " ";
     file << "\n";
     file << "        </DataArray>\n";
+    // p
+    file << "        <DataArray type=\"Float64\" Name=\"p\" format=\"ascii\">\n";
+    for (auto& p : polygons)
+      file << p.p << " ";
+    file << "\n";
+    file << "        </DataArray>\n";
     // end polymorph extension
     file << "        <DataArray type=\"Float64\" Name=\"perimeter\" format=\"ascii\">\n";
     for (auto& p : polygons)
