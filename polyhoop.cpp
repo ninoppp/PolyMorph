@@ -10,6 +10,7 @@
 #include <random>
 #include <algorithm>
 #include <cassert>
+#include <unordered_set>
 
 #include "solver.h"
 
@@ -771,20 +772,45 @@ struct Interpolator {
   
   // helper function for scatter. search algorithm to find parent polygon for a grid point
   std::size_t find_parent(Point grid_point) {
-    // ToDo: use boxes, make sure to not check all vertices of same polygon. 
+    const std::size_t bxi = (grid_point.x - ensemble.x0) / ensemble.bs + 1; // box index in x direction
+    const std::size_t byi = (grid_point.y - ensemble.y0) / ensemble.bs + 1; // box index in y direction
+    std::unordered_set<std::size_t> checked_polygons; // store checked polygons to avoid checking them again
+    std::size_t radius = 1; // search area (how many boxes in each direction)
+    bool last_iteration = false; // abort search as soon as we can be sure it's a background node
+    while (true) {
+      for (std::size_t bxj = bxi - radius; bxj <= bxi + radius; ++bxj) { // search within 1 box in each direction (3x3 area)
+        for (std::size_t byj = byi - radius; byj <= byi + radius; ++byj) {
+          if (bxj == 0 || bxj == ensemble.Nx - 1 || byj == 0 || byj == ensemble.Ny - 1) {
+            last_iteration = true;
+          }
+          for (Vertex* v = ensemble.first[bxj * ensemble.Ny + byj]; v; v = v->next) {
+            if (checked_polygons.find(v->p) == checked_polygons.end()) {  // new polygon encountered
+              if (ensemble.polygons[v->p].contains(grid_point)) {
+                return v->p;
+              } else {
+                checked_polygons.insert(v->p);
+              }
+            }
+          }
+        }
+      }
+      if (last_iteration) return -1; // background node
+      if (!checked_polygons.empty()) last_iteration = true; // only go 1 more layer
+      ++radius;
+    }
     // naive full search
-    for (std::size_t p = 0; p < ensemble.polygons.size(); p++) {
+    /*for (std::size_t p = 0; p < ensemble.polygons.size(); p++) {
       if (ensemble.polygons[p].contains(grid_point)) {
         return p;
       }
     }
-    return -1; // background node
+    return -1; // background node */
   }
 
   // scatter coefficients D, k from polygons to grid points
   void scatter() { // ToDo: make this function prettier
     Grid<int>& prev_idx = solver.parent_idx; // stores the polygon index of the cell in which a grid point lies (its parent)
-    Grid<int> new_idx(-1); // negative indices indicate a background node
+    Grid<int> new_idx(-1); // negative indices indicate a background node. ToDo: could make this in place
     
     #pragma omp parallel for collapse(2)
     for (int i = 0; i < Nx; i++) {
