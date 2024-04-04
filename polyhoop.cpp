@@ -51,7 +51,7 @@ constexpr double drmax = h + sh + ss; // maximum interaction distance
 constexpr double dx = 0.1; // [L] grid spacing for solver
 constexpr double D_mu = 3.0; // [L^2/T] diffusion coefficient mean
 constexpr double k_mu = 1.0; // [1/T] degradation rate mean 
-constexpr double p_mu = 3.0; // [1/T] production rate mean
+constexpr double p_mu = 6.0; // [1/T] production rate mean
 constexpr double D_CV = 0.1; // [-] coefficient of variation of diffusion
 constexpr double k_CV = 0.1; // [-] coefficient of variation of degradation rate
 constexpr double p_CV = 0.1; // [-] coefficient of variation of production rate
@@ -73,12 +73,6 @@ const double p_lnCV = std::log(1 + p_CV*p_CV);
 std::lognormal_distribution<> D_dist(std::log(D_mu) - D_lnCV/2, std::sqrt(D_lnCV)); // diffusion coefficient distribution ToDo: "magic numer sigma"
 std::lognormal_distribution<> k_dist(std::log(k_mu) - k_lnCV/2, std::sqrt(k_lnCV)); // reaction rate distribution
 std::lognormal_distribution<> p_dist(std::log(p_mu) - p_lnCV/2, std::sqrt(p_lnCV)); // production rate distribution
-
-// methods for selecting producing cells
-auto heavyside = [](const Polygon& p) { return p.midpoint().x < 0.5; }; // ToDo: remove magic-number 0.5
-auto mother_cell = [](const Polygon& p) { return p.vertices[0].p == 0; }; // workaround to get polygon index
-// choose method
-auto is_producing = mother_cell;
 
 struct Point  // basically a 2D vector
 {
@@ -170,6 +164,12 @@ struct Polygon
     return 1/vertices.size() * midp;
   }
 };
+
+// methods for selecting producing cells ToDo: move this to a better place
+auto heavyside = [](const Polygon& p) { return p.midpoint().x < 0.5; }; // ToDo: remove magic-number 0.5
+auto mother_cell = [](const Polygon& p) { return p.vertices[0].p == Nr; }; // workaround to get polygon index
+// choose method
+auto is_producing = mother_cell;
 
 struct Ensemble
 {
@@ -811,7 +811,7 @@ struct Interpolator {
           }
           for (Vertex* v = ensemble.first[bxj * ensemble.Ny + byj]; v; v = v->next) {
             if (checked_polygons.find(v->p) == checked_polygons.end()) {  // new polygon encountered
-              if (ensemble.polygons[v->p].contains(grid_point)) {
+              if (ensemble.polygons[v->p].contains(grid_point) && v->p >= Nr) { // don't want to check rigid polygons
                 return v->p;
               } else {
                 checked_polygons.insert(v->p);
@@ -824,13 +824,6 @@ struct Interpolator {
       if (!checked_polygons.empty()) last_iteration = true; // only go 1 more layer
       ++radius;
     }
-    // naive full search
-    /*for (std::size_t p = 0; p < ensemble.polygons.size(); p++) {
-      if (ensemble.polygons[p].contains(grid_point)) {
-        return p;
-      }
-    }
-    return -1; // background node */
   }
 
   // scatter coefficients D, k from polygons to grid points
@@ -853,7 +846,7 @@ struct Interpolator {
         else if (prev_idx(i, j) >= 0 && ensemble.polygons[prev_idx(i, j)].contains(grid_point)) { 
           new_idx(i, j) = prev_idx(i, j);
         } 
-        // search algorithm
+        // onion layer search algorithm
         else {
           new_idx(i, j) = find_parent(grid_point);
         }
@@ -894,7 +887,9 @@ struct Interpolator {
       for (const Index& idx : cell.children) {
         cell.u += solver.u(idx);
       }
-      cell.u /= cell.children.size();
+      if (cell.children.size() > 0) { // avoid division by zero if cells exceed RD box
+        cell.u /= cell.children.size();
+      }
     }
   }
 };
