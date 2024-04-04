@@ -73,7 +73,7 @@ struct Solver {
             for (int j = 0; j < Ny; j++) {   
                 // mirror past-boundary nodes
                 const double n = (j == Ny-1) ? u(i, j-1) : u(i, j+1);
-                const double s = (j == 0)    ? 1         : u(i, j-1); // dirichlet boundary condition
+                const double s = (j == 0)    ? u(i, j+1) : u(i, j-1);
                 const double e = (i == Nx-1) ? u(i-1, j) : u(i+1, j);
                 const double w = (i == 0)    ? u(i+1, j) : u(i-1, j);
                 unew(i, j) = u(i, j) + dt * (
