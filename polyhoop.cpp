@@ -50,8 +50,11 @@ constexpr double drmax = h + sh + ss; // maximum interaction distance
 // PolyMorh extension
 constexpr double dx = 0.1; // [L] grid spacing for solver
 constexpr double D_mu = 3.0; // [L^2/T] diffusion coefficient mean
-constexpr double k_mu = 1.0; // [1/T] reaction rate mean 
+constexpr double k_mu = 1.0; // [1/T] degradation rate mean 
 constexpr double p_mu = 3.0; // [1/T] production rate mean
+constexpr double D_CV = 0.1; // [-] coefficient of variation of diffusion
+constexpr double k_CV = 0.1; // [-] coefficient of variation of degradation rate
+constexpr double p_CV = 0.1; // [-] coefficient of variation of production rate
 constexpr double D0 = 3.0; // [L^2/T] diffusion coefficient background
 constexpr double k0 = 1.0; // [1/T] reaction rate background
 constexpr double p0 = 0.0; // [1/T] reaction rate background
@@ -62,10 +65,14 @@ const double alpha_lnCV = std::log(1 + alpha_CV*alpha_CV);
 std::lognormal_distribution<> Amax_dist(std::log(Amax_mu) - Amax_lnCV/2, std::sqrt(Amax_lnCV)); // division area distribution
 std::lognormal_distribution<> alpha_dist(std::log(alpha_mu) - alpha_lnCV/2, std::sqrt(alpha_lnCV)); // area growth rate distribution
 std::uniform_real_distribution<> uni_dist;
+
 // PolyMorph extension
-std::lognormal_distribution<> D_dist(std::log(D_mu), 0.2); // diffusion coefficient distribution ToDo: "magic numer sigma"
-std::lognormal_distribution<> k_dist(std::log(k_mu), 0.2); // reaction rate distribution
-std::lognormal_distribution<> p_dist(std::log(p_mu), 0.2); // production rate distribution
+const double D_lnCV = std::log(1 + D_CV*D_CV);
+const double k_lnCV = std::log(1 + k_CV*k_CV);
+const double p_lnCV = std::log(1 + p_CV*p_CV);
+std::lognormal_distribution<> D_dist(std::log(D_mu) - D_lnCV/2, std::sqrt(D_lnCV)); // diffusion coefficient distribution ToDo: "magic numer sigma"
+std::lognormal_distribution<> k_dist(std::log(k_mu) - k_lnCV/2, std::sqrt(k_lnCV)); // reaction rate distribution
+std::lognormal_distribution<> p_dist(std::log(p_mu) - p_lnCV/2, std::sqrt(p_lnCV)); // production rate distribution
 
 struct Point  // basically a 2D vector
 {
@@ -778,10 +785,10 @@ struct Interpolator {
     std::size_t radius = 1; // search area (how many boxes in each direction)
     bool last_iteration = false; // abort search as soon as we can be sure it's a background node
     while (true) {
-      for (std::size_t bxj = bxi - radius; bxj <= bxi + radius; ++bxj) { // search within 1 box in each direction (3x3 area)
+      for (std::size_t bxj = bxi - radius; bxj <= bxi + radius; ++bxj) {
         for (std::size_t byj = byi - radius; byj <= byi + radius; ++byj) {
           if (bxj == 0 || bxj == ensemble.Nx - 1 || byj == 0 || byj == ensemble.Ny - 1) {
-            last_iteration = true;
+            last_iteration = true; // reached last box. stop searching after this
           }
           for (Vertex* v = ensemble.first[bxj * ensemble.Ny + byj]; v; v = v->next) {
             if (checked_polygons.find(v->p) == checked_polygons.end()) {  // new polygon encountered
@@ -876,6 +883,8 @@ struct Interpolator {
 
 int main()
 {
+  // ToDo: fix seed of rng
+
   Ensemble ensemble("ensemble.off"); // read the input file
   ensemble.output(0); // print the initial state
   
