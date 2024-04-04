@@ -74,6 +74,12 @@ std::lognormal_distribution<> D_dist(std::log(D_mu) - D_lnCV/2, std::sqrt(D_lnCV
 std::lognormal_distribution<> k_dist(std::log(k_mu) - k_lnCV/2, std::sqrt(k_lnCV)); // reaction rate distribution
 std::lognormal_distribution<> p_dist(std::log(p_mu) - p_lnCV/2, std::sqrt(p_lnCV)); // production rate distribution
 
+// methods for selecting producing cells
+auto heavyside = [](const Polygon& p) { return p.midpoint().x < 0.5; }; // ToDo: remove magic-number 0.5
+auto mother_cell = [](const Polygon& p) { return p.vertices[0].p == 0; }; // workaround to get polygon index
+// choose method
+auto is_producing = mother_cell;
+
 struct Point  // basically a 2D vector
 {
   double x, y; // coordinates
@@ -154,6 +160,15 @@ struct Polygon
         in = !in;
     return in; // true if the point lies inside this polygon
   }
+  // Polymorph extension. Calculate (geometric?) midpoint of polygon
+  Point midpoint() const 
+  {
+    Point midp;
+    for (const Vertex& v : vertices) {
+      midp = midp + v.r;
+    }
+    return 1/vertices.size() * midp;
+  }
 };
 
 struct Ensemble
@@ -195,7 +210,7 @@ struct Ensemble
       // PolyMorph extension
       polygons[p].D = D_dist(rng);
       polygons[p].k = k_dist(rng);
-      polygons[p].p = 0; // ToDo: pull from distribution with lambda
+      polygons[p].p = is_producing(polygons[p]) ? p_dist(rng) : 0;
       // end PolyMorph extension
       for (std::size_t i = Nv - 1, j = 0; j < Nv; i = j++)
         polygons[p].vertices[i].l0 = (polygons[p].vertices[j].r - polygons[p].vertices[i].r).length(); // edge rest length
@@ -464,6 +479,9 @@ struct Ensemble
         polygons.back().area();
         polygons[p].A0 = A0 * polygons[p].A / (polygons[p].A + polygons.back().A);
         polygons.back().A0 = A0 - polygons[p].A0;
+        // Polymorph extension: update polygon production rate (note: has to happen after vertices are assigned)
+        polygons[p].p = is_producing(polygons[p]) ? p_dist(rng) : 0;
+        polygons.back().p = is_producing(polygons.back()) ? p_dist(rng) : 0;
       }
     }
     
@@ -777,7 +795,8 @@ struct Interpolator {
   Solver& solver;
   Interpolator(Ensemble& ensemble, Solver& solver) : ensemble(ensemble), solver(solver) {}
   
-  // helper function for scatter. search algorithm to find parent polygon for a grid point
+  // Helper function for scatter. Search algorithm to find parent polygon for a grid point
+  // Complexity almost O(1). More precicely O(vertices per polygon) which is almost constant
   std::size_t find_parent(Point grid_point) {
     const std::size_t bxi = (grid_point.x - ensemble.x0) / ensemble.bs + 1; // box index in x direction
     const std::size_t byi = (grid_point.y - ensemble.y0) / ensemble.bs + 1; // box index in y direction
