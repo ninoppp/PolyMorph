@@ -53,7 +53,7 @@ elif [ "$1" = "t" ]; then
 else
     echo "running full pipeline ..."
     compile_polyhoop
-    generate_ensemble
+    #generate_ensemble
     run_polyhoop
     move_files
 fi
