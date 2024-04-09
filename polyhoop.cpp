@@ -795,35 +795,28 @@ struct Interpolator {
   Solver& solver;
   Interpolator(Ensemble& ensemble, Solver& solver) : ensemble(ensemble), solver(solver) {}
   
-  // Helper function for scatter. Search algorithm to find parent polygon for a grid point
+  // Search algorithm to find parent polygon for a grid point.
   // Complexity almost O(1). More precicely O(vertices per polygon) which is almost constant
   std::size_t find_parent(Point grid_point) {
-    const std::size_t bxi = (grid_point.x - ensemble.x0) / ensemble.bs + 1; // box index in x direction
+    std::size_t bxi = (grid_point.x - ensemble.x0) / ensemble.bs + 1; // box index in x direction
     const std::size_t byi = (grid_point.y - ensemble.y0) / ensemble.bs + 1; // box index in y direction
     std::unordered_set<std::size_t> checked_polygons; // store checked polygons to avoid checking them again
-    std::size_t radius = 1; // search area (how many boxes in each direction)
     bool last_iteration = false; // abort search as soon as we can be sure it's a background node
-    while (true) {
-      for (std::size_t bxj = bxi - radius; bxj <= bxi + radius; ++bxj) {
-        for (std::size_t byj = byi - radius; byj <= byi + radius; ++byj) {
-          if (bxj == 0 || bxj == ensemble.Nx - 1 || byj == 0 || byj == ensemble.Ny - 1) {
-            last_iteration = true; // reached last box. stop searching after this
-          }
-          for (Vertex* v = ensemble.first[bxj * ensemble.Ny + byj]; v; v = v->next) {
-            if (checked_polygons.find(v->p) == checked_polygons.end()) {  // new polygon encountered
-              if (ensemble.polygons[v->p].contains(grid_point) && v->p >= Nr) { // don't want to check rigid polygons
-                return v->p;
-              } else {
-                checked_polygons.insert(v->p);
-              }
-            }
+    while (bxi < ensemble.Nx) {
+      for (Vertex* v = ensemble.first[bxi * ensemble.Ny + byi]; v; v = v->next) { // loop over vertices in box
+        if (checked_polygons.find(v->p) == checked_polygons.end()) {  // new polygon encountered
+          if (v->p >= Nr && ensemble.polygons[v->p].contains(grid_point)) { // don't want to check rigid polygons
+            return v->p;
+          } else {
+            checked_polygons.insert(v->p);
           }
         }
       }
       if (last_iteration) return -1; // background node
       if (!checked_polygons.empty()) last_iteration = true; // only go 1 more layer
-      ++radius;
+      ++bxi;
     }
+    return -1; // background node (reached boundary of ensemble box)
   }
 
   // scatter coefficients D, k from polygons to grid points
