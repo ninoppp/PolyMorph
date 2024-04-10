@@ -20,17 +20,17 @@ struct Solver1D {
     double D0; // diffusion coefficient. Later also a grid datastructure
     double dx; // grid spacing
     double dt; // time step
-    Reaction R; // reaction term
+    double k;
     double norm = 0; // keep track of change in u
 
     // initialize the grid with a given initial condition
-    Solver1D(std::vector<double> u0, const double D0 = 1.0, const double dx = 0.1, 
-            double dt = 1e-4, Reaction R = LinearDegradation(0.1)) {
+    Solver1D(std::vector<double> u0, const double D0, const double dx, 
+            double dt, double k) {
         this->u = u0;
         this->D0 = D0;
         this->dx = dx;
         this->dt = dt;
-        this->R = R;
+        this->k = k;
     }
     //tau(x) = (1+x/lambda ) / (2k) time to stead state
 
@@ -42,11 +42,18 @@ struct Solver1D {
         for (int i = 1; i < u.size() - 1; i++) {
             unew[i] = u[i] + dt * (
                 D0 / (dx*dx) * (u[i+1] + u[i-1] - 2 * u[i])
-                + R(u[i], 0, 0)
+                - k*u[i]
             ); 
         }
+        // BDC
         unew[0] = 1;
-        unew[u.size() - 1] = unew[u.size() - 2]; // consider last cell as ghost cell
+        unew[u.size() - 1] = 0;
+        /*int i = u.size() - 1;
+        unew[i] = u[i] + dt * (
+            D0 / (dx*dx) * (2*u[i-1] - 2*u[i])
+            - k*u[i]
+        );*/
+
         norm = get_norm(u, unew);
         u = unew; 
     }
