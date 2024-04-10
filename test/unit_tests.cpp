@@ -7,8 +7,9 @@
 #include "1d_solver.h"
 // #include <gtest/gtest.h>
 
-constexpr double c0 = 1.0;
+constexpr double c0 = 1;
 constexpr double D = 0.03;
+constexpr double j = 0.01; //influx, negative gradient at left boundary
 constexpr double dx = 0.01;
 constexpr double k = 0.01;
 constexpr double dt = 1e-3;
@@ -19,7 +20,7 @@ constexpr unsigned Ns = 10000;
 constexpr unsigned Nf = 100;
 
 const double lambda = std::sqrt(D/k);
-const double tau = (1+L/5/lambda ) / (2*k); // time to stead state from Roman
+const double tau = (1+L/10/lambda ) / (2*k); // time to stead state from Roman
 //constexpr double tau = L*L / (D * N*N * M_PI*M_PI); // from script for double dirichlet
 
 void print(std::string s) {
