@@ -822,11 +822,11 @@ struct Interpolator {
   // scatter coefficients D, k from polygons to grid points
   void scatter() { // ToDo: make this function prettier
     Grid<int>& prev_idx = solver.parent_idx; // stores the polygon index of the cell in which a grid point lies (its parent)
-    Grid<int> new_idx(-1); // negative indices indicate a background node. ToDo: could make this in place
+    Grid<int> new_idx(solver.Nx, solver.Ny, -1); // negative indices indicate a background node. ToDo: could make this in place
     
     #pragma omp parallel for collapse(2)
-    for (int i = 0; i < Nx; i++) {
-      for (int j = 0; j < Ny; j++) { 
+    for (int i = 0; i < solver.Nx; i++) {
+      for (int j = 0; j < solver.Ny; j++) { 
         // spatial coordinates of grid point
         const double x = solver.box_position_x + i * solver.dx;
         const double y = solver.box_position_y + j * solver.dx;
@@ -865,8 +865,8 @@ struct Interpolator {
     for (auto& cell : ensemble.polygons) {
       cell.children.clear();
     }
-    for (int i = 0; i < Nx; i++) {
-      for (int j = 0; j < Ny; j++) {
+    for (int i = 0; i < solver.Nx; i++) {
+      for (int j = 0; j < solver.Ny; j++) {
         if (solver.parent_idx(i, j) >= 0) { // skip background nodes
           auto& cell = ensemble.polygons[solver.parent_idx(i, j)]; 
           cell.children.push_back(Index(i, j)); 
@@ -895,8 +895,8 @@ int main()
   Ensemble ensemble("ensemble.off"); // read the input file
   ensemble.output(0); // print the initial state
   
-  Grid<double> u0; // initial condition, just 0
-  Solver solver(u0, D_mu, dx, dt, LinearDegradation(k_mu));  // init solver // dx should be 0.01 for stability
+  Grid<double> u0(100, 100); // initial condition, just zeros
+  Solver solver(u0, D_mu, dx, dt, LinearDegradation(k_mu));
   solver.output(0); // print the initial state
   
   Interpolator interpolator(ensemble, solver);

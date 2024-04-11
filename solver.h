@@ -3,12 +3,6 @@
 #include <fstream>
 #include <cmath>
 
-// size of the FD grid. 
-// x always corresponds to i and y to j.
-// ToDo: make members of grid
-constexpr int Nx = 100; 
-constexpr int Ny = 100;
-
 struct Index {
   int i; 
   int j;
@@ -18,10 +12,13 @@ struct Index {
 template<typename T>
 struct Grid {
     std::vector<std::vector<T>> data;
-    Grid () : data(Nx, std::vector<T>(Ny, T(0))) {} // constructor always creates Nx x Ny grid
-    Grid (double value) : data(Nx, std::vector<T>(Ny, value)) {}
+    Grid (size_t Nx, size_t Ny) : data(Nx, std::vector<T>(Ny, T(0))), Nx(Nx), Ny(Ny) {}
+    Grid (size_t Nx, size_t Ny, double value) : data(Nx, std::vector<T>(Ny, value)), Nx(Nx), Ny(Ny) {}
+    Grid () { Grid(100, 100) } // ToDo: magic numbers
     T& operator()(int i, int j) { return data[i][j]; }
     T& operator()(Index idx) { return data[idx.i][idx.j]; }
+    size_t sizeX() const { return data.size(); }
+    size_t sizeY() const { return data[0].size(); }
 };
 
 struct Reaction {
@@ -39,8 +36,8 @@ struct LinearDegradation : Reaction {
 };
 
 struct Solver { 
-    double box_position_x;  // ToDo: change this ugly datastruct. Maybe a dimensions struct
-    double box_position_y;   
+    double box_position_x, box_position_y; // bottom left corner of RD box
+    size_t Nx, Ny; // number of grid points
     double D0; // diffusion coefficient. Later also a grid datastructure
     double dx; // grid spacing
     double dt; // time step
@@ -59,13 +56,15 @@ struct Solver {
         this->dx = dx;
         this->dt = dt;
         this->R = R;
+        this->Nx = u.sizeX();
+        this->Ny = u.sizeY();
         box_position_x = - Nx/2 * dx; // midpoint at 0
         box_position_y = - Ny/2 * dx;
-        parent_idx = Grid<int>(-1); // initialize as all background nodes. Maybe change to std::map?
+        parent_idx = Grid<int>(Nx, Ny, -1); // initialize as all background nodes. Maybe change to std::map?
     }
 
     void step() { 
-        Grid<double> unew;
+        Grid<double> unew(Nx, Ny);
         // Forward Euler with central differences ToDo: adapt for variable diffusion coefficient
         // maybe separate inner nodes and boundary to efficiently parallelize and vectorize inner nodes
         #pragma omp parallel for collapse(2)
@@ -86,6 +85,7 @@ struct Solver {
         u = unew; 
     }
 
+    void rescale(); // rescale the grid to a new size
 
     void output(const std::size_t frame) {    // f: frame number
         char filename [19]; 
@@ -164,8 +164,8 @@ struct Solver {
 
 // helper function for IC
 
-Grid<double> create_gaussian() {
-    Grid<double> u;
+Grid<double> create_gaussian(size_t Nx, size_t Ny) {
+    Grid<double> u(Nx, Ny);
     for(int i = 0; i < Nx; i++)
         for(int j = 0; j < Ny; j++)
             u(i, j) = std::exp(-((i - Nx/2)*(i - Nx/2) + (j - Ny/2)*(j - Ny/2)) / 100.0);
