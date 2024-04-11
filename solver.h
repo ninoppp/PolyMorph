@@ -12,9 +12,9 @@ struct Index {
 template<typename T>
 struct Grid {
     std::vector<std::vector<T>> data;
-    Grid (size_t Nx, size_t Ny) : data(Nx, std::vector<T>(Ny, T(0))), Nx(Nx), Ny(Ny) {}
-    Grid (size_t Nx, size_t Ny, double value) : data(Nx, std::vector<T>(Ny, value)), Nx(Nx), Ny(Ny) {}
-    Grid () { Grid(100, 100) } // ToDo: magic numbers
+    Grid (size_t Nx, size_t Ny) : data(Nx, std::vector<T>(Ny, T(0))) {}
+    Grid (size_t Nx, size_t Ny, double value) : data(Nx, std::vector<T>(Ny, value)) {}
+    Grid () { Grid(100, 100); } // ToDo: magic numbers
     T& operator()(int i, int j) { return data[i][j]; }
     T& operator()(Index idx) { return data[idx.i][idx.j]; }
     size_t sizeX() const { return data.size(); }
@@ -35,6 +35,12 @@ struct LinearDegradation : Reaction {
     }
 };
 
+enum class BoundaryCondition {
+    Dirichlet,
+    Neumann,
+    Mixed, // 1 at west boundary, 0 at east boundary, zero-flux at north and south
+};
+
 struct Solver { 
     double box_position_x, box_position_y; // bottom left corner of RD box
     size_t Nx, Ny; // number of grid points
@@ -49,8 +55,8 @@ struct Solver {
     Grid<double> p; // production rate
 
     // initialize the grid with a given initial condition
-    Solver(const Grid<double> u0, const double D0 = 1.0, const double dx = 0.1, 
-            double dt = 1e-4, Reaction R = LinearDegradation(0.1)) {
+    Solver(const Grid<double> u0, const double D0, const double dx, 
+            double dt, Reaction R) {
         this->u = u0;
         this->D0 = D0;
         this->dx = dx;
@@ -58,23 +64,28 @@ struct Solver {
         this->R = R;
         this->Nx = u.sizeX();
         this->Ny = u.sizeY();
+        std::cout << "Solver dimensions Nx: " << Nx << " Ny: " << Ny << std::endl;
+        // ToDo: find better way to initialize all this
         box_position_x = - Nx/2 * dx; // midpoint at 0
         box_position_y = - Ny/2 * dx;
         parent_idx = Grid<int>(Nx, Ny, -1); // initialize as all background nodes. Maybe change to std::map?
+        D = Grid<double>(Nx, Ny, D0);
+        k = Grid<double>(Nx, Ny, 0.05); 
+        p = Grid<double>(Nx, Ny, 0.0);
     }
 
     void step() { 
         Grid<double> unew(Nx, Ny);
-        // Forward Euler with central differences ToDo: adapt for variable diffusion coefficient
+        // Forward Euler with central differences
         // maybe separate inner nodes and boundary to efficiently parallelize and vectorize inner nodes
         #pragma omp parallel for collapse(2)
         for (int i = 0; i < Nx; i++) {
             for (int j = 0; j < Ny; j++) {   
                 // mirror past-boundary nodes
-                const double n = (j == Ny-1) ? u(i, j-1) : u(i, j+1);
+                const double n = (j == Ny-1) ? u(i, j-1) : u(i, j+1); // ToDo: option for different BDC
                 const double s = (j == 0)    ? u(i, j+1) : u(i, j-1);
-                const double e = (i == Nx-1) ? u(i-1, j) : u(i+1, j);
-                const double w = (i == 0)    ? u(i+1, j) : u(i-1, j);
+                const double e = (i == Nx-1) ? u(i-1, j) : u(i+1, j); 
+                const double w = (i == 0)    ? u(i+1, j) : u(i-1, j); 
                 unew(i, j) = u(i, j) + dt * (
                     D(i, j) / (dx*dx) * (n + s + e + w - 4 * u(i, j))
                     - k(i, j) * u(i, j) //+ R(u(i, j), i, j)
@@ -85,9 +96,9 @@ struct Solver {
         u = unew; 
     }
 
-    void rescale(); // rescale the grid to a new size
+    void rescale(size_t Nx_new, size_t Ny_new) {}
 
-    void output(const std::size_t frame) {    // f: frame number
+    void output(const std::size_t frame) {
         char filename [19]; 
         snprintf(filename, 19, "rd_frame%06zu.vts", frame);        
         std::ofstream file(filename);
