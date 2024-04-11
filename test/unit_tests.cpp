@@ -3,7 +3,7 @@
 #include <fstream>
 #include <cmath>
 
-//#include "../solver.h"
+#include "../solver.h"
 #include "1d_solver.h"
 
 constexpr double c0 = 1;
@@ -11,11 +11,11 @@ constexpr double D = 0.03;
 constexpr double j = 0.03; //influx, negative gradient at left boundary
 constexpr double dx = 0.01;
 constexpr double k = 0.05;
-constexpr double dt = 1e-4;
-constexpr double L = 1.0;
+constexpr double dt = 1e-3;
+constexpr double L = 10.0;
 constexpr int N = L/dx;
 
-constexpr unsigned Ns = 500000;
+constexpr unsigned Ns = 1000;
 constexpr unsigned Nf = 100;
 
 const double lambda = std::sqrt(D/k);
@@ -27,7 +27,7 @@ const double tau = tau_standard;
 void print(std::string s) {
     std::cout << s << std::endl;
 }
-/*/
+
 void print_grid(Grid<double> u, int N) {
     for (int i = 0; i < N; i++) {
         for (int j = 0; j < N; j++) {
@@ -40,22 +40,27 @@ void print_grid(Grid<double> u, int N) {
 
 // only run solver same as in polyhoop
 void run_solver() {
-    Grid<double> u;
-    Solver solver(u, 0.03, 0.01, 1e-4, LinearDegradation(0.01));
-    for (int f = 0; f < 100; f++) {
-        for (int s = 0; s < 3000; s++) {
+    std::cout << "running 2d solver" << std::endl;
+    Grid<double> u(N, 3);
+    Solver solver(u, D, dx, dt, LinearDegradation(k));
+    for (int f = 0; f < Nf; f++) {
+        for (int s = 0; s < Ns; s++) {
             solver.step();
         }
         //solver.output(f);
-        std::cout << "frame " << f << std::endl;
+        double time = f*Ns*dt;
+        std::cout << 
+            "frame " << f <<
+            " time: " << time << 
+            " tau: " << tau << std::endl;
     }
     // final (hopefully steady) state
     std::ofstream file("test/final_frame.txt");
-    for (int j = 0; j < Ny; j++) {
-        file << solver.u(1,j) << std::endl;
+    for (int i = 0; i < solver.Nx; i++) {
+        file << solver.u(i,1) << std::endl;
     }
     file.close();
-}*/
+}
 
 void run_1d_solver() {
     std::cout << "running 1d solver" << std::endl;
@@ -85,6 +90,7 @@ void run_1d_solver() {
 }
 
 int main() {    
-    run_1d_solver();
+    //run_1d_solver();
+    run_solver();
     return 0;
 }

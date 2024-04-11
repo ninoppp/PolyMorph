@@ -1,15 +1,15 @@
 #include <vector>
 #include <cmath>
 
-struct Reaction {
+struct Reaction1d {
     double operator()(double u, int i, int j) {
         return 0.0; // ToDo: implement reaction function
     }
 };
 
-struct LinearDegradation : Reaction {
+struct LinearDegradation1d : Reaction1d {
     double k;
-    LinearDegradation(double k): k(k) {}
+    LinearDegradation1d(double k): k(k) {}
     double operator()(double u, int i, int j) {
         return -k * u;
     }
