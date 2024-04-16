@@ -50,6 +50,9 @@ elif [ "$1" = "t" ]; then
     compile_and_run_test
     plot_steady_state
     
+elif [ "$1" = "m" ]; then
+    move_files
+
 else
     echo "running full pipeline ..."
     compile_polyhoop

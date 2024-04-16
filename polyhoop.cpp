@@ -42,7 +42,7 @@ constexpr double cc = 30; // [1/T] collision damping rate
 constexpr double dt = 1e-4; // [T] time step // default 1e-4
 
 constexpr std::size_t Nf = 100; // number of output frames
-constexpr std::size_t Ns = 3000; // number of time steps between frames // default 1000
+constexpr std::size_t Ns = 4000; // number of time steps between frames // default 1000
 constexpr std::size_t Nr = 1; // number of rigid polygons
 
 constexpr double drmax = h + sh + ss; // maximum interaction distance
@@ -749,7 +749,7 @@ struct Ensemble
     file << "\n";
     file << "        </DataArray>\n";
     // flag
-    file << "        <DataArray type=\"Int8\" Name=\"threshold\" format=\"ascii\">\n";
+    file << "        <DataArray type=\"Int8\" Name=\"flag\" format=\"ascii\">\n";
     for (auto& p : polygons)
       file << p.flag << " ";
     file << "\n";
@@ -952,7 +952,7 @@ int main()
   */
 
   // grow rectangular tissue
-  for (size_t f = 1; f<= Nf/2; f++) {
+  for (size_t f = 1; f<= 29; f++) {
     for (size_t s = 0; s < Ns; s++) {
       ensemble.step();
     }
@@ -966,7 +966,7 @@ int main()
     }
   }
   interpolator.scatter();
-  for (size_t f = Nf/2+1; f<= Nf; f++) {
+  for (size_t f = 30; f <= Nf; f++) {
     for (size_t s = 0; s < Ns; s++) {
       solver.step();
       interpolator.gather();
