@@ -12,7 +12,7 @@ constexpr double j = 0.03; //influx, negative gradient at left boundary
 constexpr double dx = 0.01;
 constexpr double k = 0.05;
 constexpr double dt = 1e-3;
-constexpr double L = 10.0;
+constexpr double L = 50.0;
 constexpr int N = L/dx;
 
 constexpr unsigned Ns = 1000;

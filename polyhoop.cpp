@@ -39,15 +39,15 @@ constexpr double gl = 0; // [L/T^2] edge gravitational acceleration
 constexpr double cv = 10; // [1/T] viscous damping rate
 constexpr double cd = 0; // [-] drag coefficient
 constexpr double cc = 30; // [1/T] collision damping rate
-constexpr double dt = 1e-4; // [T] time step
+constexpr double dt = 1e-4; // [T] time step // default 1e-4
 
 constexpr std::size_t Nf = 100; // number of output frames
 constexpr std::size_t Ns = 1000; // number of time steps between frames // default 1000
-constexpr std::size_t Nr = 1; // number of rigid polygons
+constexpr std::size_t Nr = 0; // number of rigid polygons
 
 constexpr double drmax = h + sh + ss; // maximum interaction distance
 
-// PolyMorh extension
+// PolyMorph extension
 constexpr double dx = 0.1; // [L] grid spacing for solver
 constexpr double D_mu = 3.0; // [L^2/T] diffusion coefficient mean
 constexpr double k_mu = 1.0; // [1/T] degradation rate mean 
@@ -822,24 +822,28 @@ struct Interpolator {
   // scatter coefficients D, k from polygons to grid points
   void scatter() { // ToDo: make this function prettier
     Grid<int>& prev_idx = solver.parent_idx; // stores the polygon index of the cell in which a grid point lies (its parent)
-    Grid<int> new_idx(solver.Nx, solver.Ny, -1); // negative indices indicate a background node. ToDo: could make this in place
+    Grid<int> new_idx(solver.Nx, solver.Ny, -2); // negative indices indicate a background node. ToDo: could make this in place
     
+    int istart = std::max(int((ensemble.x0 - solver.box_position_x) / solver.dx), 0);
+    int jstart = std::max(int((ensemble.y0 - solver.box_position_y) / solver.dx), 0);
+    int iend = std::min(size_t((ensemble.x1 - solver.box_position_x) / solver.dx + 1), solver.Nx);
+    int jend = std::min(size_t((ensemble.y1 - solver.box_position_y) / solver.dx + 1), solver.Ny);
+
     #pragma omp parallel for collapse(2)
-    for (int i = 0; i < solver.Nx; i++) {
-      for (int j = 0; j < solver.Ny; j++) { 
+    for (int i = istart; i < iend; i++) {
+      for (int j = jstart; j < jend; j++) { 
         // spatial coordinates of grid point
         const double x = solver.box_position_x + i * solver.dx;
         const double y = solver.box_position_y + j * solver.dx;
         const Point grid_point(x, y);
         // check if outside the ensemble box ToDo: Limit loop to those boundaries
-        if (x < ensemble.x0 || x > ensemble.x1 || y < ensemble.y0 || y > ensemble.y1) {
+        /*if (x < ensemble.x0 || x > ensemble.x1 || y < ensemble.y0 || y > ensemble.y1) {
           new_idx(i, j) = -2; // external background node
-        } 
+        }*/ 
         // check if still the same parent
-        else if (prev_idx(i, j) >= 0 && ensemble.polygons[prev_idx(i, j)].contains(grid_point)) { 
+        if (prev_idx(i, j) >= 0 && ensemble.polygons[prev_idx(i, j)].contains(grid_point)) { 
           new_idx(i, j) = prev_idx(i, j);
         } 
-        // onion layer search algorithm
         else {
           new_idx(i, j) = find_parent(grid_point);
         }
@@ -855,7 +859,7 @@ struct Interpolator {
         }
       }
     }
-    solver.parent_idx = new_idx;
+    solver.parent_idx = new_idx;  // ToDo: update in place
   }
 
   // gather concentration u from grid points to polygons
@@ -895,12 +899,16 @@ int main()
   Ensemble ensemble("ensemble.off"); // read the input file
   ensemble.output(0); // print the initial state
   
-  Grid<double> u0(100, 100); // initial condition, just zeros
+  unsigned L = 5;
+  unsigned N = L/dx; 
+  Grid<double> u0(N, N); // initial condition, just zeros
   Solver solver(u0, D_mu, dx, dt, LinearDegradation(k_mu));
   solver.output(0); // print the initial state
   
   Interpolator interpolator(ensemble, solver);
-
+  interpolator.scatter(); 
+  interpolator.gather();
+    
   for (std::size_t f = 1; f <= Nf; ++f)
   {
     for (std::size_t s = 0; s < Ns; ++s) 

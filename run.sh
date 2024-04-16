@@ -31,7 +31,7 @@ run_polyhoop() {
     OMP_NUM_THREADS=8 ./polyhoop.out
 }
 
-run_test() {
+compile_and_run_test() {
     g++ -fopenmp -O3 -o test/a.out test/unit_tests.cpp 
     ./test/a.out
 }
@@ -47,7 +47,7 @@ if [ "$1" = "c" ]; then
 
 elif [ "$1" = "t" ]; then
     echo "running test only ..."
-    run_test
+    compile_and_run_test
     plot_steady_state
     
 else

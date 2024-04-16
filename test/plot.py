@@ -25,24 +25,24 @@ def u_2xneumann(x):
     return j/mu * (math.exp(mu * (2 - x)) + math.exp(mu * x)) / (math.exp(2 * mu) - 1)
 
 # - select the analytical solution - #
-u = u_2xneumann
+u = u_standard
 
 # Read the values from final_frame.txt
 with open('test/final_frame.txt', 'r') as file:
     values = [float(line.strip()) for line in file]
-    values = values[0:int(len(values))]
+    values = values[0:int(len(values)/5)]
 
 x_values = [i * dx for i in range(len(values))]
 analytical_values = [u(x) for x in x_values]
 difference = [abs(v - a) for v, a in zip(values, analytical_values)]
 
-plt.plot(x_values, analytical_values, ':', label='Analytical Solution')
-plt.plot(x_values, values, ':', label='Numerical Solution')
-#plt.plot(x_values[::1], difference[::1], 'o', ms=3, label='absolute numerical error |u - u_analytical|')
+#plt.plot(x_values[0::4], analytical_values[0::4], ':', label='Analytical Solution')
+#plt.plot(x_values[2::4], values[2::4], ':', label='Numerical Solution')
+plt.plot(x_values[::10], difference[::10], 'o', ms=2, label='absolute numerical error |u - u_analytical|')
 
 plt.xlabel('x')
-plt.ylabel('concentration u')
-#plt.yscale('log')
+#plt.ylabel('concentration u')
+plt.yscale('log')
 
 plt.legend()
 plt.savefig('/home/uranus/PolyMorph/test/solution_plot.pdf')

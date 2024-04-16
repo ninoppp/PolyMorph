@@ -64,10 +64,12 @@ struct Solver {
         this->R = R;
         this->Nx = u.sizeX();
         this->Ny = u.sizeY();
-        std::cout << "Solver dimensions Nx: " << Nx << " Ny: " << Ny << std::endl;
-        // ToDo: find better way to initialize all this
-        box_position_x = - Nx/2 * dx; // midpoint at 0
-        box_position_y = - Ny/2 * dx;
+        std::cout << "Solver dimensions Nx=" << Nx << " Ny=" << Ny << std::endl;
+        // ToDo: find better way to initialize all this below
+        box_position_x = -0.5 * Nx * dx; // midpoint at 0
+        box_position_y = -0.5 * Ny * dx;
+        std::cout << "dx=" << dx << std::endl;
+        std::cout << "RD box x=" << box_position_x << " y=" << box_position_y << std::endl;
         parent_idx = Grid<int>(Nx, Ny, -1); // initialize as all background nodes. Maybe change to std::map?
         D = Grid<double>(Nx, Ny, D0);
         k = Grid<double>(Nx, Ny, 0.05); 
@@ -77,7 +79,8 @@ struct Solver {
     void step() { 
         Grid<double> unew(Nx, Ny);
         // Forward Euler with central differences
-        // maybe separate inner nodes and boundary to efficiently parallelize and vectorize inner nodes
+        // ToDo: separate inner nodes and boundary to efficiently parallelize and vectorize inner nodes
+        // while allowing different boundary conditions
         #pragma omp parallel for collapse(2)
         for (int i = 0; i < Nx; i++) {
             for (int j = 0; j < Ny; j++) {   
