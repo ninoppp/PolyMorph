@@ -42,8 +42,8 @@ constexpr double cc = 30; // [1/T] collision damping rate
 constexpr double dt = 1e-4; // [T] time step // default 1e-4
 
 constexpr std::size_t Nf = 100; // number of output frames
-constexpr std::size_t Ns = 1000; // number of time steps between frames // default 1000
-constexpr std::size_t Nr = 0; // number of rigid polygons
+constexpr std::size_t Ns = 3000; // number of time steps between frames // default 1000
+constexpr std::size_t Nr = 1; // number of rigid polygons
 
 constexpr double drmax = h + sh + ss; // maximum interaction distance
 
@@ -52,12 +52,15 @@ constexpr double dx = 0.1; // [L] grid spacing for solver
 constexpr double D_mu = 3.0; // [L^2/T] diffusion coefficient mean
 constexpr double k_mu = 1.0; // [1/T] degradation rate mean 
 constexpr double p_mu = 6.0; // [1/T] production rate mean
+constexpr double threshold_mu = 0.5; // [-] threshold for morphogen concentration mean
 constexpr double D_CV = 0.1; // [-] coefficient of variation of diffusion
 constexpr double k_CV = 0.1; // [-] coefficient of variation of degradation rate
 constexpr double p_CV = 0.1; // [-] coefficient of variation of production rate
+constexpr double threshold_CV = 0.1; // [-] coefficient of variation of threshold
 constexpr double D0 = 3.0; // [L^2/T] diffusion coefficient background
 constexpr double k0 = 1.0; // [1/T] reaction rate background
 constexpr double p0 = 0.0; // [1/T] reaction rate background
+
 
 std::mt19937 rng; // random number generator
 const double Amax_lnCV = std::log(1 + Amax_CV*Amax_CV);
@@ -70,9 +73,11 @@ std::uniform_real_distribution<> uni_dist;
 const double D_lnCV = std::log(1 + D_CV*D_CV);
 const double k_lnCV = std::log(1 + k_CV*k_CV);
 const double p_lnCV = std::log(1 + p_CV*p_CV);
+const double threshold_lnCV = std::log(1 + threshold_CV*threshold_CV);
 std::lognormal_distribution<> D_dist(std::log(D_mu) - D_lnCV/2, std::sqrt(D_lnCV)); // diffusion coefficient distribution ToDo: "magic numer sigma"
 std::lognormal_distribution<> k_dist(std::log(k_mu) - k_lnCV/2, std::sqrt(k_lnCV)); // reaction rate distribution
 std::lognormal_distribution<> p_dist(std::log(p_mu) - p_lnCV/2, std::sqrt(p_lnCV)); // production rate distribution
+std::lognormal_distribution<> threshold_dist(std::log(threshold_mu) - threshold_lnCV/2, std::sqrt(threshold_lnCV)); // threshold distribution
 
 struct Point  // basically a 2D vector
 {
@@ -122,6 +127,8 @@ struct Polygon
   // Polymorph extension. 
   double D, k, p; // diffusion coefficient, degradation rate, production rate
   double u = 0; // local morphogen concentration
+  double threshold = 0; // threshold for morphogen concentration
+  bool flag = false; // general purpose flag
   std::vector<Index> children; // stores the indices of the grid points within the polygon
   // END Polymorph extension
   double area()
@@ -166,10 +173,12 @@ struct Polygon
 };
 
 // methods for selecting producing cells ToDo: move this to a better place
-auto heavyside = [](const Polygon& p) { return p.midpoint().x < 0.5; }; // ToDo: remove magic-number 0.5
+double heavyside_x = 0;
+auto heavyside = [](const Polygon& p) { return p.midpoint().x < heavyside_x; }; // ToDo: remove magic-number 0.5
 auto mother_cell = [](const Polygon& p) { return p.vertices[0].p == Nr; }; // workaround to get polygon index
+auto none = [](const Polygon& p) { return false; };
 // choose method
-auto is_producing = mother_cell;
+auto is_producing = none;
 
 struct Ensemble
 {
@@ -211,6 +220,7 @@ struct Ensemble
       polygons[p].D = D_dist(rng);
       polygons[p].k = k_dist(rng);
       polygons[p].p = is_producing(polygons[p]) ? p_dist(rng) : 0;
+      polygons[p].threshold = threshold_dist(rng);
       // end PolyMorph extension
       for (std::size_t i = Nv - 1, j = 0; j < Nv; i = j++)
         polygons[p].vertices[i].l0 = (polygons[p].vertices[j].r - polygons[p].vertices[i].r).length(); // edge rest length
@@ -482,6 +492,8 @@ struct Ensemble
         // Polymorph extension: update polygon production rate (note: has to happen after vertices are assigned)
         polygons[p].p = is_producing(polygons[p]) ? p_dist(rng) : 0;
         polygons.back().p = is_producing(polygons.back()) ? p_dist(rng) : 0;
+        polygons[p].threshold = threshold_dist(rng);
+        polygons.back().threshold = threshold_dist(rng);
       }
     }
     
@@ -730,6 +742,18 @@ struct Ensemble
       file << p.p << " ";
     file << "\n";
     file << "        </DataArray>\n";
+    // threshold
+    file << "        <DataArray type=\"Float64\" Name=\"threshold\" format=\"ascii\">\n";
+    for (auto& p : polygons)
+      file << p.threshold << " ";
+    file << "\n";
+    file << "        </DataArray>\n";
+    // flag
+    file << "        <DataArray type=\"Int8\" Name=\"threshold\" format=\"ascii\">\n";
+    for (auto& p : polygons)
+      file << p.flag << " ";
+    file << "\n";
+    file << "        </DataArray>\n";
     // end polymorph extension
     file << "        <DataArray type=\"Float64\" Name=\"perimeter\" format=\"ascii\">\n";
     for (auto& p : polygons)
@@ -849,7 +873,7 @@ struct Interpolator {
           new_idx(i, j) = find_parent(grid_point);
         }
         // scatter values
-        if (new_idx(i, j) < 0) { // is background node
+        if (new_idx(i, j) < Nr) { // is background node (treat rigid as BG)
           solver.D(i, j) = D0; // background diffusion
           solver.k(i, j) = k0; // background degradation
           solver.p(i, j) = p0; // background production (should be zero)
@@ -887,6 +911,11 @@ struct Interpolator {
       }
       if (cell.children.size() > 0) { // avoid division by zero if cells exceed RD box
         cell.u /= cell.children.size();
+        if (cell.u > cell.threshold) { // set flag
+          cell.flag = 1;
+        } else {
+          cell.flag = 0;
+        }
       }
     }
   }
@@ -900,16 +929,14 @@ int main()
   Ensemble ensemble("ensemble.off"); // read the input file
   ensemble.output(0); // print the initial state
   
-  unsigned L = 5;
+  unsigned L = 20;
   unsigned N = L/dx; 
   Grid<double> u0(N, N); // initial condition, just zeros
   Solver solver(u0, D_mu, dx, dt, LinearDegradation(k0));
   solver.output(0); // print the initial state
   
   Interpolator interpolator(ensemble, solver);
-  interpolator.scatter(); 
-  interpolator.gather();
-    
+  /*
   for (std::size_t f = 1; f <= Nf; ++f)
   {
     for (std::size_t s = 0; s < Ns; ++s) 
@@ -918,12 +945,33 @@ int main()
       interpolator.scatter(); 
       solver.step();
       interpolator.gather();
-    }
-    // for testing purposes only every frame. no interaction yet. 
-    //interpolator.scatter(); 
-    //interpolator.gather();
-    
+    } 
     ensemble.output(f); // print a frame
     solver.output(f); // print a frame
+  }
+  */
+
+  // grow rectangular tissue
+  for (size_t f = 1; f<= Nf/2; f++) {
+    for (size_t s = 0; s < Ns; s++) {
+      ensemble.step();
+    }
+    ensemble.output(f);
+    solver.output(f);
+  }
+  // produce on left side 
+  for (auto& p : ensemble.polygons) {
+    if (p.midpoint().x < solver.box_position_x+4) {
+      p.p = p_dist(rng);
+    }
+  }
+  interpolator.scatter();
+  for (size_t f = Nf/2+1; f<= Nf; f++) {
+    for (size_t s = 0; s < Ns; s++) {
+      solver.step();
+      interpolator.gather();
+    }
+    ensemble.output(f);
+    solver.output(f);
   }
 }
