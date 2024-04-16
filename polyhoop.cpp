@@ -793,6 +793,7 @@ struct Ensemble
 struct Interpolator {
   Ensemble& ensemble;
   Solver& solver;
+  int istart, jstart, iend, jend; // limits of the grid points to be updated (within ensemble bounds)
   Interpolator(Ensemble& ensemble, Solver& solver) : ensemble(ensemble), solver(solver) {}
   
   // Search algorithm to find parent polygon for a grid point.
@@ -824,10 +825,10 @@ struct Interpolator {
     Grid<int>& prev_idx = solver.parent_idx; // stores the polygon index of the cell in which a grid point lies (its parent)
     Grid<int> new_idx(solver.Nx, solver.Ny, -2); // negative indices indicate a background node. ToDo: could make this in place
     
-    int istart = std::max(int((ensemble.x0 - solver.box_position_x) / solver.dx), 0);
-    int jstart = std::max(int((ensemble.y0 - solver.box_position_y) / solver.dx), 0);
-    int iend = std::min(size_t((ensemble.x1 - solver.box_position_x) / solver.dx + 1), solver.Nx);
-    int jend = std::min(size_t((ensemble.y1 - solver.box_position_y) / solver.dx + 1), solver.Ny);
+    istart = std::max(int((ensemble.x0 - solver.box_position_x) / solver.dx), 0);
+    jstart = std::max(int((ensemble.y0 - solver.box_position_y) / solver.dx), 0);
+    iend = std::min(size_t((ensemble.x1 - solver.box_position_x) / solver.dx + 1), solver.Nx);
+    jend = std::min(size_t((ensemble.y1 - solver.box_position_y) / solver.dx + 1), solver.Ny);
 
     #pragma omp parallel for collapse(2)
     for (int i = istart; i < iend; i++) {
@@ -869,8 +870,8 @@ struct Interpolator {
     for (auto& cell : ensemble.polygons) {
       cell.children.clear();
     }
-    for (int i = 0; i < solver.Nx; i++) {
-      for (int j = 0; j < solver.Ny; j++) {
+    for (int i = istart; i < iend; i++) {
+      for (int j = jstart; j < jend; j++) {
         if (solver.parent_idx(i, j) >= 0) { // skip background nodes
           auto& cell = ensemble.polygons[solver.parent_idx(i, j)]; 
           cell.children.push_back(Index(i, j)); 
@@ -902,7 +903,7 @@ int main()
   unsigned L = 5;
   unsigned N = L/dx; 
   Grid<double> u0(N, N); // initial condition, just zeros
-  Solver solver(u0, D_mu, dx, dt, LinearDegradation(k_mu));
+  Solver solver(u0, D_mu, dx, dt, LinearDegradation(k0));
   solver.output(0); // print the initial state
   
   Interpolator interpolator(ensemble, solver);

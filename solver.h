@@ -28,10 +28,10 @@ struct Reaction {
 };
 
 struct LinearDegradation : Reaction {
-    double k;
-    LinearDegradation(double k): k(k) {}
+    double k0;
+    LinearDegradation(double k): k0(k) {}
     double operator()(double u, int i, int j) {
-        return -k * u;
+        return -k0 * u;
     }
 };
 
@@ -72,7 +72,7 @@ struct Solver {
         std::cout << "RD box x=" << box_position_x << " y=" << box_position_y << std::endl;
         parent_idx = Grid<int>(Nx, Ny, -1); // initialize as all background nodes. Maybe change to std::map?
         D = Grid<double>(Nx, Ny, D0);
-        k = Grid<double>(Nx, Ny, 0.05); 
+        k = Grid<double>(Nx, Ny, 1.0); // ToDo: properly initialize background 
         p = Grid<double>(Nx, Ny, 0.0);
     }
 
