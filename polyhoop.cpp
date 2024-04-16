@@ -11,6 +11,7 @@
 #include <algorithm>
 #include <cassert>
 #include <unordered_set>
+#include <map>
 
 #include "solver.h"
 
@@ -811,6 +812,49 @@ struct Ensemble
     file << "  </PolyData>\n";
     file << "</VTKFile>\n";
   }
+
+  // Polymorph extension
+  void writeOFF(const char* filename) const {
+        std::ofstream file(filename);
+        // Count total vertices
+        std::size_t totalVertices = 0;
+        for (const auto& p : polygons) {
+            totalVertices += p.vertices.size();
+        }
+        file << "OFF\n";
+        file << totalVertices << " " << polygons.size() << " 0\n"; // Assuming 0 edges info
+        // Write all vertices (ensure no duplicate vertices)
+        std::vector<Point> allPoints;
+        for (const auto& p : polygons) {
+            for (const auto& v : p.vertices) {
+                allPoints.push_back(v.r);
+            }
+        }
+        // Removing duplicate points and mapping original indices to new indices
+        std::vector<Point> uniquePoints;
+        std::map<Point, int> pointIndexMap;
+        int index = 0;
+        for (const auto& point : allPoints) {
+            if (pointIndexMap.find(point) == pointIndexMap.end()) {
+                uniquePoints.push_back(point);
+                pointIndexMap[point] = index++;
+            }
+        }
+        // Write unique points to file
+        for (const auto& point : uniquePoints) {
+            file << point.x << " " << point.y << " " << 0 << "\n"; // 
+        }
+        // Write polygons using the indices of unique points
+        for (const auto& poly : polygons) {
+            file << poly.vertices.size();
+            for (const auto& vertex : poly.vertices) {
+                file << " " << pointIndexMap[vertex.r];
+            }
+            file << "\n";
+        }
+        file.close();
+
+    }
 };
 
 // takes care of the data scattering and gathering between ensemble and solver
@@ -948,11 +992,11 @@ int main()
     } 
     ensemble.output(f); // print a frame
     solver.output(f); // print a frame
-  }
-  */
-
+  }*/
+  
+  
   // grow rectangular tissue
-  for (size_t f = 1; f<= 29; f++) {
+  for (size_t f = 1; f <= 29; f++) {
     for (size_t s = 0; s < Ns; s++) {
       ensemble.step();
     }
