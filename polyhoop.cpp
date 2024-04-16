@@ -99,6 +99,11 @@ struct Point  // basically a 2D vector
     #pragma omp atomic
     y += a * r.y;
   }
+  // Polymorph extension: lexographical comparison for std::map (used in writeOFF)
+  bool operator<(const Point& r) const {
+    if (x == r.x) return y < r.y;
+    return x < r.x;
+  }
 };
 Point operator*(const double a, const Point& r) { return {a * r.x, a * r.y}; }
 
@@ -980,8 +985,8 @@ int main()
   solver.output(0); // print the initial state
   
   Interpolator interpolator(ensemble, solver);
-  /*
-  for (std::size_t f = 1; f <= Nf; ++f)
+  
+  for (std::size_t f = 1; f <= 29; ++f)
   {
     for (std::size_t s = 0; s < Ns; ++s) 
     {
@@ -992,9 +997,10 @@ int main()
     } 
     ensemble.output(f); // print a frame
     solver.output(f); // print a frame
-  }*/
+  }
+  ensemble.writeOFF("rect_tissue.off")
   
-  
+  /*
   // grow rectangular tissue
   for (size_t f = 1; f <= 29; f++) {
     for (size_t s = 0; s < Ns; s++) {
@@ -1005,8 +1011,10 @@ int main()
   }
   // produce on left side 
   for (auto& p : ensemble.polygons) {
+    std::cout << "midpoint " << p.midpoint().x << " box_pos+4 " << solver.box_position_x + 4 << std::endl;
     if (p.midpoint().x < solver.box_position_x+4) {
       p.p = p_dist(rng);
+      std::cout << "producing " << p.p << std::endl;
     }
   }
   interpolator.scatter();
@@ -1017,5 +1025,5 @@ int main()
     }
     ensemble.output(f);
     solver.output(f);
-  }
+  }*/
 }
