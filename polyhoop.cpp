@@ -43,16 +43,16 @@ constexpr double cc = 30; // [1/T] collision damping rate
 constexpr double dt = 1e-4; // [T] time step // default 1e-4
 
 constexpr std::size_t Nf = 100; // number of output frames
-constexpr std::size_t Ns = 1000; // number of time steps between frames // default 1000
+constexpr std::size_t Ns = 100; // number of time steps between frames // default 1000
 constexpr std::size_t Nr = 0; // number of rigid polygons
 
 constexpr double drmax = h + sh + ss; // maximum interaction distance
 
 // PolyMorph extension
 constexpr double dx = 0.4; // [L] grid spacing for solver
-constexpr double D_mu = 64.0; // [L^2/T] diffusion coefficient mean
+constexpr double D_mu = 128.0; // [L^2/T] diffusion coefficient mean
 constexpr double k_mu = 1.0; // [1/T] degradation rate mean 
-constexpr double p_mu = 12.0; // [1/T] production rate mean
+constexpr double p_mu = 24.0; // [1/T] production rate mean
 constexpr double threshold_mu = 0.5; // [-] threshold for morphogen concentration mean
 constexpr double D_CV = 0.1; // [-] coefficient of variation of diffusion
 constexpr double k_CV = 0.1; // [-] coefficient of variation of degradation rate
@@ -919,7 +919,7 @@ struct Interpolator {
           new_idx(i, j) = find_parent(grid_point);
         }
         // scatter values
-        if (new_idx(i, j) < Nr) { // is background node (treat rigid as BG)
+        if (new_idx(i, j) < int(Nr)) { // is background node (treat rigid as BG)
           solver.D(i, j) = D0; // background diffusion
           solver.k(i, j) = k0; // background degradation
           solver.p(i, j) = p0; // background production (should be zero)
@@ -1014,12 +1014,12 @@ int main()
   interpolator.scatter();    
   ensemble.output(1);
   solver.output(1);         
-  /*for (size_t f = 1; f <= Nf; f++) {
+  for (size_t f = 1; f <= Nf; f++) {
     for (size_t s = 0; s < Ns; s++) {
       solver.step();
     }
     solver.output(f);
     interpolator.gather();
     ensemble.output(f);
-  }*/
+  }
 }
