@@ -43,22 +43,22 @@ constexpr double cc = 30; // [1/T] collision damping rate
 constexpr double dt = 1e-4; // [T] time step // default 1e-4
 
 constexpr std::size_t Nf = 100; // number of output frames
-constexpr std::size_t Ns = 5000; // number of time steps between frames // default 1000
+constexpr std::size_t Ns = 1000; // number of time steps between frames // default 1000
 constexpr std::size_t Nr = 0; // number of rigid polygons
 
 constexpr double drmax = h + sh + ss; // maximum interaction distance
 
 // PolyMorph extension
 constexpr double dx = 0.4; // [L] grid spacing for solver
-constexpr double D_mu = 6.0; // [L^2/T] diffusion coefficient mean
+constexpr double D_mu = 64.0; // [L^2/T] diffusion coefficient mean
 constexpr double k_mu = 1.0; // [1/T] degradation rate mean 
-constexpr double p_mu = 6.0; // [1/T] production rate mean
+constexpr double p_mu = 12.0; // [1/T] production rate mean
 constexpr double threshold_mu = 0.5; // [-] threshold for morphogen concentration mean
 constexpr double D_CV = 0.1; // [-] coefficient of variation of diffusion
 constexpr double k_CV = 0.1; // [-] coefficient of variation of degradation rate
 constexpr double p_CV = 0.1; // [-] coefficient of variation of production rate
 constexpr double threshold_CV = 0.1; // [-] coefficient of variation of threshold
-constexpr double D0 = 6.0; // [L^2/T] diffusion coefficient background
+constexpr double D0 = 32.0; // [L^2/T] diffusion coefficient background
 constexpr double k0 = 0.0; // [1/T] reaction rate background
 constexpr double p0 = 0.0; // [1/T] reaction rate background
 
@@ -887,17 +887,17 @@ struct Interpolator {
           }
         }
       }
-      if (last_iteration) return -1; // background node
+      if (last_iteration) return -2000; // background node
       if (!checked_polygons.empty()) last_iteration = true; // only go 1 more layer
       ++bxi;
     }
-    return -1; // background node (reached boundary of ensemble box)
+    return -2000; // background node (reached boundary of ensemble box)
   }
 
   // scatter coefficients D, k from polygons to grid points
   void scatter() { // ToDo: make this function prettier
     Grid<int>& prev_idx = solver.parent_idx; // stores the polygon index of the cell in which a grid point lies (its parent)
-    Grid<int> new_idx(solver.Nx, solver.Ny, -2); // negative indices indicate a background node. ToDo: could make this in place
+    Grid<int> new_idx(solver.Nx, solver.Ny, -1000); // negative indices indicate a background node. ToDo: could make this in place
     
     istart = std::max(int((ensemble.x0 - solver.box_position_x) / solver.dx), 0);
     jstart = std::max(int((ensemble.y0 - solver.box_position_y) / solver.dx), 0);
@@ -978,43 +978,46 @@ int main()
 {
   welcome();
   rng.seed(90178009);
-  Ensemble ensemble("ensemble_default.off"); // read the input file
+  Ensemble ensemble("ensemble_5k_39.off"); // read the input file
   
-  /*unsigned L = 100;
+  unsigned L = 150;
   unsigned N = L/dx; 
   Grid<double> u0(N, N); // initial condition, just zeros
   Solver solver(u0, D0, dx, dt, k0); // init solver
   
-  Interpolator interpolator(ensemble, solver);*/
+  Interpolator interpolator(ensemble, solver);
   
-  ensemble.output(0); // print the initial state
-  //solver.output(0); // print the initial state
+  /*ensemble.output(0); // print the initial state
+  solver.output(0); // print the initial state
   for (std::size_t f = 1; f <= Nf; ++f)
   {
     for (std::size_t s = 0; s < Ns; ++s) 
     {
       ensemble.step();
-      //interpolator.scatter(); 
-      //solver.step();
-      //interpolator.gather();
+      interpolator.scatter(); 
+      solver.step();
+      interpolator.gather();
     } 
     ensemble.output(f); // print a frame
-    //solver.output(f); // print a frame
-  }
-  ensemble.writeOFF("ensemble_large.off");
+    solver.output(f); // print a frame
+  }*/
   
   // produce on left side
-  /*for (auto& p : ensemble.polygons) {
-    if (p.midpoint().x < solver.box_position_x+4) {
+  ensemble.output(0);
+  solver.output(0);
+  ensemble.step();
+  for (auto& p : ensemble.polygons) {
+    if (p.midpoint().x < solver.box_position_x+30) {
       p.p = p_dist(rng);
     }
   }  
-  interpolator.scatter();             
-  for (size_t f = 0; f <= Nf; f++) {
+  interpolator.scatter();    
+  ensemble.output(1);
+  solver.output(1);         
+  /*for (size_t f = 1; f <= Nf; f++) {
     for (size_t s = 0; s < Ns; s++) {
       solver.step();
     }
-    interpolator.scatter();
     solver.output(f);
     interpolator.gather();
     ensemble.output(f);
