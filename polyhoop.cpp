@@ -43,14 +43,14 @@ constexpr double cc = 30; // [1/T] collision damping rate
 constexpr double dt = 1e-4; // [T] time step // default 1e-4
 
 constexpr std::size_t Nf = 100; // number of output frames
-constexpr std::size_t Ns = 1000; // number of time steps between frames // default 1000
-constexpr std::size_t Nr = 1; // number of rigid polygons
+constexpr std::size_t Ns = 5000; // number of time steps between frames // default 1000
+constexpr std::size_t Nr = 0; // number of rigid polygons
 
 constexpr double drmax = h + sh + ss; // maximum interaction distance
 
 // PolyMorph extension
-constexpr double dx = 0.1; // [L] grid spacing for solver
-constexpr double D_mu = 3.0; // [L^2/T] diffusion coefficient mean
+constexpr double dx = 0.4; // [L] grid spacing for solver
+constexpr double D_mu = 6.0; // [L^2/T] diffusion coefficient mean
 constexpr double k_mu = 1.0; // [1/T] degradation rate mean 
 constexpr double p_mu = 6.0; // [1/T] production rate mean
 constexpr double threshold_mu = 0.5; // [-] threshold for morphogen concentration mean
@@ -58,7 +58,7 @@ constexpr double D_CV = 0.1; // [-] coefficient of variation of diffusion
 constexpr double k_CV = 0.1; // [-] coefficient of variation of degradation rate
 constexpr double p_CV = 0.1; // [-] coefficient of variation of production rate
 constexpr double threshold_CV = 0.1; // [-] coefficient of variation of threshold
-constexpr double D0 = 3.0; // [L^2/T] diffusion coefficient background
+constexpr double D0 = 6.0; // [L^2/T] diffusion coefficient background
 constexpr double k0 = 0.0; // [1/T] reaction rate background
 constexpr double p0 = 0.0; // [1/T] reaction rate background
 
@@ -201,7 +201,8 @@ struct Ensemble
     file.ignore(3); // ignore "OFF"
     std::size_t Nv, Np, Ne; // number of vertices, polygons, edges
     file >> Nv >> Np >> Ne; // Ne unused
-    
+    std::cout << "rigid polygons: " << Nr << ". total polygons: " << Np << std::endl; 
+
     // read all vertices
     std::vector<Point> points(Nv);
     std::vector<int> z(Nv);
@@ -966,38 +967,44 @@ struct Interpolator {
   }
 };
 
+void welcome() {
+  std::cout << "--------------------------" << std::endl
+            << "|  Welcome to PolyMorph  |" << std::endl
+            << "--------------------------" << std::endl;
+  // ToDo: logs configuration for reproducibility
+}
 
 int main()
 {
-  // ToDo: fix seed of rng
-
-  Ensemble ensemble("ensemble_rect_27.off"); // read the input file
+  welcome();
+  rng.seed(90178009);
+  Ensemble ensemble("ensemble_default.off"); // read the input file
   
-  unsigned L = 20;
+  /*unsigned L = 100;
   unsigned N = L/dx; 
   Grid<double> u0(N, N); // initial condition, just zeros
-  Solver solver(u0, D0, dx, dt, k0);
+  Solver solver(u0, D0, dx, dt, k0); // init solver
   
-  Interpolator interpolator(ensemble, solver);
+  Interpolator interpolator(ensemble, solver);*/
   
   ensemble.output(0); // print the initial state
-  solver.output(0); // print the initial state
-  
-  /*for (std::size_t f = 1; f <= Nf; ++f)
+  //solver.output(0); // print the initial state
+  for (std::size_t f = 1; f <= Nf; ++f)
   {
     for (std::size_t s = 0; s < Ns; ++s) 
     {
       ensemble.step();
-      interpolator.scatter(); 
-      solver.step();
-      interpolator.gather();
+      //interpolator.scatter(); 
+      //solver.step();
+      //interpolator.gather();
     } 
     ensemble.output(f); // print a frame
-    solver.output(f); // print a frame
-  }*/
+    //solver.output(f); // print a frame
+  }
+  ensemble.writeOFF("ensemble_large.off");
   
   // produce on left side
-  for (auto& p : ensemble.polygons) {
+  /*for (auto& p : ensemble.polygons) {
     if (p.midpoint().x < solver.box_position_x+4) {
       p.p = p_dist(rng);
     }
@@ -1011,5 +1018,5 @@ int main()
     solver.output(f);
     interpolator.gather();
     ensemble.output(f);
-  }
+  }*/
 }

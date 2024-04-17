@@ -66,7 +66,7 @@ struct Solver {
         this->R = R;
         this->Nx = u.sizeX();
         this->Ny = u.sizeY();
-        std::cout << "Solver dimensions Nx=" << Nx << " Ny=" << Ny << std::endl;
+        std::cout << "solver dimensions Nx=" << Nx << " Ny=" << Ny << std::endl;
         // ToDo: find better way to initialize all this below
         box_position_x = -0.5 * Nx * dx; // midpoint at 0
         box_position_y = -0.5 * Ny * dx;
