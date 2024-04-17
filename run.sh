@@ -27,8 +27,10 @@ generate_ensemble() {
 }
 
 run_polyhoop() {
-    echo "running polyhoop in parallel... "
-    OMP_NUM_THREADS=8 ./polyhoop.out
+    OMP_NUM_THREADS=8
+    export OMP_NUM_THREADS
+    echo "running polyhoop with $OMP_NUM_THREADS threads... "
+    ./polyhoop.out
 }
 
 compile_and_run_test() {
