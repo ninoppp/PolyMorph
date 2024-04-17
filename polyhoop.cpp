@@ -43,7 +43,7 @@ constexpr double cc = 30; // [1/T] collision damping rate
 constexpr double dt = 1e-4; // [T] time step // default 1e-4
 
 constexpr std::size_t Nf = 100; // number of output frames
-constexpr std::size_t Ns = 4000; // number of time steps between frames // default 1000
+constexpr std::size_t Ns = 1000; // number of time steps between frames // default 1000
 constexpr std::size_t Nr = 1; // number of rigid polygons
 
 constexpr double drmax = h + sh + ss; // maximum interaction distance
@@ -59,7 +59,7 @@ constexpr double k_CV = 0.1; // [-] coefficient of variation of degradation rate
 constexpr double p_CV = 0.1; // [-] coefficient of variation of production rate
 constexpr double threshold_CV = 0.1; // [-] coefficient of variation of threshold
 constexpr double D0 = 3.0; // [L^2/T] diffusion coefficient background
-constexpr double k0 = 1.0; // [1/T] reaction rate background
+constexpr double k0 = 0.0; // [1/T] reaction rate background
 constexpr double p0 = 0.0; // [1/T] reaction rate background
 
 
@@ -174,14 +174,14 @@ struct Polygon
     for (const Vertex& v : vertices) {
       midp = midp + v.r;
     }
-    return 1/vertices.size() * midp;
+    return 1.0/vertices.size() * midp;
   }
 };
 
 // methods for selecting producing cells ToDo: move this to a better place
 double heavyside_x = 0;
 auto heavyside = [](const Polygon& p) { return p.midpoint().x < heavyside_x; }; // ToDo: remove magic-number 0.5
-auto mother_cell = [](const Polygon& p) { return p.vertices[0].p == Nr; }; // workaround to get polygon index
+auto mother_cell = [](const Polygon& p) { return p.vertices[0].p == Nr; };
 auto none = [](const Polygon& p) { return false; };
 // choose method
 auto is_producing = none;
@@ -850,10 +850,10 @@ struct Ensemble
             file << point.x << " " << point.y << " " << 0 << "\n"; // 
         }
         // Write polygons using the indices of unique points
-        for (const auto& poly : polygons) {
-            file << poly.vertices.size();
-            for (const auto& vertex : poly.vertices) {
-                file << " " << pointIndexMap[vertex.r];
+        for (const auto& p : polygons) {
+            file << p.vertices.size();
+            for (const auto& v : p.vertices) {
+                file << " " << pointIndexMap[v.r];
             }
             file << "\n";
         }
@@ -870,7 +870,7 @@ struct Interpolator {
   Interpolator(Ensemble& ensemble, Solver& solver) : ensemble(ensemble), solver(solver) {}
   
   // Search algorithm to find parent polygon for a grid point.
-  // Complexity almost O(1). More precicely O(vertices per polygon) which is almost constant
+  // Complexity O(vertices per polygon)
   std::size_t find_parent(Point grid_point) {
     std::size_t bxi = (grid_point.x - ensemble.x0) / ensemble.bs + 1; // box index in x direction
     const std::size_t byi = (grid_point.y - ensemble.y0) / ensemble.bs + 1; // box index in y direction
@@ -910,12 +910,8 @@ struct Interpolator {
         const double x = solver.box_position_x + i * solver.dx;
         const double y = solver.box_position_y + j * solver.dx;
         const Point grid_point(x, y);
-        // check if outside the ensemble box ToDo: Limit loop to those boundaries
-        /*if (x < ensemble.x0 || x > ensemble.x1 || y < ensemble.y0 || y > ensemble.y1) {
-          new_idx(i, j) = -2; // external background node
-        }*/ 
-        // check if still the same parent
-        if (prev_idx(i, j) >= 0 && ensemble.polygons[prev_idx(i, j)].contains(grid_point)) { 
+        // check if still the same parent (ignore rigid)
+        if (prev_idx(i, j) >= Nr && ensemble.polygons[prev_idx(i, j)].contains(grid_point)) { 
           new_idx(i, j) = prev_idx(i, j);
         } 
         else {
@@ -926,7 +922,7 @@ struct Interpolator {
           solver.D(i, j) = D0; // background diffusion
           solver.k(i, j) = k0; // background degradation
           solver.p(i, j) = p0; // background production (should be zero)
-        } else {
+        } else { 
           solver.D(i, j) = ensemble.polygons[new_idx(i, j)].D;
           solver.k(i, j) = ensemble.polygons[new_idx(i, j)].k;
           solver.p(i, j) = ensemble.polygons[new_idx(i, j)].p;
@@ -975,18 +971,19 @@ int main()
 {
   // ToDo: fix seed of rng
 
-  Ensemble ensemble("ensemble.off"); // read the input file
-  ensemble.output(0); // print the initial state
+  Ensemble ensemble("ensemble_rect_27.off"); // read the input file
   
   unsigned L = 20;
   unsigned N = L/dx; 
   Grid<double> u0(N, N); // initial condition, just zeros
-  Solver solver(u0, D_mu, dx, dt, LinearDegradation(k0));
-  solver.output(0); // print the initial state
+  Solver solver(u0, D0, dx, dt, k0);
   
   Interpolator interpolator(ensemble, solver);
   
-  for (std::size_t f = 1; f <= 29; ++f)
+  ensemble.output(0); // print the initial state
+  solver.output(0); // print the initial state
+  
+  /*for (std::size_t f = 1; f <= Nf; ++f)
   {
     for (std::size_t s = 0; s < Ns; ++s) 
     {
@@ -997,33 +994,22 @@ int main()
     } 
     ensemble.output(f); // print a frame
     solver.output(f); // print a frame
-  }
-  ensemble.writeOFF("rect_tissue.off")
+  }*/
   
-  /*
-  // grow rectangular tissue
-  for (size_t f = 1; f <= 29; f++) {
-    for (size_t s = 0; s < Ns; s++) {
-      ensemble.step();
-    }
-    ensemble.output(f);
-    solver.output(f);
-  }
-  // produce on left side 
+  // produce on left side
   for (auto& p : ensemble.polygons) {
-    std::cout << "midpoint " << p.midpoint().x << " box_pos+4 " << solver.box_position_x + 4 << std::endl;
     if (p.midpoint().x < solver.box_position_x+4) {
       p.p = p_dist(rng);
-      std::cout << "producing " << p.p << std::endl;
     }
-  }
-  interpolator.scatter();
-  for (size_t f = 30; f <= Nf; f++) {
+  }  
+  interpolator.scatter();             
+  for (size_t f = 0; f <= Nf; f++) {
     for (size_t s = 0; s < Ns; s++) {
       solver.step();
-      interpolator.gather();
     }
-    ensemble.output(f);
+    interpolator.scatter();
     solver.output(f);
-  }*/
+    interpolator.gather();
+    ensemble.output(f);
+  }
 }

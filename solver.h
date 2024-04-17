@@ -45,6 +45,7 @@ struct Solver {
     double box_position_x, box_position_y; // bottom left corner of RD box
     size_t Nx, Ny; // number of grid points
     double D0; // diffusion coefficient. Later also a grid datastructure
+    double k0;
     double dx; // grid spacing
     double dt; // time step
     Reaction R; // reaction term
@@ -56,9 +57,10 @@ struct Solver {
 
     // initialize the grid with a given initial condition
     Solver(const Grid<double> u0, const double D0, const double dx, 
-            double dt, Reaction R) {
+            double dt, double k0) {
         this->u = u0;
         this->D0 = D0;
+        this->k0 = k0;
         this->dx = dx;
         this->dt = dt;
         this->R = R;
@@ -70,9 +72,9 @@ struct Solver {
         box_position_y = -0.5 * Ny * dx;
         std::cout << "dx=" << dx << std::endl;
         std::cout << "RD box x=" << box_position_x << " y=" << box_position_y << std::endl;
-        parent_idx = Grid<int>(Nx, Ny, -1); // initialize as all background nodes. Maybe change to std::map?
+        parent_idx = Grid<int>(Nx, Ny, -2);
         D = Grid<double>(Nx, Ny, D0);
-        k = Grid<double>(Nx, Ny, 1.0); // ToDo: properly initialize background 
+        k = Grid<double>(Nx, Ny, k0); 
         p = Grid<double>(Nx, Ny, 0.0);
     }
 
@@ -91,12 +93,16 @@ struct Solver {
                 const double w = (i == 0)    ? u(i+1, j) : u(i-1, j); 
                 unew(i, j) = u(i, j) + dt * (
                     D(i, j) / (dx*dx) * (n + s + e + w - 4 * u(i, j))
-                    - k(i, j) * u(i, j) //+ R(u(i, j), i, j)
+                    - k(i, j) * u(i, j)
                     + p(i, j)
                 ); 
             }
-        }      
-        u = unew; 
+        }
+        // temporary dirichlet 0 bdc
+        /*for (int j = 0; j < Ny; j++) {
+            unew(Nx-1, j) = 0.0; // Dirichlet BC
+        }*/
+        u = unew;    
     }
 
     void rescale(size_t Nx_new, size_t Ny_new) {}
