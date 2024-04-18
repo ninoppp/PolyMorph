@@ -184,7 +184,7 @@ auto heavyside = [](const Polygon& p) { return p.midpoint().x < heavyside_x; }; 
 auto mother_cell = [](const Polygon& p) { return p.vertices[0].p == Nr; };
 auto none = [](const Polygon& p) { return false; };
 // choose method
-auto is_producing = none;
+auto is_producing = mother_cell;
 
 struct Ensemble
 {
@@ -959,6 +959,7 @@ struct Interpolator {
         cell.u /= cell.children.size();
         if (cell.u > cell.threshold) { // set flag
           cell.flag = 1;
+          cell.alpha = 0; // stop growing
         } else {
           cell.flag = 0;
         }
@@ -978,16 +979,16 @@ int main()
 {
   welcome();
   rng.seed(90178009);
-  Ensemble ensemble("ensemble_5k_39.off"); // read the input file
+  Ensemble ensemble("ensemble_default.off"); // read the input file
   
-  unsigned L = 150;
+  unsigned L = 70;
   unsigned N = L/dx; 
   Grid<double> u0(N, N); // initial condition, just zeros
   Solver solver(u0, D0, dx, dt, k0); // init solver
   
   Interpolator interpolator(ensemble, solver);
   
-  /*ensemble.output(0); // print the initial state
+  ensemble.output(0); // print the initial state
   solver.output(0); // print the initial state
   for (std::size_t f = 1; f <= Nf; ++f)
   {
@@ -1000,10 +1001,10 @@ int main()
     } 
     ensemble.output(f); // print a frame
     solver.output(f); // print a frame
-  }*/
+  }
   
   // produce on left side
-  ensemble.output(0);
+  /*ensemble.output(0);
   solver.output(0);
   ensemble.step();
   for (auto& p : ensemble.polygons) {
@@ -1021,5 +1022,5 @@ int main()
     solver.output(f);
     interpolator.gather();
     ensemble.output(f);
-  }
+  }*/
 }
