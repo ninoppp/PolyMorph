@@ -53,7 +53,7 @@ constexpr double dx = 0.4; // [L] grid spacing for solver
 constexpr double D_mu = 128.0; // [L^2/T] diffusion coefficient mean
 constexpr double k_mu = 1.0; // [1/T] degradation rate mean 
 constexpr double p_mu = 24.0; // [1/T] production rate mean
-constexpr double threshold_mu = 0.5; // [-] threshold for morphogen concentration mean
+constexpr double threshold_mu = 0.1; // [-] threshold for morphogen concentration mean
 constexpr double D_CV = 0.1; // [-] coefficient of variation of diffusion
 constexpr double k_CV = 0.1; // [-] coefficient of variation of degradation rate
 constexpr double p_CV = 0.1; // [-] coefficient of variation of production rate
@@ -128,13 +128,12 @@ struct Vertex
 struct Polygon
 {
   std::vector<Vertex> vertices; // vertex list in counter-clockwise orientation
-  bool phase; // phase of the enclosed medium // NM: can extend this to label source cells
-  double A0, A, Amax, alpha; // target, actual & division area, area growth rate
+  bool phase; // phase of the enclosed medium
+  double A0, A, Amax, alpha0, alpha; // target, actual & division area, area growth rate
   // Polymorph extension. 
   double D, k, p; // diffusion coefficient, degradation rate, production rate
-  double u = 0; // local morphogen concentration
-  double threshold = 0; // threshold for morphogen concentration
-  bool flag = false; // general purpose flag
+  double u, threshold; // local morphogen concentration and threshold
+  bool flag; // general purpose flag
   std::vector<Index> children; // stores the indices of the grid points within the polygon
   // END Polymorph extension
   double area()
@@ -178,14 +177,6 @@ struct Polygon
   }
 };
 
-// methods for selecting producing cells ToDo: move this to a better place
-double heavyside_x = 0;
-auto heavyside = [](const Polygon& p) { return p.midpoint().x < heavyside_x; }; // ToDo: remove magic-number 0.5
-auto mother_cell = [](const Polygon& p) { return p.vertices[0].p == Nr; };
-auto none = [](const Polygon& p) { return false; };
-// choose method
-auto is_producing = mother_cell;
-
 struct Ensemble
 {
   std::vector<Polygon> polygons; // list of polygons
@@ -222,11 +213,12 @@ struct Ensemble
       polygons[p].phase = std::abs(z[j]) % 2; // the z coordinate is used as the phase 
       polygons[p].A0 = polygons[p].area(); // use the initial area as target area
       polygons[p].Amax = Amax_dist(rng);
-      polygons[p].alpha = alpha_dist(rng);
+      polygons[p].alpha0 = alpha_dist(rng);
+      polygons[p].alpha = polygons[p].alpha0;
       // PolyMorph extension
       polygons[p].D = D_dist(rng);
       polygons[p].k = k_dist(rng);
-      polygons[p].p = is_producing(polygons[p]) ? p_dist(rng) : 0;
+      polygons[p].p = 0;
       polygons[p].threshold = threshold_dist(rng);
       // end PolyMorph extension
       for (std::size_t i = Nv - 1, j = 0; j < Nv; i = j++)
@@ -329,7 +321,7 @@ struct Ensemble
                         pnew[0].phase = polygons[p[inside[0]]].phase; // use the phase of the outer polygon
                         pnew[0].A0 = (1-2*inside[0]) * polygons[p1].A0 + (1-2*inside[1]) * polygons[p2].A0;
                         pnew[0].Amax  = !inside[0] * polygons[p1].Amax  + !inside[1] * polygons[p2].Amax;
-                        pnew[0].alpha = !inside[0] * polygons[p1].alpha + !inside[1] * polygons[p2].alpha;
+                        pnew[0].alpha0 = !inside[0] * polygons[p1].alpha0 + !inside[1] * polygons[p2].alpha0;
                         pnew[0].area(); // compute the new area
                       }
                     }
@@ -389,17 +381,17 @@ struct Ensemble
                         if (inside[0] || inside[1])
                         {
                           pnew[inside[0]].A0 = pn[inside[1]].A + polygons[p1].A0;
-                          pnew[inside[0]].alpha = polygons[p1].alpha;
+                          pnew[inside[0]].alpha0 = polygons[p1].alpha0;
                           pnew[inside[1]].A0 = pn[inside[1]].A;
-                          pnew[inside[1]].alpha = 0;
+                          pnew[inside[1]].alpha0 = 0;
                         }
                         else
                         {
                           const double f = pn[0].A / (pn[0].A + pn[1].A);
                           pnew[0].A0 = polygons[p1].A0 * f;
-                          pnew[0].alpha = polygons[p1].alpha * f;
+                          pnew[0].alpha0 = polygons[p1].alpha0 * f;
                           pnew[1].A0 = polygons[p1].A0 * (1 - f);
-                          pnew[1].alpha = polygons[p1].alpha * (1 - f);
+                          pnew[1].alpha0 = polygons[p1].alpha0 * (1 - f);
                         }
                       }
                     }
@@ -482,8 +474,8 @@ struct Ensemble
         const double A0 = polygons[p].A0;
         std::vector<Vertex> vold;
         vold.swap(v);
-        polygons[p] = {{vold[vend[2]]}, polygons[p].phase, 0, 0, Amax_dist(rng), alpha_dist(rng), D_dist(rng), k_dist(rng)}; // new polygon 1
-        polygons.push_back({{vold[vend[0]]}, polygons[p].phase, 0, 0, Amax_dist(rng), alpha_dist(rng), D_dist(rng), k_dist(rng)}); // new polygon 2
+        polygons[p] = {{vold[vend[2]]}, polygons[p].phase, 0, 0, Amax_dist(rng), alpha_dist(rng), 0, D_dist(rng), k_dist(rng)}; // new polygon 1
+        polygons.push_back({{vold[vend[0]]}, polygons[p].phase, 0, 0, Amax_dist(rng), alpha_dist(rng), 0, D_dist(rng), k_dist(rng)}); // new polygon 2
         for (std::size_t i = vend[1]; i != vend[2]; i = (i + 1) % vold.size())
           polygons[p].vertices.push_back(vold[i]);
         for (std::size_t i = vend[3]; i != vend[0]; i = (i + 1) % vold.size())
@@ -497,10 +489,10 @@ struct Ensemble
         polygons[p].A0 = A0 * polygons[p].A / (polygons[p].A + polygons.back().A);
         polygons.back().A0 = A0 - polygons[p].A0;
         // Polymorph extension: update polygon production rate (note: has to happen after vertices are assigned)
-        polygons[p].p = is_producing(polygons[p]) ? p_dist(rng) : 0;
-        polygons.back().p = is_producing(polygons.back()) ? p_dist(rng) : 0;
         polygons[p].threshold = threshold_dist(rng);
         polygons.back().threshold = threshold_dist(rng);
+        polygons[p].alpha = polygons[p].alpha0;
+        polygons.back().alpha = polygons.back().alpha0;
       }
     }
     
@@ -899,10 +891,14 @@ struct Interpolator {
     Grid<int>& prev_idx = solver.parent_idx; // stores the polygon index of the cell in which a grid point lies (its parent)
     Grid<int> new_idx(solver.Nx, solver.Ny, -1000); // negative indices indicate a background node. ToDo: could make this in place
     
-    istart = std::max(int((ensemble.x0 - solver.box_position_x) / solver.dx), 0);
-    jstart = std::max(int((ensemble.y0 - solver.box_position_y) / solver.dx), 0);
-    iend = std::min(size_t((ensemble.x1 - solver.box_position_x) / solver.dx + 1), solver.Nx);
-    jend = std::min(size_t((ensemble.y1 - solver.box_position_y) / solver.dx + 1), solver.Ny);
+    istart = std::max(int((ensemble.x0 - solver.box_position_x) / solver.dx) + 1, 0);
+    jstart = std::max(int((ensemble.y0 - solver.box_position_y) / solver.dx) + 1, 0);
+    iend = std::min(size_t((ensemble.x1 - solver.box_position_x) / solver.dx), solver.Nx);
+    jend = std::min(size_t((ensemble.y1 - solver.box_position_y) / solver.dx), solver.Ny); // plus 1 maybe problem
+    assert(solver.box_position_x + istart * solver.dx >= ensemble.x0);
+    assert(solver.box_position_y + jstart * solver.dx >= ensemble.y0);
+    assert(solver.box_position_x + iend * solver.dx <= ensemble.x1);
+    assert(solver.box_position_y + jend * solver.dx <= ensemble.y1);
 
     #pragma omp parallel for collapse(2)
     for (int i = istart; i < iend; i++) {
@@ -912,7 +908,7 @@ struct Interpolator {
         const double y = solver.box_position_y + j * solver.dx;
         const Point grid_point(x, y);
         // check if still the same parent (ignore rigid)
-        if (prev_idx(i, j) >= Nr && ensemble.polygons[prev_idx(i, j)].contains(grid_point)) { 
+        if (prev_idx(i, j) >= int(Nr) && ensemble.polygons[prev_idx(i, j)].contains(grid_point)) { 
           new_idx(i, j) = prev_idx(i, j);
         } 
         else {
@@ -937,6 +933,7 @@ struct Interpolator {
   // important: depends on scatter being called every iteration to build the parent_idx
   void gather() {
     // get all children from parent idx built during scatter()
+    #pragma omp parallel for
     for (auto& cell : ensemble.polygons) {
       cell.children.clear();
     }
@@ -944,35 +941,57 @@ struct Interpolator {
       for (int j = jstart; j < jend; j++) {
         if (solver.parent_idx(i, j) >= 0) { // skip background nodes
           auto& cell = ensemble.polygons[solver.parent_idx(i, j)]; 
-          cell.children.push_back(Index(i, j)); 
+          cell.children.push_back(Index(i, j)); // cannot parallelize this part
         }
       }
     }
     // accumulate data from children
-    for (auto& cell : ensemble.polygons) {
+    #pragma omp parallel for
+    for (int p = Nr; p < ensemble.polygons.size(); p++) {
       // average concentration
+      auto& cell = ensemble.polygons[p];
       cell.u = 0;
       for (const Index& idx : cell.children) {
         cell.u += solver.u(idx);
       }
       if (cell.children.size() > 0) { // avoid division by zero if cells exceed RD box
         cell.u /= cell.children.size();
-        if (cell.u > cell.threshold) { // set flag
-          cell.flag = 1;
-          cell.alpha = 0; // stop growing
-        } else {
-          cell.flag = 0;
-        }
       }
     }
   }
+};
+
+// handles polygon modification due to signaling effects. could all be done in ensemble.step()
+struct Chemistry {
+  Ensemble& ensemble;
+  std::function<bool(Polygon&)> is_producing = [](Polygon& p) { return false;};
+  Chemistry(Ensemble& ensemble) : ensemble(ensemble) {}
+
+  void update() {
+    #pragma omp parallel for
+    for (int i = Nr; i < ensemble.polygons.size(); i++) {
+      auto& cell = ensemble.polygons[i];
+      // set production
+      if (cell.p == 0 && is_producing(cell)) {
+        cell.p = p_dist(rng);
+      } 
+      // flag
+      if (cell.flag && cell.u > cell.threshold) { // enough morphogen, start growing (again)
+        cell.flag = false;
+        cell.alpha0 = alpha_dist(rng);
+      } else if (!cell.flag && cell.u < cell.threshold){ // stop grwoth
+        cell.flag = true;
+        cell.alpha0 = 0; 
+      }
+    }
+  }  
 };
 
 void welcome() {
   std::cout << "--------------------------" << std::endl
             << "|  Welcome to PolyMorph  |" << std::endl
             << "--------------------------" << std::endl;
-  // ToDo: logs configuration for reproducibility
+  // ToDo: log configuration for reproducibility
 }
 
 int main()
@@ -985,8 +1004,10 @@ int main()
   unsigned N = L/dx; 
   Grid<double> u0(N, N); // initial condition, just zeros
   Solver solver(u0, D0, dx, dt, k0); // init solver
-  
+
   Interpolator interpolator(ensemble, solver);
+  Chemistry chemistry(ensemble);
+  chemistry.is_producing = [](const Polygon& p) { return p.vertices[0].p == Nr; }; // mother cell
   
   ensemble.output(0); // print the initial state
   solver.output(0); // print the initial state
@@ -998,6 +1019,7 @@ int main()
       interpolator.scatter(); 
       solver.step();
       interpolator.gather();
+      chemistry.update();
     } 
     ensemble.output(f); // print a frame
     solver.output(f); // print a frame

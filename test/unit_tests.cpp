@@ -91,6 +91,8 @@ void run_1d_solver() {
 
 int main() {    
     //run_1d_solver();
-    run_solver();
+    //run_solver();
+    size_t x = 1;
+    std::cout << x - 2 << std::endl;
     return 0;
 }

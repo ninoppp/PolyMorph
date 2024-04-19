@@ -93,7 +93,7 @@ struct Polygon
 {
   std::vector<Vertex> vertices; // vertex list in counter-clockwise orientation
   bool phase; // phase of the enclosed medium
-  double A0, A, Amax, alpha; // target, actual & division area, area growth rate
+  double A0, A, Amax, alpha0; // target, actual & division area, area growth rate
   double area()
   {
     A = 0;
@@ -161,7 +161,7 @@ struct Ensemble
       polygons[p].phase = std::abs(z[j]) % 2; // the z coordinate is used as the phase
       polygons[p].A0 = polygons[p].area(); // use the initial area as target area
       polygons[p].Amax = Amax_dist(rng);
-      polygons[p].alpha = alpha_dist(rng);
+      polygons[p].alpha0 = alpha_dist(rng);
       for (std::size_t i = Nv - 1, j = 0; j < Nv; i = j++)
         polygons[p].vertices[i].l0 = (polygons[p].vertices[j].r - polygons[p].vertices[i].r).length(); // edge rest length
     }
@@ -262,7 +262,7 @@ struct Ensemble
                         pnew[0].phase = polygons[p[inside[0]]].phase; // use the phase of the outer polygon
                         pnew[0].A0 = (1-2*inside[0]) * polygons[p1].A0 + (1-2*inside[1]) * polygons[p2].A0;
                         pnew[0].Amax  = !inside[0] * polygons[p1].Amax  + !inside[1] * polygons[p2].Amax;
-                        pnew[0].alpha = !inside[0] * polygons[p1].alpha + !inside[1] * polygons[p2].alpha;
+                        pnew[0].alpha0 = !inside[0] * polygons[p1].alpha0 + !inside[1] * polygons[p2].alpha0;
                         pnew[0].area(); // compute the new area
                       }
                     }
@@ -322,17 +322,17 @@ struct Ensemble
                         if (inside[0] || inside[1])
                         {
                           pnew[inside[0]].A0 = pn[inside[1]].A + polygons[p1].A0;
-                          pnew[inside[0]].alpha = polygons[p1].alpha;
+                          pnew[inside[0]].alpha0 = polygons[p1].alpha0;
                           pnew[inside[1]].A0 = pn[inside[1]].A;
-                          pnew[inside[1]].alpha = 0;
+                          pnew[inside[1]].alpha0 = 0;
                         }
                         else
                         {
                           const double f = pn[0].A / (pn[0].A + pn[1].A);
                           pnew[0].A0 = polygons[p1].A0 * f;
-                          pnew[0].alpha = polygons[p1].alpha * f;
+                          pnew[0].alpha0 = polygons[p1].alpha0 * f;
                           pnew[1].A0 = polygons[p1].A0 * (1 - f);
-                          pnew[1].alpha = polygons[p1].alpha * (1 - f);
+                          pnew[1].alpha0 = polygons[p1].alpha0 * (1 - f);
                         }
                       }
                     }
@@ -525,8 +525,8 @@ struct Ensemble
         v.r.add(dt, v.v); // update vertex position
       }
       polygons[p].area(); // compute the new polygon area
-      if (polygons[p].A > beta * polygons[p].A0 || polygons[p].alpha < 0)
-        polygons[p].A0 += polygons[p].alpha * dt; // apply the area growth rate
+      if (polygons[p].A > beta * polygons[p].A0 || polygons[p].alpha0 < 0)
+        polygons[p].A0 += polygons[p].alpha0 * dt; // apply the area growth rate
     }
     t += dt; // advance the time
   }
