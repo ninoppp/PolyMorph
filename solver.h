@@ -41,6 +41,15 @@ enum class BoundaryCondition {
     Mixed, // 1 at west boundary, 0 at east boundary, zero-flux at north and south
 };
 
+enum struct save_flag {
+    parent_idx = 1 << 1,
+    D = 1 << 2,
+    k = 1 << 3,
+    p = 1 << 4,
+    threshold = 1 << 5,
+    flag = 1 << 6
+};
+
 struct Solver { 
     double box_position_x, box_position_y; // bottom left corner of RD box
     size_t Nx, Ny; // number of grid points
