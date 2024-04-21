@@ -43,7 +43,7 @@ constexpr double cc = 30; // [1/T] collision damping rate
 constexpr double dt = 1e-4; // [T] time step // default 1e-4
 
 constexpr std::size_t Nf = 100; // number of output frames
-constexpr std::size_t Ns = 100; // number of time steps between frames // default 1000
+constexpr std::size_t Ns = 5000; // number of time steps between frames // default 1000
 constexpr std::size_t Nr = 0; // number of rigid polygons
 
 constexpr double drmax = h + sh + ss; // maximum interaction distance
@@ -54,11 +54,11 @@ constexpr double D_mu = 128.0; // [L^2/T] diffusion coefficient mean
 constexpr double k_mu = 1.0; // [1/T] degradation rate mean 
 constexpr double p_mu = 24.0; // [1/T] production rate mean
 constexpr double threshold_mu = 0.1; // [-] threshold for morphogen concentration mean
-constexpr double D_CV = 0.1; // [-] coefficient of variation of diffusion
-constexpr double k_CV = 0.1; // [-] coefficient of variation of degradation rate
-constexpr double p_CV = 0.1; // [-] coefficient of variation of production rate
-constexpr double threshold_CV = 0.1; // [-] coefficient of variation of threshold
-constexpr double D0 = 32.0; // [L^2/T] diffusion coefficient background
+constexpr double D_CV = 0.3; // [-] coefficient of variation of diffusion
+constexpr double k_CV = 0.3; // [-] coefficient of variation of degradation rate
+constexpr double p_CV = 0.3; // [-] coefficient of variation of production rate
+constexpr double threshold_CV = 0.3; // [-] coefficient of variation of threshold
+constexpr double D0 = 64.0; // [L^2/T] diffusion coefficient background
 constexpr double k0 = 0.0; // [1/T] reaction rate background
 constexpr double p0 = 0.0; // [1/T] reaction rate background
 
@@ -961,7 +961,8 @@ struct Interpolator {
   }
 };
 
-// handles polygon modification due to signaling effects. could all be done in ensemble.step()
+// Handles polygon modification due to signaling effects. 
+// Could also be done in ensemble.step()
 struct Chemistry {
   Ensemble& ensemble;
   std::function<bool(Polygon&)> is_producing = [](Polygon& p) { return false;};
@@ -976,12 +977,12 @@ struct Chemistry {
         cell.p = p_dist(rng);
       } 
       // flag
-      if (cell.flag && cell.u > cell.threshold) { // enough morphogen, start growing (again)
-        cell.flag = false;
-        cell.alpha0 = alpha_dist(rng);
-      } else if (!cell.flag && cell.u < cell.threshold){ // stop grwoth
+      if (!cell.flag && cell.u < cell.threshold) {
         cell.flag = true;
-        cell.alpha0 = 0; 
+        cell.alpha = 0;
+      } else if (cell.flag && cell.u > cell.threshold){
+        cell.flag = false;
+        cell.alpha = cell.alpha0; 
       }
     }
   }  
@@ -1000,7 +1001,7 @@ int main()
   rng.seed(90178009);
   Ensemble ensemble("ensemble_default.off"); // read the input file
   
-  unsigned L = 70;
+  unsigned L = 150;
   unsigned N = L/dx; 
   Grid<double> u0(N, N); // initial condition, just zeros
   Solver solver(u0, D0, dx, dt, k0); // init solver
@@ -1016,33 +1017,12 @@ int main()
     for (std::size_t s = 0; s < Ns; ++s) 
     {
       ensemble.step();
+      chemistry.update();
       interpolator.scatter(); 
       solver.step();
       interpolator.gather();
-      chemistry.update();
     } 
     ensemble.output(f); // print a frame
     solver.output(f); // print a frame
   }
-  
-  // produce on left side
-  /*ensemble.output(0);
-  solver.output(0);
-  ensemble.step();
-  for (auto& p : ensemble.polygons) {
-    if (p.midpoint().x < solver.box_position_x+30) {
-      p.p = p_dist(rng);
-    }
-  }  
-  interpolator.scatter();    
-  ensemble.output(1);
-  solver.output(1);         
-  for (size_t f = 1; f <= Nf; f++) {
-    for (size_t s = 0; s < Ns; s++) {
-      solver.step();
-    }
-    solver.output(f);
-    interpolator.gather();
-    ensemble.output(f);
-  }*/
 }
