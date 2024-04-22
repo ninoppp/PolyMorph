@@ -44,8 +44,8 @@ constexpr double cc = 30; // [1/T] collision damping rate
 constexpr double dt = 1e-4; // [T] time step // default 1e-4
 
 constexpr std::size_t Nf = 100; // number of output frames
-constexpr std::size_t Ns = 5000; // number of time steps between frames // default 1000
-constexpr std::size_t Nr = 0; // number of rigid polygons
+constexpr std::size_t Ns = 3000; // number of time steps between frames // default 1000
+constexpr std::size_t Nr = 1; // number of rigid polygons
 
 constexpr double drmax = h + sh + ss; // maximum interaction distance
 
@@ -989,6 +989,20 @@ struct Chemistry {
       }
     }
   }  
+
+  double get_border_sharpness() {
+    double xmin = ensemble.x0;
+    double xmax = ensemble.x0;
+    for (auto& cell : ensemble.polygons) {
+      for (auto& vertex : cell.vertices) {
+        if (cell.flag) {
+          xmin = std::min(xmin, vertex.r.x); // leftmost flagged point
+        } else {
+          xmax = std::max(xmax, vertex.r.x); // rightmost unflagged
+        }
+      }
+    }
+  }
 };
 
 void welcome() {
@@ -1002,30 +1016,31 @@ int main()
 {
   welcome();
   rng.seed(90178009);
-  Ensemble ensemble("ensemble_default.off"); // read the input file
+  Ensemble ensemble("ensemble_box_100x50.off"); // read the input file
   
-  unsigned L = 150;
+  /*unsigned L = 100;
   unsigned N = L/dx; 
   Grid<double> u0(N, N); // initial condition, just zeros
   Solver solver(u0, D0, dx, dt, k0); // init solver
 
   Interpolator interpolator(ensemble, solver);
   Chemistry chemistry(ensemble);
-  chemistry.is_producing = [](const Polygon& p) { return p.vertices[0].p == Nr; }; // mother cell
+  chemistry.is_producing = [](const Polygon& p) { return p.vertices[0].p == Nr; }; // mother cell*/
   
   ensemble.output(0); // print the initial state
-  solver.output(0); // print the initial state
+  //solver.output(0); // print the initial state
   for (std::size_t f = 1; f <= Nf; ++f)
   {
     for (std::size_t s = 0; s < Ns; ++s) 
     {
       ensemble.step();
-      chemistry.update();
+      /*chemistry.update();
       interpolator.scatter(); 
       solver.step();
-      interpolator.gather();
+      interpolator.gather();*/
     } 
     ensemble.output(f); // print a frame
-    solver.output(f); // print a frame
+    //solver.output(f); // print a frame
   }
+  ensemble.writeOFF("ensemble_rect_100x50.off");
 }
