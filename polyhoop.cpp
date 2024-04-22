@@ -21,6 +21,7 @@ constexpr double lmax = 0.2; // [L] maximum edge length
 constexpr double Q = 1; // [-] isoparametric ratio
 constexpr double alpha_mu = 1; // [L^2/T] mean area growth rate
 constexpr double alpha_CV = 0; // [-] coefficient of variation of area growth rate
+constexpr double beta = 0.9; // [-] minimum area fraction for growth
 constexpr double Amin = 0; // [L^2] minimum area
 constexpr double Amax_mu = M_PI; // [L^2] mean maximum area
 constexpr double Amax_CV = 0; // [-] coefficient of variation of maximum area
@@ -588,8 +589,10 @@ struct Ensemble
         v.v.add(dt, v.a); // update vertex velocity
         v.r.add(dt, v.v); // update vertex position
       }
-      polygons[p].A0 += polygons[p].alpha * dt; // apply the area growth rate
-      polygons[p].area(); // compute the new polygon area
+      polygons[p].area(); // compute the new polygon area (Q: why did the order of this change)
+      if (polygons[p].A > beta * polygons[p].A0 || polygons[p].alpha < 0) {
+        polygons[p].A0 += polygons[p].alpha * dt; // apply the area growth rate
+      }
     }
     t += dt; // advance the time
   } // NM: end step()
