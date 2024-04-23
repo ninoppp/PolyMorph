@@ -17,6 +17,7 @@
 #include <map>
 
 #include "const.h"
+#include "solver.h" // TODO : remove this dependency (only uses Index)
 
 // distributions
 std::mt19937 rng; // random number generator

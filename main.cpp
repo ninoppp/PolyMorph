@@ -25,7 +25,7 @@ int main()
 
   Interpolator interpolator(ensemble, solver);
   Chemistry chemistry(ensemble);
-  chemistry.is_producing = [](const Polygon& p) { return p.vertices[0].p == Nr; }; // mother cell*/
+  chemistry.is_producing = [](const Polygon& p) { return p.vertices[0].p == Nr; }; // mother cell
   
   ensemble.output(0); // print the initial state
   solver.output(0); // print the initial state
@@ -34,7 +34,7 @@ int main()
     for (std::size_t s = 0; s < Ns; ++s) 
     {
       ensemble.step();
-      chemistry.update();
+      //chemistry.update();
       interpolator.scatter(); 
       solver.step();
       interpolator.gather();
