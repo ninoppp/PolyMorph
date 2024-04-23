@@ -1,0 +1,65 @@
+#ifndef CHEMISTRY_H
+#define CHEMISTRY_H
+
+#include "polyhoop.h"
+
+// Handles polygon modification due to signaling effects. 
+// Could also be done in ensemble.step()
+struct Chemistry {
+  Ensemble& ensemble;
+  std::function<bool(Polygon&)> is_producing = [](Polygon& p) { return false;};
+  Chemistry(Ensemble& ensemble) : ensemble(ensemble) {}
+
+  void update() {
+    #pragma omp parallel for
+    for (int i = Nr; i < ensemble.polygons.size(); i++) {
+      auto& cell = ensemble.polygons[i];
+      // set production
+      if (cell.p == 0 && is_producing(cell)) {
+        cell.p = p_dist(rng);
+      } 
+      // flag
+      if (!cell.flag && cell.u < cell.threshold) {
+        cell.flag = true;
+        cell.alpha = 0;
+      } else if (cell.flag && cell.u > cell.threshold){
+        cell.flag = false;
+        cell.alpha = cell.alpha0; 
+      }
+    }
+  }  
+
+  double get_border_sharpness() { // "width" of border
+    double xmin = ensemble.x0;
+    double xmax = ensemble.x0;
+    for (auto& cell : ensemble.polygons) {
+      for (auto& vertex : cell.vertices) {
+        if (cell.flag) {
+          xmin = std::min(xmin, vertex.r.x); // leftmost flagged point
+        } else {
+          xmax = std::max(xmax, vertex.r.x); // rightmost unflagged
+        }
+      }
+    }
+    return xmax - xmin;
+  }
+
+  void chemotaxis() {
+    #pragma omp parallel for
+    for (int p = Nr; p < ensemble.polygons.size(); p++) {
+      auto& cell = ensemble.polygons[p];
+      for (auto& vertex : cell.vertices) {
+        // move towards higher concentration
+        ; 
+      }
+    }
+  }
+
+  //void test();
+};
+
+/*void Chemistry::test() {
+  std::cout << "Chemistry test" << std::endl;
+}*/
+
+#endif

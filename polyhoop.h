@@ -3,6 +3,9 @@
 // vetterro@ethz.ch
 // ETH Zurich
 
+#ifndef POLYHOOP_H
+#define POLYHOOP_H
+
 #include <fstream>
 #include <iostream>
 #include <vector>
@@ -13,57 +16,9 @@
 #include <unordered_set>
 #include <map>
 
-#include "solver.h"
+#include "const.h"
 
-constexpr double h = 0.01; // [L] edge thickness
-constexpr double lmin = 0.02; // [L] minimum edge length
-constexpr double lmax = 0.2; // [L] maximum edge length
-constexpr double Q = 1; // [-] isoparametric ratio
-constexpr double alpha_mu = 1; // [L^2/T] mean area growth rate
-constexpr double alpha_CV = 0; // [-] coefficient of variation of area growth rate
-constexpr double beta = 0.9; // [-] minimum area fraction for growth
-constexpr double Amin = 0; // [L^2] minimum area
-constexpr double Amax_mu = M_PI; // [L^2] mean maximum area
-constexpr double Amax_CV = 0; // [-] coefficient of variation of maximum area
-constexpr double gam = 1e3; // [L/T^2] line tension per vertex mass
-constexpr double ka = 1e5; // [1/(L^2*T^2)] area stiffness per vertex mass
-constexpr double kl = 1e4; // [L/T^2] edge contractility stiffness per vertex mass
-constexpr double kb = 0; // [L^3/T^2] bending stiffness per vertex mass
-constexpr double kr = 1e7; // [1/T^2] repulsion stiffness per vertex mass
-constexpr double kh = 1e6; // [1/T^2] adhesion stiffness per vertex mass
-constexpr double sh = 0.01; // [L] adhesion hardening zone size
-constexpr double ss = 0.01; // [L] adhesion softening zone size
-constexpr double theta = 0; // [-] fusion threshold
-constexpr double mu = 0; // [-] dynamic friction coefficient
-constexpr double rho = 0; // [1/L^2] fluid mass density per vertex mass
-constexpr double g = 0; // [L/T^2] gravitational acceleration
-constexpr double gl = 0; // [L/T^2] edge gravitational acceleration
-constexpr double cv = 10; // [1/T] viscous damping rate
-constexpr double cd = 0; // [-] drag coefficient
-constexpr double cc = 30; // [1/T] collision damping rate
-constexpr double dt = 1e-4; // [T] time step // default 1e-4
-
-constexpr std::size_t Nf = 100; // number of output frames
-constexpr std::size_t Ns = 3000; // number of time steps between frames // default 1000
-constexpr std::size_t Nr = 1; // number of rigid polygons
-
-constexpr double drmax = h + sh + ss; // maximum interaction distance
-
-// PolyMorph extension
-constexpr double dx = 0.4; // [L] grid spacing for solver
-constexpr double D_mu = 128.0; // [L^2/T] diffusion coefficient mean
-constexpr double k_mu = 1.0; // [1/T] degradation rate mean 
-constexpr double p_mu = 24.0; // [1/T] production rate mean
-constexpr double threshold_mu = 0.1; // [-] threshold for morphogen concentration mean
-constexpr double D_CV = 0.3; // [-] coefficient of variation of diffusion
-constexpr double k_CV = 0.3; // [-] coefficient of variation of degradation rate
-constexpr double p_CV = 0.3; // [-] coefficient of variation of production rate
-constexpr double threshold_CV = 0.3; // [-] coefficient of variation of threshold
-constexpr double D0 = 64.0; // [L^2/T] diffusion coefficient background
-constexpr double k0 = 0.0; // [1/T] reaction rate background
-constexpr double p0 = 0.0; // [1/T] reaction rate background
-
-
+// distributions
 std::mt19937 rng; // random number generator
 const double Amax_lnCV = std::log(1 + Amax_CV*Amax_CV);
 const double alpha_lnCV = std::log(1 + alpha_CV*alpha_CV);
@@ -80,6 +35,7 @@ std::lognormal_distribution<> D_dist(std::log(D_mu) - D_lnCV/2, std::sqrt(D_lnCV
 std::lognormal_distribution<> k_dist(std::log(k_mu) - k_lnCV/2, std::sqrt(k_lnCV)); // reaction rate distribution
 std::lognormal_distribution<> p_dist(std::log(p_mu) - p_lnCV/2, std::sqrt(p_lnCV)); // production rate distribution
 std::lognormal_distribution<> threshold_dist(std::log(threshold_mu) - threshold_lnCV/2, std::sqrt(threshold_lnCV)); // threshold distribution
+
 
 struct Point  // basically a 2D vector
 {
@@ -858,201 +814,4 @@ struct Ensemble
     }
 };
 
-// takes care of the data scattering and gathering between ensemble and solver
-struct Interpolator {
-  Ensemble& ensemble;
-  Solver& solver;
-  int istart, jstart, iend, jend; // limits of the grid points to be updated (within ensemble bounds)
-  Interpolator(Ensemble& ensemble, Solver& solver) : ensemble(ensemble), solver(solver) {}
-  
-  // Search algorithm to find parent polygon for a grid point.
-  // Complexity O(vertices per polygon)
-  std::size_t find_parent(Point grid_point) {
-    std::size_t bxi = (grid_point.x - ensemble.x0) / ensemble.bs + 1; // box index in x direction
-    const std::size_t byi = (grid_point.y - ensemble.y0) / ensemble.bs + 1; // box index in y direction
-    std::unordered_set<std::size_t> checked_polygons; // store checked polygons to avoid checking them again
-    bool last_iteration = false; // abort search as soon as we can be sure it's a background node
-    while (bxi < ensemble.Nx) {
-      for (Vertex* v = ensemble.first[bxi * ensemble.Ny + byi]; v; v = v->next) { // loop over vertices in box
-        if (checked_polygons.find(v->p) == checked_polygons.end()) {  // new polygon encountered
-          if (v->p >= Nr && ensemble.polygons[v->p].contains(grid_point)) { // don't want to check rigid polygons
-            return v->p;
-          } else {
-            checked_polygons.insert(v->p);
-          }
-        }
-      }
-      if (last_iteration) return -2000; // background node
-      if (!checked_polygons.empty()) last_iteration = true; // only go 1 more layer
-      ++bxi;
-    }
-    return -2000; // background node (reached boundary of ensemble box)
-  }
-
-  // scatter coefficients D, k from polygons to grid points
-  void scatter() { // ToDo: make this function prettier
-    Grid<int>& prev_idx = solver.parent_idx; // stores the polygon index of the cell in which a grid point lies (its parent)
-    Grid<int> new_idx(solver.Nx, solver.Ny, -1000); // negative indices indicate a background node. ToDo: could make this in place
-    
-    istart = std::max(int((ensemble.x0 - solver.box_position_x) / solver.dx) + 1, 0);
-    jstart = std::max(int((ensemble.y0 - solver.box_position_y) / solver.dx) + 1, 0);
-    iend = std::min(size_t((ensemble.x1 - solver.box_position_x) / solver.dx), solver.Nx);
-    jend = std::min(size_t((ensemble.y1 - solver.box_position_y) / solver.dx), solver.Ny); // plus 1 maybe problem
-    assert(solver.box_position_x + istart * solver.dx >= ensemble.x0);
-    assert(solver.box_position_y + jstart * solver.dx >= ensemble.y0);
-    assert(solver.box_position_x + iend * solver.dx <= ensemble.x1);
-    assert(solver.box_position_y + jend * solver.dx <= ensemble.y1);
-
-    #pragma omp parallel for collapse(2)
-    for (int i = istart; i < iend; i++) {
-      for (int j = jstart; j < jend; j++) { 
-        // spatial coordinates of grid point
-        const double x = solver.box_position_x + i * solver.dx;
-        const double y = solver.box_position_y + j * solver.dx;
-        const Point grid_point(x, y);
-        // check if still the same parent (ignore rigid)
-        if (prev_idx(i, j) >= int(Nr) && ensemble.polygons[prev_idx(i, j)].contains(grid_point)) { 
-          new_idx(i, j) = prev_idx(i, j);
-        } 
-        else {
-          new_idx(i, j) = find_parent(grid_point);
-        }
-        // scatter values
-        if (new_idx(i, j) < int(Nr)) { // is background node (treat rigid as BG)
-          solver.D(i, j) = D0; // background diffusion
-          solver.k(i, j) = k0; // background degradation
-          solver.p(i, j) = p0; // background production (should be zero)
-        } else { 
-          solver.D(i, j) = ensemble.polygons[new_idx(i, j)].D;
-          solver.k(i, j) = ensemble.polygons[new_idx(i, j)].k;
-          solver.p(i, j) = ensemble.polygons[new_idx(i, j)].p;
-        }
-      }
-    }
-    solver.parent_idx = new_idx;  // ToDo: update in place
-  }
-
-  // gather concentration u from grid points to polygons
-  // important: depends on scatter being called every iteration to build the parent_idx
-  void gather() {
-    // get all children from parent idx built during scatter()
-    #pragma omp parallel for
-    for (auto& cell : ensemble.polygons) {
-      cell.children.clear();
-    }
-    for (int i = istart; i < iend; i++) {
-      for (int j = jstart; j < jend; j++) {
-        if (solver.parent_idx(i, j) >= 0) { // skip background nodes
-          auto& cell = ensemble.polygons[solver.parent_idx(i, j)]; 
-          cell.children.push_back(Index(i, j)); // cannot parallelize this part
-        }
-      }
-    }
-    // accumulate data from children
-    #pragma omp parallel for
-    for (int p = Nr; p < ensemble.polygons.size(); p++) {
-      // average concentration
-      auto& cell = ensemble.polygons[p];
-      cell.u = 0;
-      for (const Index& idx : cell.children) {
-        cell.u += solver.u(idx);
-      }
-      if (cell.children.size() > 0) { // avoid division by zero if cells exceed RD box
-        cell.u /= cell.children.size();
-      }
-    }
-  }
-};
-
-// Handles polygon modification due to signaling effects. 
-// Could also be done in ensemble.step()
-struct Chemistry {
-  Ensemble& ensemble;
-  std::function<bool(Polygon&)> is_producing = [](Polygon& p) { return false;};
-  Chemistry(Ensemble& ensemble) : ensemble(ensemble) {}
-
-  void update() {
-    #pragma omp parallel for
-    for (int i = Nr; i < ensemble.polygons.size(); i++) {
-      auto& cell = ensemble.polygons[i];
-      // set production
-      if (cell.p == 0 && is_producing(cell)) {
-        cell.p = p_dist(rng);
-      } 
-      // flag
-      if (!cell.flag && cell.u < cell.threshold) {
-        cell.flag = true;
-        cell.alpha = 0;
-      } else if (cell.flag && cell.u > cell.threshold){
-        cell.flag = false;
-        cell.alpha = cell.alpha0; 
-      }
-    }
-  }  
-
-  double get_border_sharpness() { // "width" of border
-    double xmin = ensemble.x0;
-    double xmax = ensemble.x0;
-    for (auto& cell : ensemble.polygons) {
-      for (auto& vertex : cell.vertices) {
-        if (cell.flag) {
-          xmin = std::min(xmin, vertex.r.x); // leftmost flagged point
-        } else {
-          xmax = std::max(xmax, vertex.r.x); // rightmost unflagged
-        }
-      }
-    }
-    return xmax - xmin;
-  }
-
-  void chemotaxis() {
-    #pragma omp parallel for
-    for (int p = Nr; p < ensemble.polygons.size(); p++) {
-      auto& cell = ensemble.polygons[p];
-      for (auto& vertex : cell.vertices) {
-        // move towards higher concentration
-        ; 
-      }
-    }
-  }
-};
-
-void welcome() {
-  std::cout << "--------------------------" << std::endl
-            << "|  Welcome to PolyMorph  |" << std::endl
-            << "--------------------------" << std::endl;
-  // ToDo: log configuration for reproducibility
-}
-
-int main()
-{
-  welcome();
-  rng.seed(90178009);
-  Ensemble ensemble("ensemble_box_100x50.off"); // read the input file
-  
-  /*unsigned L = 100;
-  unsigned N = L/dx; 
-  Grid<double> u0(N, N); // initial condition, just zeros
-  Solver solver(u0, D0, dx, dt, k0); // init solver
-
-  Interpolator interpolator(ensemble, solver);
-  Chemistry chemistry(ensemble);
-  chemistry.is_producing = [](const Polygon& p) { return p.vertices[0].p == Nr; }; // mother cell*/
-  
-  ensemble.output(0); // print the initial state
-  //solver.output(0); // print the initial state
-  for (std::size_t f = 1; f <= 68; ++f)
-  {
-    for (std::size_t s = 0; s < Ns; ++s) 
-    {
-      ensemble.step();
-      /*chemistry.update();
-      interpolator.scatter(); 
-      solver.step();
-      interpolator.gather();*/
-    } 
-    ensemble.output(f); // print a frame
-    //solver.output(f); // print a frame
-  }
-  ensemble.writeOFF("ensemble_rect_100x50.off");
-}
+#endif

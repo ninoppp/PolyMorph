@@ -1,3 +1,6 @@
+#ifndef SOLVER_H
+#define SOLVER_H
+
 #include <vector>
 #include <functional>
 #include <fstream>
@@ -201,3 +204,5 @@ Grid<double> create_gaussian(size_t Nx, size_t Ny) {
     u(Nx/2, Ny/2) = 1.0;
     return u;
 }
+
+#endif

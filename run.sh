@@ -17,8 +17,8 @@ cleanup_files() {
 }
 
 compile_polyhoop() {
-    echo "compiling polyhoop ... "
-    g++ -fopenmp -O3 -o polyhoop.out polyhoop.cpp
+    echo "compiling polymorph ... "
+    g++ -fopenmp -O3 -o polymorph.out main.cpp
 }
 
 generate_ensemble() {
@@ -29,8 +29,8 @@ generate_ensemble() {
 run_polyhoop() {
     OMP_NUM_THREADS=8
     export OMP_NUM_THREADS
-    echo "running polyhoop with $OMP_NUM_THREADS threads... "
-    ./polyhoop.out
+    echo "running polymorph with $OMP_NUM_THREADS threads... "
+    ./polymorph.out
 }
 
 compile_and_run_test() {
