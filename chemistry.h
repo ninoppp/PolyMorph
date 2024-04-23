@@ -32,7 +32,8 @@ struct Chemistry {
   double get_border_sharpness() { // "width" of border
     double xmin = ensemble.x1;
     double xmax = ensemble.x0;
-    for (auto& cell : ensemble.polygons) {
+    for (int p = Nr; p < ensemble.polygons.size(); p++) {
+      auto& cell = ensemble.polygons[p];
       for (auto& vertex : cell.vertices) {
         if (cell.flag) {
           xmin = std::min(xmin, vertex.r.x); // leftmost flagged point
@@ -41,6 +42,7 @@ struct Chemistry {
         }
       }
     }
+    std::cout << "xmin=" << xmin << " xmax=" << xmax << std::endl;
     return xmax - xmin;
   }
 
