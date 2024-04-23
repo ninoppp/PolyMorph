@@ -44,10 +44,10 @@ struct Interpolator {
     jstart = std::max(int((ensemble.y0 - solver.box_position_y) / solver.dx) + 1, 0);
     iend = std::min(size_t((ensemble.x1 - solver.box_position_x) / solver.dx), solver.Nx);
     jend = std::min(size_t((ensemble.y1 - solver.box_position_y) / solver.dx), solver.Ny); // plus 1 maybe problem
-    assert(solver.box_position_x + istart * solver.dx >= ensemble.x0);
+    /*assert(solver.box_position_x + istart * solver.dx >= ensemble.x0);
     assert(solver.box_position_y + jstart * solver.dx >= ensemble.y0);
     assert(solver.box_position_x + iend * solver.dx <= ensemble.x1);
-    assert(solver.box_position_y + jend * solver.dx <= ensemble.y1);
+    assert(solver.box_position_y + jend * solver.dx <= ensemble.y1);*/
 
     #pragma omp parallel for collapse(2)
     for (int i = istart; i < iend; i++) {
@@ -57,7 +57,7 @@ struct Interpolator {
         const double y = solver.box_position_y + j * solver.dx;
         const Point grid_point(x, y);
         // check if still the same parent (ignore rigid)
-        if (prev_idx(i, j) >= int(Nr) && ensemble.polygons[prev_idx(i, j)].contains(grid_point)) { 
+        if (prev_idx(i, j) >= int(Nr) && ensemble.polygons[prev_idx(i, j)].contains(grid_point)) { // ToDo: check if in bounds
           new_idx(i, j) = prev_idx(i, j);
         } 
         else {

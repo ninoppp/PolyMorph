@@ -29,25 +29,25 @@ constexpr double gl = 0; // [L/T^2] edge gravitational acceleration
 constexpr double cv = 10; // [1/T] viscous damping rate
 constexpr double cd = 0; // [-] drag coefficient
 constexpr double cc = 30; // [1/T] collision damping rate
-constexpr double dt = 1e-4; // [T] time step // default 1e-4
+constexpr double dt = 1e-5; // [T] time step // default 1e-4
 
 constexpr std::size_t Nf = 100; // number of output frames
-constexpr std::size_t Ns = 3000; // number of time steps between frames // default 1000
+constexpr std::size_t Ns = 10000; // number of time steps between frames // default 1000
 constexpr std::size_t Nr = 1; // number of rigid polygons
 
 constexpr double drmax = h + sh + ss; // maximum interaction distance
 
 // PolyMorph extension
-constexpr double dx = 0.4; // [L] grid spacing for solver
-constexpr double D_mu = 128.0; // [L^2/T] diffusion coefficient mean
+constexpr double dx = 0.3; // [L] grid spacing for solver
+constexpr double D_mu = 64.0; // [L^2/T] diffusion coefficient mean
 constexpr double k_mu = 1.0; // [1/T] degradation rate mean 
-constexpr double p_mu = 24.0; // [1/T] production rate mean
+constexpr double p_mu = 12.0; // [1/T] production rate mean
 constexpr double threshold_mu = 0.1; // [-] threshold for morphogen concentration mean
 constexpr double D_CV = 0.3; // [-] coefficient of variation of diffusion
 constexpr double k_CV = 0.3; // [-] coefficient of variation of degradation rate
 constexpr double p_CV = 0.3; // [-] coefficient of variation of production rate
 constexpr double threshold_CV = 0.3; // [-] coefficient of variation of threshold
-constexpr double D0 = 64.0; // [L^2/T] diffusion coefficient background
+constexpr double D0 = 32.0; // [L^2/T] diffusion coefficient background
 constexpr double k0 = 0.0; // [1/T] reaction rate background
 constexpr double p0 = 0.0; // [1/T] reaction rate background
 
