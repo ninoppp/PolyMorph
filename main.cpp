@@ -16,7 +16,7 @@ int main()
 {
   welcome();
   rng.seed(90178009);
-  Ensemble ensemble("ensemble_default.off"); // read the input file
+  Ensemble ensemble("ensemble/default.off"); // read the input file
   
   unsigned L = 50;
   unsigned N = L/dx; 
