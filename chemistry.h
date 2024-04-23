@@ -10,7 +10,7 @@ struct Chemistry {
   std::function<bool(Polygon&)> is_producing = [](Polygon& p) { return false;};
   Chemistry(Ensemble& ensemble) : ensemble(ensemble) {}
 
-  void update() {
+  void update() { // ToDo: split into flag() and produce()
     #pragma omp parallel for
     for (int i = Nr; i < ensemble.polygons.size(); i++) {
       auto& cell = ensemble.polygons[i];
@@ -18,7 +18,7 @@ struct Chemistry {
       if (cell.p == 0 && is_producing(cell)) {
         cell.p = p_dist(rng);
       } 
-      // flag
+      // flag below threshold
       if (!cell.flag && cell.u < cell.threshold) {
         cell.flag = true;
         cell.alpha = 0;
@@ -30,7 +30,7 @@ struct Chemistry {
   }  
 
   double get_border_sharpness() { // "width" of border
-    double xmin = ensemble.x0;
+    double xmin = ensemble.x1;
     double xmax = ensemble.x0;
     for (auto& cell : ensemble.polygons) {
       for (auto& vertex : cell.vertices) {
@@ -50,16 +50,12 @@ struct Chemistry {
       auto& cell = ensemble.polygons[p];
       for (auto& vertex : cell.vertices) {
         // move towards higher concentration
+        // manipulate vertex acceleration
+        // Q: how to get morphogen gradient cheaply?
         ; 
       }
     }
   }
-
-  //void test();
 };
-
-/*void Chemistry::test() {
-  std::cout << "Chemistry test" << std::endl;
-}*/
 
 #endif

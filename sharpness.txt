@@ -1,0 +1,7 @@
+CV=0.1 sharpness=100.145
+CV=0.2 sharpness=100.145
+CV=0.3 sharpness=100.145
+CV=0.4 sharpness=100.145
+CV=0.5 sharpness=100.145
+CV=0.75 sharpness=100.145
+CV=1 sharpness=100.145
