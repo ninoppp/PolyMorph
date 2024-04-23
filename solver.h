@@ -41,7 +41,7 @@ enum class BoundaryCondition {
     Mixed, // 1 at west boundary, 0 at east boundary, zero-flux at north and south
 };
 
-enum struct save_flag {
+enum struct output_flags {
     parent_idx = 1 << 1,
     D = 1 << 2,
     k = 1 << 3,

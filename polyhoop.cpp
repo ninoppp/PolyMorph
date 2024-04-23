@@ -990,7 +990,7 @@ struct Chemistry {
     }
   }  
 
-  double get_border_sharpness() {
+  double get_border_sharpness() { // "width" of border
     double xmin = ensemble.x0;
     double xmax = ensemble.x0;
     for (auto& cell : ensemble.polygons) {
@@ -1000,6 +1000,18 @@ struct Chemistry {
         } else {
           xmax = std::max(xmax, vertex.r.x); // rightmost unflagged
         }
+      }
+    }
+    return xmax - xmin;
+  }
+
+  void chemotaxis() {
+    #pragma omp parallel for
+    for (int p = Nr; p < ensemble.polygons.size(); p++) {
+      auto& cell = ensemble.polygons[p];
+      for (auto& vertex : cell.vertices) {
+        // move towards higher concentration
+        ; 
       }
     }
   }
@@ -1029,7 +1041,7 @@ int main()
   
   ensemble.output(0); // print the initial state
   //solver.output(0); // print the initial state
-  for (std::size_t f = 1; f <= Nf; ++f)
+  for (std::size_t f = 1; f <= 68; ++f)
   {
     for (std::size_t s = 0; s < Ns; ++s) 
     {
