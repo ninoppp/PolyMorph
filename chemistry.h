@@ -7,7 +7,9 @@
 // Could also be done in ensemble.step()
 struct Chemistry {
   Ensemble& ensemble;
+  bool growth_control = false;
   std::function<bool(Polygon&)> is_producing = [](Polygon& p) { return false;};
+
   Chemistry(Ensemble& ensemble) : ensemble(ensemble) {}
 
   void update() { // ToDo: split into flag() and produce()
@@ -17,14 +19,16 @@ struct Chemistry {
       // set production
       if (cell.p == 0 && is_producing(cell)) {
         cell.p = p_dist(rng);
-      } 
+      } else if (cell.p > 0 && !is_producing(cell)) {
+        cell.p = 0;
+      }
       // flag below threshold
       if (!cell.flag && cell.u < cell.threshold) {
         cell.flag = true;
-        cell.alpha = 0;
+        if (growth_control) cell.alpha = 0;
       } else if (cell.flag && cell.u > cell.threshold){
         cell.flag = false;
-        cell.alpha = cell.alpha0; 
+        if (growth_control) cell.alpha = cell.alpha0; 
       }
     }
   }  
