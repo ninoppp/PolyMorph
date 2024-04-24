@@ -1,0 +1,13 @@
+CV=0.5 sharpness=16.6108
+CV=0.7 sharpness=20.2002
+CV=1 sharpness=24.8346
+config:
+D0=32
+D_mu=64
+k_mu=1
+p_mu=12
+threshold_mu=0.1
+dx=0.3
+dt=1e-05
+Nf=100
+Ns=10000
