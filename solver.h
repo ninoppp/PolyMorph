@@ -6,13 +6,15 @@
 #include <fstream>
 #include <cmath>
 
+#include "reaction.h"
+
 struct Index {
   int i; 
   int j;
   Index(int i, int j): i(i), j(j) {}
 };
 
-template<typename T>
+template<typename T>    // ToDo: move to separate file
 struct Grid {
     std::vector<std::vector<T>> data;
     Grid (size_t Nx, size_t Ny) : data(Nx, std::vector<T>(Ny, T(0))) {}
@@ -24,27 +26,13 @@ struct Grid {
     size_t sizeY() const { return data[0].size(); }
 };
 
-struct Reaction {
-    double operator()(double u, int i, int j) {
-        return 0.0;
-    }
-};
-
-struct LinearDegradation : Reaction {
-    double k0;
-    LinearDegradation(double k): k0(k) {}
-    double operator()(double u, int i, int j) {
-        return -k0 * u;
-    }
-};
-
 enum class BoundaryCondition {
     Dirichlet,
     Neumann,
     Mixed, // 1 at west boundary, 0 at east boundary, zero-flux at north and south
 };
 
-enum struct output_flags {
+enum struct output_flags { 
     parent_idx = 1 << 1,
     D = 1 << 2,
     k = 1 << 3,
