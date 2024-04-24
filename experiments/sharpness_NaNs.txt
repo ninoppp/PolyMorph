@@ -1,7 +1,0 @@
-CV=0.1 sharpness=6.12622
-CV=0.2 sharpness=10.1409
-CV=0.3 sharpness=15.3179
-CV=0.4 sharpness=0
-CV=0.5 sharpness=0
-CV=0.75 sharpness=0
-CV=1 sharpness=0
