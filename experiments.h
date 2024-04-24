@@ -11,14 +11,20 @@ void write_config() {
         << "Date=" << __DATE__ << std::endl
         << "Time=" << __TIME__ << std::endl
         << "D0=" << D0 << std::endl
+        << "k0=" << k0 << std::endl
+        << "p0=" << p0 << std::endl
         << "D_mu=" << D_mu << std::endl
         << "k_mu=" << k_mu << std::endl
         << "p_mu=" << p_mu << std::endl
-        << "threshold_mu=" << threshold_mu << std::endl
+        << "D_CV=" << D_CV << std::endl
+        << "k_CV=" << k_CV << std::endl
+        << "p_CV=" << p_CV << std::endl
+        << "threshold_mu=" << threshold_mu << " threshold_CV=" << threshold_CV << std::endl
         << "dx=" << dx << std::endl
         << "dt=" << dt << std::endl
         << "Nf=" << Nf << std::endl
-        << "Ns=" << Ns << std::endl;
+        << "Ns=" << Ns << std::endl
+        << "Nr=" << Nr << std::endl;
     config.close();
 }
 
@@ -93,12 +99,13 @@ void sharpness_experiment() {
 
 void differentiation_experiment() {
     Ensemble ensemble("ensemble/singlecell.off"); // read the input file
-    unsigned L = 100;
+    unsigned L = 50;
     unsigned N = L/dx; 
     Grid<double> u0(N, N); // initial condition, just zeros
     Solver solver(u0, D0, dx, dt, k0); // init solver
     Interpolator interpolator(ensemble, solver);
     Chemistry chemistry(ensemble);
+    chemistry.growth_control = true; // stop growth if flagged
     chemistry.is_producing = [](const Polygon& p) { return p.vertices[0].p == Nr; }; // mother cell
     
     ensemble.output(0); // print the initial state
@@ -113,5 +120,8 @@ void differentiation_experiment() {
         } 
         ensemble.output(f);
         solver.output(f);
+        if (f == Nf/2) { // stop production after half-time
+            chemistry.is_producing = [](const Polygon& p) { return false; }; 
+        }
     }
 }

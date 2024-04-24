@@ -8,12 +8,14 @@ move_files() {
     mkdir $path/$timestamp
     mv *.vtp $path/$timestamp/
     mv *.vts $path/$timestamp/ 
+    mv *.cfg $path/$timestamp/
 }
 
 cleanup_files() {
     echo "cleaning up leftover output files ..."
     rm *.vtp
     rm *.vts
+    rm *.cfg
 }
 
 compile_polyhoop() {
