@@ -12,12 +12,11 @@ void welcome() {
             << "--------------------------" << std::endl;
 }
 
-int main()
-{
+int main() {
   welcome();
   rng.seed(90178009);
 
-  sharpness_experiment();
   write_config();
+  differentiation_experiment();
 }
 

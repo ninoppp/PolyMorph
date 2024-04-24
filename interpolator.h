@@ -28,17 +28,17 @@ struct Interpolator {
           }
         }
       }
-      if (last_iteration) return -2000; // background node
+      if (last_iteration) return -2; // background node
       if (!checked_polygons.empty()) last_iteration = true; // only go 1 more layer
       ++bxi;
     }
-    return -2000; // background node (reached boundary of ensemble box)
+    return -2; // background node (reached boundary of ensemble box)
   }
 
   // scatter coefficients D, k from polygons to grid points
   void scatter() { // ToDo: make this function prettier
     Grid<int>& prev_idx = solver.parent_idx; // stores the polygon index of the cell in which a grid point lies (its parent)
-    Grid<int> new_idx(solver.Nx, solver.Ny, -1000); // negative indices indicate a background node. ToDo: could make this in place
+    Grid<int> new_idx(solver.Nx, solver.Ny, -1); // negative indices indicate a background node. ToDo: could make this in place
     
     istart = std::max(int((ensemble.x0 - solver.box_position_x) / solver.dx) + 1, 0);
     jstart = std::max(int((ensemble.y0 - solver.box_position_y) / solver.dx) + 1, 0);

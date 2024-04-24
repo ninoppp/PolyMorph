@@ -33,8 +33,8 @@ constexpr double cc = 30; // [1/T] collision damping rate
 constexpr double dt = 1e-4; // [T] time step // default 1e-4
 
 constexpr std::size_t Nf = 100; // number of output frames
-constexpr std::size_t Ns = 1000; // number of time steps between frames // default 1000
-constexpr std::size_t Nr = 1; // number of rigid polygons
+constexpr std::size_t Ns = 3000; // number of time steps between frames // default 1000
+constexpr std::size_t Nr = 0; // number of rigid polygons
 
 constexpr double drmax = h + sh + ss; // maximum interaction distance
 
@@ -45,15 +45,18 @@ constexpr int num_k = 1; // number of coefficients needed for reaction term
 
 constexpr double D_mu = 64.0; // [L^2/T] diffusion coefficient mean
 constexpr double k_mu = 1.0; // [1/T] degradation rate mean 
-constexpr double p_mu = 12.0; // [1/T] production rate mean
+constexpr double p_mu = 24.0; // [1/T] production rate mean
 constexpr double threshold_mu = 0.1; // [-] threshold for morphogen concentration mean
 constexpr double D_CV = 0.3; // [-] coefficient of variation of diffusion
 constexpr double k_CV = 0.3; // [-] coefficient of variation of degradation rate
 constexpr double p_CV = 0.3; // [-] coefficient of variation of production rate
-constexpr double threshold_CV = 0.3; // [-] coefficient of variation of threshold
-constexpr double D0 = 32.0; // [L^2/T] diffusion coefficient background
-constexpr double k0 = 0.0; // [1/T] reaction rate background
+constexpr double threshold_CV = 0.1; // [-] coefficient of variation of threshold
+constexpr double D0 = 64.0; // [L^2/T] diffusion coefficient background
+constexpr double k0 = 1.0; // [1/T] reaction rate background
 constexpr double p0 = 0.0; // [1/T] reaction rate background
+
+constexpr double D_max = 1.5*D_mu;
+// = dx*dx/dt/2; // CFL according to slide 19: https://people.math.ethz.ch/~grsam/SS21/NAII/resources/slides/ODE-Lecture6.pdf
 /*
 constexpr double k_mu[num_k] = {}; // reaction coefficients mean
 constexpr double k_CV[num_k] = {}; // reaction coefficients CV
