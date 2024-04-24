@@ -29,11 +29,11 @@ constexpr double gl = 0; // [L/T^2] edge gravitational acceleration
 constexpr double cv = 10; // [1/T] viscous damping rate
 constexpr double cd = 0; // [-] drag coefficient
 constexpr double cc = 30; // [1/T] collision damping rate
-constexpr double dt = 1e-5; // [T] time step // default 1e-4
+constexpr double dt = 1e-4; // [T] time step // default 1e-4
 
 constexpr std::size_t Nf = 100; // number of output frames
-constexpr std::size_t Ns = 10000; // number of time steps between frames // default 1000
-constexpr std::size_t Nr = 1; // number of rigid polygons
+constexpr std::size_t Ns = 1000; // number of time steps between frames // default 1000
+constexpr std::size_t Nr = 0; // number of rigid polygons
 
 constexpr double drmax = h + sh + ss; // maximum interaction distance
 
