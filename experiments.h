@@ -54,44 +54,47 @@ void default_testrun() {
 }
 
 void sharpness_experiment() {
-  std::ofstream file("sharpness.txt");
+  std::ofstream file("sharpness.csv");
   file << "ThreshCV GradCV sharpness" << std::endl;
-  double CV[] = {0.1, 0.2, 0.3, 0.4, 0.5, 0.7, 1.0};
-  for (double threshCV : CV) {
-    // adjust threshold precision
-    double tlnCV = std::log(1 + cv*cv);
-    threshold_dist = std::lognormal_distribution<double>(std::log(threshold_mu) - tlnCV/2, std::sqrt(tlnCV));
-    for (double cv : CV) {
-      // adjust gradient precision
-      double lnCV = std::log(1 + cv*cv);
-      D_dist = std::lognormal_distribution<double>(std::log(D_mu) - lnCV/2, std::sqrt(lnCV));
-      k_dist = std::lognormal_distribution<double>(std::log(k_mu) - lnCV/2, std::sqrt(lnCV));
-      p_dist = std::lognormal_distribution<double>(std::log(p_mu) - lnCV/2, std::sqrt(lnCV));
+  double CV[] = {0.1, 0.2, 0.3, 0.5, 0.7, 1.0};
 
-      Ensemble ensemble("ensemble/rect_100x50.off");
-      Chemistry chemistry(ensemble);
-      Grid<double> u0(int(102/dx), int(52/dx)); // initial condition, just zeros
-      Solver solver(u0, D0, dx, dt, k0); // init solver
-      Interpolator interpolator(ensemble, solver);
-      chemistry.is_producing = [solver](const Polygon& p) { return p.midpoint().x < solver.box_position_x + 10; }; // heavyside
-      
-      ensemble.output(cv*10000); // print the initial state
-      solver.output(cv*10000); // print the initial state
-      ensemble.step(); // update boxes and everything
-      chemistry.update();
-      interpolator.scatter(); 
-      for (std::size_t f = 1; f <= Nf; ++f)
-      {
-        for (std::size_t s = 0; s < Ns; ++s) 
+  for (double thresh_cv : CV) {
+    double tlnCV = std::log(1 + thresh_cv*thresh_cv);
+    threshold_dist = std::lognormal_distribution<double>(std::log(threshold_mu) - tlnCV/2, std::sqrt(tlnCV));
+    
+    for (double grad_cv : CV) {
+      for (int rep = 0; rep < 5; rep++) { // repeat each experiment 5 times
+
+        double lnCV = std::log(1 + grad_cv*grad_cv);
+        D_dist = std::lognormal_distribution<double>(std::log(D_mu) - lnCV/2, std::sqrt(lnCV));
+        k_dist = std::lognormal_distribution<double>(std::log(k_mu) - lnCV/2, std::sqrt(lnCV));
+        p_dist = std::lognormal_distribution<double>(std::log(p_mu) - lnCV/2, std::sqrt(lnCV));
+
+        Ensemble ensemble("ensemble/rect_100x50.off");
+        Chemistry chemistry(ensemble);
+        Grid<double> u0(int(102/dx), int(52/dx)); // initial condition, just zeros
+        Solver solver(u0, D0, dx, dt, k0); // init solver
+        Interpolator interpolator(ensemble, solver);
+        chemistry.is_producing = [solver](const Polygon& p) { return p.midpoint().x < solver.box_position_x + 10; }; // heavyside
+        
+        //ensemble.output(cv*10000); // print the initial state
+        //solver.output(cv*10000); // print the initial state
+        ensemble.step(); // update boxes and everything
+        chemistry.update();
+        interpolator.scatter(); 
+        for (std::size_t f = 1; f <= Nf; ++f)
         {
-          solver.step();
-        } 
+          for (std::size_t s = 0; s < Ns; ++s) 
+          {
+            solver.step();
+          } 
+          //ensemble.output(int(cv*10000 + f));
+          //solver.output(int(cv*10000 + f));
+        }
         interpolator.gather(); // get u
         chemistry.update(); // flag
-        ensemble.output(int(cv*10000 + f));
-        solver.output(int(cv*10000 + f));
+        file << thresh_cv << " " << grad_cv << " " << chemistry.get_border_sharpness() << std::endl;
       }
-      file << cv << " " << chemistry.get_border_sharpness() << std::endl;
     } 
   }
   file.close();

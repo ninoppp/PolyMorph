@@ -17,6 +17,6 @@ int main() {
   rng.seed(90178009);
 
   write_config();
-  differentiation_experiment();
+  sharpness_experiment();
 }
 
