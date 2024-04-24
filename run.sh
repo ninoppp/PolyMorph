@@ -18,6 +18,7 @@ cleanup_files() {
 
 compile_polyhoop() {
     echo "compiling polymorph ... "
+    rm -f polymorph.out
     g++ -fopenmp -O3 -o polymorph.out main.cpp
 }
 

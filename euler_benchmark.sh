@@ -12,6 +12,7 @@ module load gcc
 module list
 
 echo "Running benchmark job... "
+rm -f benchmark.out
 g++ -fopenmp -O3 -o benchmark.out benchmark.cpp
 
 # Run the program for OMP_NUM_THREADS equal to 1, 2, 4, 8, ..., 64, 128

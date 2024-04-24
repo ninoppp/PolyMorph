@@ -12,6 +12,7 @@ module load gcc
 module list
 
 echo "compiling polymorph ... "
+rm -f polymorph.out
 g++ -fopenmp -O3 -o polymorph.out main.cpp
 OMP_NUM_THREADS=16
 export OMP_NUM_THREADS
