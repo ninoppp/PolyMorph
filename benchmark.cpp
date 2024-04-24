@@ -10,11 +10,11 @@
 int main() {
     std::cout << "Running benchmark" << std::endl;
     rng.seed(90178009);
-    Ensemble ensemble("ensemble/default.off"); // read the input file
+    Ensemble ensemble("ensemble/box_100x50.off"); // read the input file
     
     size_t N = 256;
     size_t frames = 100;
-    size_t timesteps = 1000;
+    size_t timesteps = 2000;
 
     Grid<double> u0(N, N); // initial condition, just zeros
     Solver solver(u0, D0, dx, dt, k0); // init solver
@@ -22,7 +22,7 @@ int main() {
     Chemistry chemistry(ensemble);
     chemistry.is_producing = [solver](const Polygon& p) { return p.midpoint().x < solver.box_position_x + 10; }; // heavyside
 
-    std::ofstream file("benchmark_full_simulation.txt", std::ios::app);
+    std::ofstream file("benchmark_ensemble_box.txt", std::ios::app);
     file << "num_threads frame num_gridpoints num_vertices time" << std::endl;
 
     int num_threads = omp_get_max_threads();
@@ -30,10 +30,6 @@ int main() {
         double start = walltime();
         for (std::size_t s = 0; s < timesteps; ++s) {
             ensemble.step();
-            chemistry.update();
-            interpolator.scatter();
-            solver.step();
-            interpolator.gather();
         } 
         double end = walltime();
         size_t num_vertices = 0;
