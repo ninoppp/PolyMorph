@@ -1,4 +1,4 @@
-num_threads frame total_vertices time
+num_threads frame num_vertices time
 1 1 40 0.010601
 1 2 40 0.00659609
 1 3 70 0.014204
