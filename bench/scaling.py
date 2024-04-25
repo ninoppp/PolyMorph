@@ -9,8 +9,7 @@ solver = pd.read_csv('benchmark_solver.csv', sep='\s+')
 full_sim = pd.read_csv('benchmark_full_simulation.csv', sep='\s+')
 ensemble_box = pd.read_csv('benchmark_ensemble_box.csv', sep='\s+')
 
-P = 0.93 # reference: Polyhoop paper
-def amdahl(t):
+def amdahl(P, t):
     return 1.0 / (1.0 - P + P / t)
 
 # ensemble.step() runtime vs total vertices
@@ -44,13 +43,15 @@ avg_ratio_by_thread_box_filtered = ensemble_box_filtered.groupby('num_threads')[
 speedup = avg_ratio_by_thread['time_per_vertex'][0] / avg_ratio_by_thread['time_per_vertex']
 speedup_box = avg_ratio_by_thread_box['time_per_vertex'][0] / avg_ratio_by_thread_box['time_per_vertex']
 speedup_box_filtered = avg_ratio_by_thread_box_filtered['time_per_vertex'][0] / avg_ratio_by_thread_box_filtered['time_per_vertex']
-speedup_reference = amdahl(avg_ratio_by_thread['num_threads'])
+speedup_reference = amdahl(0.93, avg_ratio_by_thread['num_threads'])
+speedup_reference97 = amdahl(0.97, avg_ratio_by_thread['num_threads'])
 plt.figure(figsize=(10, 5))
-plt.plot(threads, speedup, marker='o', label='Single cell, Ns=1e3')
-plt.plot(threads, speedup_box, marker='o', label='Single cell + box, Ns=3e3')
+plt.plot(threads, speedup, marker='o', label='Single cell')
+plt.plot(threads, speedup_box, marker='o', label='Single cell + box')
 plt.plot(threads, speedup_box_filtered, marker='o', label='Single cell + box, only 50k+ vertices')
 plt.plot(threads, speedup_reference, label='Amdahl\'s Law, P=93%')
-plt.title('Average Frame Time per Vertex vs Number of Threads')
+#plt.plot(threads, speedup_reference97, label='Amdahl\'s Law, P=97%')
+plt.title('Speedup: Average Frame Time per Vertex vs Number of Threads')
 plt.xlabel('Number of Threads')
 plt.ylabel('Speedup S = T(1) / T(p)')
 plt.xscale('log', base=2)
