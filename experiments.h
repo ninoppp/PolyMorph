@@ -16,10 +16,11 @@ void write_config() {
         << "D_mu=" << D_mu << std::endl
         << "k_mu=" << k_mu << std::endl
         << "p_mu=" << p_mu << std::endl
+        << "threshold_mu=" << threshold_mu << std::endl 
         << "D_CV=" << D_CV << std::endl
         << "k_CV=" << k_CV << std::endl
         << "p_CV=" << p_CV << std::endl
-        << "threshold_mu=" << threshold_mu << " threshold_CV=" << threshold_CV << std::endl
+        << "threshold_CV=" << threshold_CV << std::endl
         << "dx=" << dx << std::endl
         << "dt=" << dt << std::endl
         << "Nf=" << Nf << std::endl
