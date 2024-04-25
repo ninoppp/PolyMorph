@@ -1,9 +1,11 @@
 import pandas as pd
 import matplotlib.pyplot as plt
+import math
 
 ensemble = pd.read_csv('benchmark_ensemble.csv', sep='\s+')
 solver128 = pd.read_csv('benchmark_solver_128.csv', sep='\s+')
 solver256 = pd.read_csv('benchmark_solver_256.csv', sep='\s+')
+solver = pd.read_csv('benchmark_solver.csv', sep='\s+')
 full_sim = pd.read_csv('benchmark_full_simulation.csv', sep='\s+')
 ensemble_box = pd.read_csv('benchmark_ensemble_box.csv', sep='\s+')
 
@@ -70,5 +72,25 @@ plt.xscale('log', base=2)
 plt.yscale('log')
 plt.grid(True)
 plt.legend()
-plt.savefig("solver_scaling.pdf")
+plt.savefig("solver_scaling_small.pdf")
+
+
+plt.figure(figsize=(10, 5))
+gridpoints = solver['num_gridpoints'].unique()
+threads = solver['num_threads'].unique()
+for gp in gridpoints:
+    data_by_gp = solver[solver['num_gridpoints'] == gp]
+    avg_runtime_by_thread = data_by_gp.groupby('num_threads')['time'].mean().reset_index()
+    avg_runtime_per_gp = avg_runtime_by_thread['time'] / gp
+    speedup = avg_runtime_per_gp[0] / avg_runtime_per_gp
+    plt.plot(threads, avg_runtime_per_gp, marker='o', label=f'{int(math.sqrt(gp))}x{int(math.sqrt(gp))} gridpoints')
+    
+plt.title('Solver Average Frame Time per Gridpoint vs Number of Threads')
+plt.xlabel('Number of Threads')
+plt.ylabel('Frame Time / Gridpoints (seconds)')
+plt.xscale('log', base=2)
+plt.yscale('log')
+plt.grid(True)
+plt.legend()
+plt.savefig(f"solver_scaling.pdf")
 
