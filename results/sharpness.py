@@ -1,20 +1,36 @@
 import numpy as np
 import matplotlib.pyplot as plt
+import pandas as pd
 
-CV = [0.1, 0.2, 0.3, 0.4, 0.5, 0.7, 1.0]
-measurements = {
-    0.1: [3.39008, 6.12622],
-    0.2: [7.77738, 10.1409],
-    0.3: [9.78458, 15.3179],
-    0.4: [14.8297],
-    0.5: [14.8039, 16.6108],
-    0.7: [20.2002],
-    1.0: [24.8346]
-}
+# by tcv
+data = pd.read_csv('sharpness.csv', sep='\s+')
+threshCV = data['ThreshCV'].unique()
+avg_sharpness_by_threshCV = data.groupby('ThreshCV')['sharpness'].mean().reset_index()
+plt.figure(figsize=(10, 5))
+plt.plot(threshCV, avg_sharpness_by_threshCV['sharpness'], marker='o', label='Average')
 
-avg_sharpness = [np.mean(measurements[cv]) for cv in CV]
+#for gcv in data['GradCV'].unique():
+#    data_by_gcv = data[data['GradCV'] == gcv]
+#    avg_sharpness_by_tcv = data_by_gcv.groupby('ThreshCV')['sharpness'].mean().reset_index()
+#    plt.plot(avg_sharpness_by_tcv['ThreshCV'], avg_sharpness_by_tcv['sharpness'], marker='o', label=f'Gradient CV = {gcv}')
 
-plt.plot(CV, avg_sharpness, 'o-')
-plt.xlabel('CV value for D, k, p, readout')
-plt.ylabel('border width [units]')
-plt.savefig('sharpness.pdf')
+plt.title('Sharpness vs Threshold Coefficient-Variation')
+plt.xlabel('Threshold CV')
+plt.ylabel('Border width [units]')
+plt.grid(True)
+plt.legend()
+plt.savefig("sharpness_threshold.pdf")
+
+# by gcv
+plt.figure(figsize=(10, 5))
+for tcv in threshCV:
+    data_by_tcv = data[data['ThreshCV'] == tcv]
+    avg_sharpness_by_gcv = data_by_tcv.groupby('GradCV')['sharpness'].mean().reset_index()
+    plt.plot(avg_sharpness_by_gcv['GradCV'], avg_sharpness_by_gcv['sharpness'], marker='o', label=f'Threshold CV = {tcv}')
+
+plt.title('Sharpness vs Gradient Coefficient-Variation')
+plt.xlabel('Gradient CV (D,k,p)')
+plt.ylabel('Border width [units]')
+plt.grid(True)
+plt.legend()
+plt.savefig("sharpness_gradient.pdf")
