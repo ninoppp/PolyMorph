@@ -2,6 +2,7 @@
 #define CONST_H
 
 #include <cmath>
+#include <vector>
 
 // Original Polyhoop parameters
 constexpr double h = 0.01; // [L] edge thickness
@@ -39,28 +40,21 @@ constexpr std::size_t Nr = 1; // number of rigid polygons
 constexpr double drmax = h + sh + ss; // maximum interaction distance
 
 // Diffusion parameters
-constexpr double dx = 0.3; // [L] grid spacing for solver
-constexpr int num_species = 1; // number of diffusable species
-constexpr int num_k = 1; // number of coefficients needed for reaction term
-
-constexpr double D_mu = 64.0; // [L^2/T] diffusion coefficient mean
-constexpr double k_mu = 1.0; // [1/T] degradation rate mean 
-constexpr double p_mu = 24.0; // [1/T] production rate mean
-constexpr double threshold_mu = 0.1; // [-] threshold for morphogen concentration mean
-constexpr double D_CV = 0.3; // [-] coefficient of variation of diffusion
-constexpr double k_CV = 0.3; // [-] coefficient of variation of degradation rate
-constexpr double p_CV = 0.3; // [-] coefficient of variation of production rate
-constexpr double threshold_CV = 0.1; // [-] coefficient of variation of threshold
+constexpr double dx = 0.25; // [L] grid spacing for solver
 constexpr double D0 = 64.0; // [L^2/T] diffusion coefficient background
 constexpr double k0 = 0.0; // [1/T] reaction rate background
 constexpr double p0 = 0.0; // [1/T] reaction rate background
 
-constexpr double D_max = 1.5*D_mu;
-// = dx*dx/dt/2; // CFL according to slide 19: https://people.math.ethz.ch/~grsam/SS21/NAII/resources/slides/ODE-Lecture6.pdf
-/*
-constexpr double k_mu[num_k] = {}; // reaction coefficients mean
-constexpr double k_CV[num_k] = {}; // reaction coefficients CV
-constexpr double D_mu[num_species] = {}; // reaction coefficients background
-constexpr double D_CV[num_species] = {}; // reaction coefficients background
-*/
+constexpr int NUM_SPECIES = 2; // number of diffusable species
+constexpr int NUM_KIN = 3; // number of kinetic coefficients
+const std::vector<double> k_mu = {1.0, 1.0, 4.0}; // reaction koefficient mean
+const std::vector<double> k_CV = {0.3, 0.3, 0.3}; // [-] reaction coefficients CV
+const std::vector<double> D_mu = {64, 32}; // [L^2/T] diffusion coefficient mean
+const std::vector<double> D_CV = {0.3, 0.3}; // [-] coefficient of variation of diffusion
+const std::vector<double> p_mu = {24, 24}; // [1/T] production rate mean
+const std::vector<double> p_CV = {0.3, 0.3}; // [-] coefficient of variation of production rate
+const std::vector<double> threshold_mu = {0.1, 0.1}; // [-] threshold mean 
+const std::vector<double> threshold_CV = {0.1, 0.1}; // [-] coefficient of variation of threshold
+constexpr double cutoff_factor = 2.0; // [-] lognormal dists are cutoff at mu*factor to maintain stability
+
 #endif
