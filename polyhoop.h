@@ -18,6 +18,7 @@
 
 #include "const.h"
 #include "solver.h" // TODO : remove this dependency (only uses Index)
+#include "utils.h"
 
 // distributions
 std::mt19937 rng; // random number generator
@@ -27,22 +28,10 @@ std::lognormal_distribution<> Amax_dist(std::log(Amax_mu) - Amax_lnCV/2, std::sq
 std::lognormal_distribution<> alpha_dist(std::log(alpha_mu) - alpha_lnCV/2, std::sqrt(alpha_lnCV)); // area growth rate distribution
 std::uniform_real_distribution<> uni_dist;
 
-// PolyMorph extension
-const double D_lnCV = std::log(1 + D_CV*D_CV);
-const double k_lnCV = std::log(1 + k_CV*k_CV);
-const double p_lnCV = std::log(1 + p_CV*p_CV);
-const double threshold_lnCV = std::log(1 + threshold_CV*threshold_CV);
-std::lognormal_distribution<> D_dist(std::log(D_mu) - D_lnCV/2, std::sqrt(D_lnCV)); // diffusion coefficient distribution ToDo: "magic numer sigma"
-std::lognormal_distribution<> k_dist(std::log(k_mu) - k_lnCV/2, std::sqrt(k_lnCV)); // reaction rate distribution
-std::lognormal_distribution<> p_dist(std::log(p_mu) - p_lnCV/2, std::sqrt(p_lnCV)); // production rate distribution
-std::lognormal_distribution<> threshold_dist(std::log(threshold_mu) - threshold_lnCV/2, std::sqrt(threshold_lnCV)); // threshold distribution
-auto D_dist_cutoff = [](std::mt19937 rng) { // ToDo: find better place
-  double D = D_dist(rng);
-  while (D > D_max) {
-    D = D_dist(rng);
-  }
-  return D;
- }; // diffusion coefficient distribution with cutoff
+std::vector<std::lognormal_distribution<>> D_dist = create_lognormal(D_mu, D_CV);
+std::vector<std::lognormal_distribution<>> k_dist = create_lognormal(k_mu, k_CV);
+std::vector<std::lognormal_distribution<>> p_dist = create_lognormal(p_mu, p_CV);
+std::vector<std::lognormal_distribution<>> threshold_dist = create_lognormal(threshold_mu, threshold_CV);
 
 struct Point  // basically a 2D vector
 {
@@ -94,12 +83,10 @@ struct Polygon
   std::vector<Vertex> vertices; // vertex list in counter-clockwise orientation
   bool phase; // phase of the enclosed medium
   double A0, A, Amax, alpha0, alpha; // target, actual & division area, area growth rate
-  // Polymorph extension. 
-  double D, k, p; // diffusion coefficient, degradation rate, production rate
-  double u, threshold; // local morphogen concentration and threshold
+  std::vector<double> D, k, p, u, threshold; // local morphogen concentration and threshold
   bool flag; // general purpose flag
-  std::vector<Index> children; // stores the indices of the grid points within the polygon
-  // END Polymorph extension
+  std::vector<Index> children; // stores the indices of the FD grid points within the polygon
+
   double area()
   {
     A = 0;
@@ -180,10 +167,10 @@ struct Ensemble
       polygons[p].alpha0 = alpha_dist(rng);
       polygons[p].alpha = polygons[p].alpha0;
       // PolyMorph extension
-      polygons[p].D = D_dist_cutoff(rng);
-      polygons[p].k = k_dist(rng);
-      polygons[p].p = 0;
-      polygons[p].threshold = threshold_dist(rng);
+      polygons[p].D = sample(D_dist, rng);
+      polygons[p].k = sample(k_dist, rng);
+      polygons[p].threshold = sample(threshold_dist, rng);
+      polygons[p].p = std::vector<double>(NUM_SPECIES, 0);
       // end PolyMorph extension
       for (std::size_t i = Nv - 1, j = 0; j < Nv; i = j++)
         polygons[p].vertices[i].l0 = (polygons[p].vertices[j].r - polygons[p].vertices[i].r).length(); // edge rest length
@@ -438,8 +425,8 @@ struct Ensemble
         const double A0 = polygons[p].A0;
         std::vector<Vertex> vold;
         vold.swap(v);
-        polygons[p] = {{vold[vend[2]]}, polygons[p].phase, 0, 0, Amax_dist(rng), alpha_dist(rng), 0, D_dist_cutoff(rng), k_dist(rng)}; // new polygon 1
-        polygons.push_back({{vold[vend[0]]}, polygons[p].phase, 0, 0, Amax_dist(rng), alpha_dist(rng), 0, D_dist_cutoff(rng), k_dist(rng)}); // new polygon 2
+        polygons[p] = {{vold[vend[2]]}, polygons[p].phase, 0, 0, Amax_dist(rng), alpha_dist(rng), 0, sample(D_dist, rng), sample(k_dist, rng)}; // new polygon 1
+        polygons.push_back({{vold[vend[0]]}, polygons[p].phase, 0, 0, Amax_dist(rng), alpha_dist(rng), 0, sample(D_dist, rng), sample(k_dist, rng)}); // new polygon 2
         for (std::size_t i = vend[1]; i != vend[2]; i = (i + 1) % vold.size())
           polygons[p].vertices.push_back(vold[i]);
         for (std::size_t i = vend[3]; i != vend[0]; i = (i + 1) % vold.size())
@@ -453,8 +440,8 @@ struct Ensemble
         polygons[p].A0 = A0 * polygons[p].A / (polygons[p].A + polygons.back().A);
         polygons.back().A0 = A0 - polygons[p].A0;
         // Polymorph extension: update polygon production rate (note: has to happen after vertices are assigned)
-        polygons[p].threshold = threshold_dist(rng);
-        polygons.back().threshold = threshold_dist(rng);
+        polygons[p].threshold = sample(threshold_dist, rng);
+        polygons.back().threshold = sample(threshold_dist, rng);
         polygons[p].alpha = polygons[p].alpha0;
         polygons.back().alpha = polygons.back().alpha0;
       }
@@ -684,13 +671,15 @@ struct Ensemble
     file << "        </DataArray>\n";
     // polymorph extension
     // u
-    file << "        <DataArray type=\"Float64\" Name=\"u\" format=\"ascii\">\n";
-    for (auto& p : polygons)
-      file << p.u << " ";
-    file << "\n";
-    file << "        </DataArray>\n";
+    for (int i = 0; i < NUM_SPECIES; i++){
+      file << "        <DataArray type=\"Float64\" Name=\"u" << i << "\" format=\"ascii\">\n";
+      for (auto& p : polygons)
+        file << p.u[i] << " ";
+      file << "\n";
+      file << "        </DataArray>\n";
+    }
     // D
-    file << "        <DataArray type=\"Float64\" Name=\"D\" format=\"ascii\">\n";
+    /*file << "        <DataArray type=\"Float64\" Name=\"D\" format=\"ascii\">\n";
     for (auto& p : polygons)
       file << p.D << " ";
     file << "\n";
@@ -718,7 +707,7 @@ struct Ensemble
     for (auto& p : polygons)
       file << p.flag << " ";
     file << "\n";
-    file << "        </DataArray>\n";
+    file << "        </DataArray>\n";*/
     // end polymorph extension
     file << "        <DataArray type=\"Float64\" Name=\"perimeter\" format=\"ascii\">\n";
     for (auto& p : polygons)
