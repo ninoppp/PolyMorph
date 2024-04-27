@@ -1,13 +1,16 @@
-#include "const.h"
 #include <cassert>
 #include <fstream>
 #include <iostream>
 #include <vector>
+#include <random>
+
+#include "const.h"
 
 void validate_parameters() {
-  assert(D_mu.size() == NUM_SPECIES && D_CV.size() == NUM_SPECIES);
-  assert(p_mu.size() == NUM_SPECIES && p_CV.size() == NUM_SPECIES);
-  assert(k_mu.size() == k_CV.size());
+    assert(D_mu.size() == NUM_SPECIES && D_CV.size() == NUM_SPECIES);
+    assert(p_mu.size() == NUM_SPECIES && p_CV.size() == NUM_SPECIES);
+    assert(k_mu.size() == k_CV.size());
+    assert(threshold_mu.size() == threshold_CV.size());
 }
 
 template <typename T>
@@ -44,4 +47,26 @@ void write_config() {
         << "Ns=" << Ns << std::endl
         << "Nr=" << Nr << std::endl;
     config.close();
+}
+
+std::vector<std::lognormal_distribution<>> create_lognormal(const std::vector<double>& mu, const std::vector<double>& CV) {
+    std::vector<std::lognormal_distribution<>> dists;
+    for (int i = 0; i < mu.size(); i++) {
+        double lnCV = std::log(1 + CV[i]*CV[i]);
+        dists.push_back(std::lognormal_distribution<>(std::log(mu[i]) - lnCV/2, std::sqrt(lnCV)));
+    }
+    return dists;
+}
+
+std::vector<double> sample(std::vector<std::lognormal_distribution<>>& dists, std::mt19937& rng) {
+    std::vector<double> samples;
+    for (int i = 0; i < dists.size(); i++) {
+        double x = dists[i](rng);
+        int max_tries = 50;
+        while (x > cutoff_factor*dists[i].m() && max_tries-- > 0) {
+            x = dists[i](rng);
+        }
+        samples.push_back(x);
+    }
+    return samples;
 }
