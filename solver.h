@@ -108,23 +108,17 @@ struct Solver {
         file << "</DataArray>" << std::endl;
         file << "</Points>" << std::endl;
         file << "<PointData Scalars=\"scalars\">" << std::endl; // start point data
+        
         // u
-        file << u.to_vtk("u");
+        if (Output::u) file << u.to_vtk("u");
         // parent_idx
-        file << "<DataArray type=\"Int32\" Name=\"parent_idx\" format=\"ascii\">" << std::endl;
-        for (int i = 0; i < Nx; i++) {
-            for (int j = 0; j < Ny; j++) {
-                file << parent_idx(i, j) << " ";
-            }
-            file << std::endl;
-        }
-        file << "</DataArray>" << std::endl;
+        if (Output::parent_idx) file << parent_idx.to_vtk("parent_idx");
         // D
-        file << D.to_vtk("D");
+        if (Output::D) file << D.to_vtk("D");
         // k
-        file << k.to_vtk("k");
+        if (Output::k) file << k.to_vtk("k");
         // p
-        file << p.to_vtk("p");
+        if (Output::p) file << p.to_vtk("p");
         
         file << "</PointData>" << std::endl;    // end of point data
         file << "</Piece>" << std::endl;
