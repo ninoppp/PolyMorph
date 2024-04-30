@@ -1,10 +1,12 @@
+#include "solver.h"
+#include <iostream>
 #include "const.h"
 #include "polyhoop.h"
-#include "solver.h"
 #include "interpolator.h"
 #include "chemistry.h"
 #include "experiments.h"
-#include <iostream>
+#include "utils.h"
+#include <cassert>
 
 void welcome() {
   std::cout << "--------------------------" << std::endl
@@ -12,11 +14,12 @@ void welcome() {
             << "--------------------------" << std::endl;
 }
 
+
 int main() {
   welcome();
+  validate_parameters();
   rng.seed(90178009);
-
   write_config();
-  sharpness_experiment();
+  default_testrun();
 }
 

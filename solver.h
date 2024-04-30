@@ -6,7 +6,8 @@
 #include <fstream>
 #include <cmath>
 #include <sstream>
-#include <array>
+#include <iostream>
+#include <cassert>
 
 #include "reaction.h"
 #include "grid.h"

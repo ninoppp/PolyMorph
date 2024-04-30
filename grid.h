@@ -39,20 +39,18 @@ size_t Grid<std::vector<double>>::sizeZ() const {
 template<typename T>
 std::string Grid<T>::to_vtk(std::string name) { // arr_size ignored  
     std::stringstream xml;
-    for (int k = 0; k < arr_size; k++) {
-        xml << "<DataArray type=\"Float64\" Name=\"" << name << "\" format=\"ascii\">" << std::endl;
-        for (int i = 0; i < sizeX(); i++) {
-            for (int j = 0; j < sizeY(); j++) {
-                xml << data[i][j] << " ";
-            }
-            xml << std::endl;
+    xml << "<DataArray type=\"Float64\" Name=\"" << name << "\" format=\"ascii\">" << std::endl;
+    for (int i = 0; i < sizeX(); i++) {
+        for (int j = 0; j < sizeY(); j++) {
+            xml << data[i][j] << " ";
         }
-        xml << "</DataArray>" << std::endl;
+        xml << std::endl;
     }
+    xml << "</DataArray>" << std::endl;
     return xml.str();
 }
 
-template<>
+template<>  // TODO use vector components in vtk
 std::string Grid<std::vector<double>>::to_vtk(std::string name) {
     std::stringstream xml;
     for (int k = 0; k < sizeZ(); k++) {

@@ -1,6 +1,10 @@
+#ifndef UTILS_H
+#define UTILS_H
+
 #include <cassert>
 #include <fstream>
 #include <iostream>
+#include <sstream>
 #include <vector>
 #include <random>
 
@@ -70,3 +74,19 @@ std::vector<double> sample(std::vector<std::lognormal_distribution<>>& dists, st
     }
     return samples;
 }
+
+
+/*template <typename T>
+std::string vec_to_vtk(std::vector<T> v, std::string name) {
+    std::stringstream xml;
+    xml << "<DataArray type=\"Float64\" Name=\"" << name 
+        << "\" NumberOfComponents=\"" << v.size() 
+        << "\" format=\"ascii\">\n";
+    for (auto& element : v) {
+        xml << element << " ";
+    }
+    xml << "\n";
+    xml << "</DataArray>\n";
+}*/
+
+#endif
