@@ -57,6 +57,14 @@ const std::vector<double> threshold_mu = {0.1, 0.1}; // [-] threshold mean
 const std::vector<double> threshold_CV = {0.1, 0.1}; // [-] coefficient of variation of threshold
 constexpr double cutoff_factor = 2.0; // [-] lognormal dists are cutoff at mu*factor to maintain stability
 
-// ToDo: output bools
+struct Output { // define what to output to save space
+    static const bool u = true; // concentration
+    static const bool D = true; // diffusion coefficient
+    static const bool p = true; // production rate
+    static const bool k = true; // kinetic coefficients
+    static const bool parent_idx = true; // polygon idx grid
+    static const bool threshold = true; // threshold
+    static const bool flag = true; // boolean polygon flag 
+}; 
 
 #endif
