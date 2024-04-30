@@ -84,7 +84,7 @@ struct Polygon
   bool phase; // phase of the enclosed medium
   double A0, A, Amax, alpha0, alpha; // target, actual & division area, area growth rate
   std::vector<double> D, k, p, u, threshold; // local morphogen concentration and threshold
-  bool flag; // general purpose flag
+  bool flag; // general purpose flag ToDo: make vector to allow multiple flags
   std::vector<Index> children; // stores the indices of the FD grid points within the polygon
 
   double area()
@@ -171,6 +171,7 @@ struct Ensemble
       polygons[p].k = sample(k_dist, rng);
       polygons[p].threshold = sample(threshold_dist, rng);
       polygons[p].p = std::vector<double>(NUM_SPECIES, 0);
+      polygons[p].u = std::vector<double>(NUM_SPECIES, 0);
       // end PolyMorph extension
       for (std::size_t i = Nv - 1, j = 0; j < Nv; i = j++)
         polygons[p].vertices[i].l0 = (polygons[p].vertices[j].r - polygons[p].vertices[i].r).length(); // edge rest length
@@ -439,11 +440,15 @@ struct Ensemble
         polygons.back().area();
         polygons[p].A0 = A0 * polygons[p].A / (polygons[p].A + polygons.back().A);
         polygons.back().A0 = A0 - polygons[p].A0;
-        // Polymorph extension: update polygon production rate (note: has to happen after vertices are assigned)
+        
         polygons[p].threshold = sample(threshold_dist, rng);
         polygons.back().threshold = sample(threshold_dist, rng);
         polygons[p].alpha = polygons[p].alpha0;
         polygons.back().alpha = polygons.back().alpha0;
+        polygons[p].u = std::vector<double>(NUM_SPECIES, 0);
+        polygons.back().u = std::vector<double>(NUM_SPECIES, 0);
+        polygons[p].p = std::vector<double>(NUM_SPECIES, 0);
+        polygons.back().p = std::vector<double>(NUM_SPECIES, 0);
       }
     }
     
@@ -679,27 +684,31 @@ struct Ensemble
       file << "        </DataArray>\n";
     }
     // D
-    /*file << "        <DataArray type=\"Float64\" Name=\"D\" format=\"ascii\">\n";
-    for (auto& p : polygons)
-      file << p.D << " ";
+    file << "        <DataArray type=\"Float64\" Name=\"D\" NumberOfComponents=\"" << NUM_SPECIES << "\" format=\"ascii\">\n";
+    for (auto& p : polygons) 
+      for (int i = 0; i < NUM_SPECIES; i++)
+        file << p.D[i] << " ";
     file << "\n";
     file << "        </DataArray>\n";
     // k
-    file << "        <DataArray type=\"Float64\" Name=\"k\" format=\"ascii\">\n";
+    file << "        <DataArray type=\"Float64\" Name=\"k\" NumberOfComponents=\"" << NUM_KIN << "\" format=\"ascii\">\n";
     for (auto& p : polygons)
-      file << p.k << " ";
+      for (int i = 0; i < NUM_KIN; i++)
+        file << p.k[i] << " ";
     file << "\n";
     file << "        </DataArray>\n";
     // p
-    file << "        <DataArray type=\"Float64\" Name=\"p\" format=\"ascii\">\n";
+    file << "        <DataArray type=\"Float64\" Name=\"p\" NumberOfComponents=\"" << NUM_SPECIES << "\" format=\"ascii\">\n";
     for (auto& p : polygons)
-      file << p.p << " ";
+      for (int i = 0; i < NUM_SPECIES; i++)
+        file << p.p[i] << " ";
     file << "\n";
     file << "        </DataArray>\n";
     // threshold
-    file << "        <DataArray type=\"Float64\" Name=\"threshold\" format=\"ascii\">\n";
+    file << "        <DataArray type=\"Float64\" Name=\"threshold\" NumberOfComponents=\"" << NUM_SPECIES << "\" format=\"ascii\">\n";
     for (auto& p : polygons)
-      file << p.threshold << " ";
+      for (int i = 0; i < NUM_SPECIES; i++)
+        file << p.threshold[i] << " ";
     file << "\n";
     file << "        </DataArray>\n";
     // flag
@@ -707,7 +716,7 @@ struct Ensemble
     for (auto& p : polygons)
       file << p.flag << " ";
     file << "\n";
-    file << "        </DataArray>\n";*/
+    file << "        </DataArray>\n";
     // end polymorph extension
     file << "        <DataArray type=\"Float64\" Name=\"perimeter\" format=\"ascii\">\n";
     for (auto& p : polygons)
