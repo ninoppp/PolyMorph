@@ -2,6 +2,7 @@
 #define CHEMISTRY_H
 
 #include "polyhoop.h"
+#include "utils.h"
 
 // Handles polygon modification due to signaling effects. 
 // Could also be done in ensemble.step()
@@ -17,10 +18,10 @@ struct Chemistry {
     for (int i = Nr; i < ensemble.polygons.size(); i++) {
       auto& cell = ensemble.polygons[i];
       // set production
-      if (cell.p == 0 && is_producing(cell)) {
-        cell.p = p_dist(rng);
-      } else if (cell.p > 0 && !is_producing(cell)) {
-        cell.p = 0;
+      if (cell.p[0] == 0 && is_producing(cell)) { // ToDo: don't check only first element
+        cell.p = sample(p_dist, rng); // ToDo: make this more efficient (only sample once per cell
+      } else if (cell.p[0] > 0 && !is_producing(cell)) {
+        cell.p = std::vector<double>(NUM_SPECIES, 0);
       }
       // flag below threshold
       if (!cell.flag && cell.u < cell.threshold) {
