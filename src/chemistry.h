@@ -1,6 +1,8 @@
 #ifndef CHEMISTRY_H
 #define CHEMISTRY_H
 
+#include <numeric>
+
 #include "polyhoop.h"
 #include "utils.h"
 
@@ -8,7 +10,7 @@
 // Could also be done in ensemble.step()
 struct Chemistry {
   Ensemble& ensemble;
-  bool growth_control = false;
+  bool growth_control = false; // set true to stop growth when below threshold
   std::function<bool(Polygon&)> is_producing = [](Polygon& p) { return false;};
 
   Chemistry(Ensemble& ensemble) : ensemble(ensemble) {}
@@ -18,19 +20,20 @@ struct Chemistry {
     for (int i = Nr; i < ensemble.polygons.size(); i++) {
       auto& cell = ensemble.polygons[i];
       // set production
-      if (cell.p[0] == 0 && is_producing(cell)) { // ToDo: don't check only first element
-        cell.p = sample(p_dist, rng); // ToDo: make this more efficient (only sample once per cell
-      } else if (cell.p[0] > 0 && !is_producing(cell)) {
+      double p_sum = std::accumulate(cell.p.begin(), cell.p.end(), 0.0); // assuming p_i >= 0. ToDo: allow sinks
+      if (p_sum == 0 && is_producing(cell)) {
+        cell.p = sample(p_dist, rng);
+      } else if (p_sum > 0 && !is_producing(cell)) {
         cell.p = std::vector<double>(NUM_SPECIES, 0);
       }
-      // flag below threshold TODO: fix for multi species
-      /*if (!cell.flag && cell.u < cell.threshold) {
+      // flag below threshold
+      if (!cell.flag && cell.u[0] < cell.threshold[0]) {  // atm only consider first species
         cell.flag = true;
         if (growth_control) cell.alpha = 0;
-      } else if (cell.flag && cell.u > cell.threshold){
+      } else if (cell.flag && cell.u[0] > cell.threshold[0]){
         cell.flag = false;
         if (growth_control) cell.alpha = cell.alpha0; 
-      }*/
+      }
     }
   }  
 
