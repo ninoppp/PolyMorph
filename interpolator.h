@@ -65,9 +65,9 @@ struct Interpolator {
         }
         // scatter values
         if (new_idx(i, j) < int(Nr)) { // is background node (treat rigid as BG)
-          solver.D(i, j) = D0; // background diffusion
-          solver.k(i, j) = k0; // background degradation
-          solver.p(i, j) = p0; // background production (should be zero)
+          solver.D(i, j) = std::vector<double>(NUM_SPECIES, D0); // background diffusion
+          solver.k(i, j) = std::vector<double>(NUM_SPECIES, k0); // background degradation
+          solver.p(i, j) = std::vector<double>(NUM_SPECIES, p0); // background production (should be zero)
         } else { 
           solver.D(i, j) = ensemble.polygons[new_idx(i, j)].D;
           solver.k(i, j) = ensemble.polygons[new_idx(i, j)].k;
@@ -82,29 +82,31 @@ struct Interpolator {
   // important: depends on scatter being called every iteration to build the parent_idx
   void gather() {
     // get all children from parent idx built during scatter()
-    #pragma omp parallel for
     for (auto& cell : ensemble.polygons) {
       cell.children.clear();
     }
     for (int i = istart; i < iend; i++) {
       for (int j = jstart; j < jend; j++) {
-        if (solver.parent_idx(i, j) >= 0) { // skip background nodes
+        if (solver.parent_idx(i, j) >= int(Nr)) { // skip background nodes
           auto& cell = ensemble.polygons[solver.parent_idx(i, j)]; 
           cell.children.push_back(Index(i, j)); // cannot parallelize this part
         }
       }
     }
-    // accumulate data from children
+    // accumulate data from children (average concentration)
     #pragma omp parallel for
     for (int p = Nr; p < ensemble.polygons.size(); p++) {
-      // average concentration
       auto& cell = ensemble.polygons[p];
-      cell.u = 0;
+      cell.u = std::vector<double>(NUM_SPECIES, 0.0);
       for (const Index& idx : cell.children) {
-        cell.u += solver.u(idx);
+        for (int i = 0; i < NUM_SPECIES; i++){
+          cell.u[i] += solver.u(idx)[i];
+        }
       }
       if (cell.children.size() > 0) { // avoid division by zero if cells exceed RD box
-        cell.u /= cell.children.size();
+        for (int i = 0; i < NUM_SPECIES; i++) {
+          cell.u[i] /= cell.children.size();
+        }
       }
     }
   }

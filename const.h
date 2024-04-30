@@ -34,8 +34,8 @@ constexpr double cc = 30; // [1/T] collision damping rate
 constexpr double dt = 1e-4; // [T] time step // default 1e-4
 
 constexpr std::size_t Nf = 100; // number of output frames
-constexpr std::size_t Ns = 2000; // number of time steps between frames // default 1000
-constexpr std::size_t Nr = 1; // number of rigid polygons
+constexpr std::size_t Ns = 100; // number of time steps between frames // default 1000
+constexpr std::size_t Nr = 0; // number of rigid polygons
 
 constexpr double drmax = h + sh + ss; // maximum interaction distance
 
@@ -45,8 +45,8 @@ constexpr double D0 = 64.0; // [L^2/T] diffusion coefficient background
 constexpr double k0 = 0.0; // [1/T] reaction rate background
 constexpr double p0 = 0.0; // [1/T] reaction rate background
 
-constexpr int NUM_SPECIES = 2; // number of diffusable species
-constexpr int NUM_KIN = 3; // number of kinetic coefficients
+constexpr int NUM_SPECIES = 2; // number of diffusable species (size of D, k, p)
+constexpr int NUM_KIN = 3; // number of kinetic coefficients (size of k)
 const std::vector<double> k_mu = {1.0, 1.0, 4.0}; // reaction koefficient mean
 const std::vector<double> k_CV = {0.3, 0.3, 0.3}; // [-] reaction coefficients CV
 const std::vector<double> D_mu = {64, 32}; // [L^2/T] diffusion coefficient mean
@@ -56,5 +56,7 @@ const std::vector<double> p_CV = {0.3, 0.3}; // [-] coefficient of variation of 
 const std::vector<double> threshold_mu = {0.1, 0.1}; // [-] threshold mean 
 const std::vector<double> threshold_CV = {0.1, 0.1}; // [-] coefficient of variation of threshold
 constexpr double cutoff_factor = 2.0; // [-] lognormal dists are cutoff at mu*factor to maintain stability
+
+// ToDo: output bools
 
 #endif
