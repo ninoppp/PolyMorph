@@ -53,6 +53,7 @@ void write_config() {
     config.close();
 }
 
+// creates a vector of lognormal distributions from vectors of means and CVs
 std::vector<std::lognormal_distribution<>> create_lognormal(const std::vector<double>& mu, const std::vector<double>& CV) {
     std::vector<std::lognormal_distribution<>> dists;
     for (int i = 0; i < mu.size(); i++) {
@@ -62,6 +63,7 @@ std::vector<std::lognormal_distribution<>> create_lognormal(const std::vector<do
     return dists;
 }
 
+// returns a vector of samples from a vector of lognormal distributions
 std::vector<double> sample(std::vector<std::lognormal_distribution<>>& dists, std::mt19937& rng) {
     std::vector<double> samples;
     for (int i = 0; i < dists.size(); i++) {
@@ -74,19 +76,5 @@ std::vector<double> sample(std::vector<std::lognormal_distribution<>>& dists, st
     }
     return samples;
 }
-
-
-/*template <typename T>
-std::string vec_to_vtk(std::vector<T> v, std::string name) {
-    std::stringstream xml;
-    xml << "<DataArray type=\"Float64\" Name=\"" << name 
-        << "\" NumberOfComponents=\"" << v.size() 
-        << "\" format=\"ascii\">\n";
-    for (auto& element : v) {
-        xml << element << " ";
-    }
-    xml << "\n";
-    xml << "</DataArray>\n";
-}*/
 
 #endif

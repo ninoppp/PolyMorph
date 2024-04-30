@@ -23,8 +23,9 @@ int main() {
     
     for (int N = 2048; N <= 8192; N *= 2) {
 
-        Grid<double> u0(N, N); // initial condition, just zeros
-        Solver solver(u0, D0, dx, dt, k0); // init solver
+        Grid<std::vector<double>> u0(N, N); // initial condition, just zeros
+        Reaction R = LinearDegradation();
+        Solver solver(u0, D0, dx, dt, R); // init solver
         Interpolator interpolator(ensemble, solver);
         Chemistry chemistry(ensemble);
         chemistry.is_producing = [solver](const Polygon& p) { return p.midpoint().x < solver.box_position_x + 10; }; // heavyside

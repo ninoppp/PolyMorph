@@ -21,7 +21,7 @@ cleanup_files() {
 compile_polyhoop() {
     echo "compiling polymorph ... "
     rm -f polymorph.out
-    g++ -fopenmp -O3 -o polymorph.out main.cpp
+    g++ -fopenmp -O3 -o polymorph.out src/main.cpp
 }
 
 generate_ensemble() {
