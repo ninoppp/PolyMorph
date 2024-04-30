@@ -17,7 +17,7 @@
 #include <map>
 
 #include "const.h"
-#include "solver.h" // TODO : remove this dependency (only uses Index)
+#include "grid.h"
 #include "utils.h"
 
 // distributions
@@ -83,9 +83,9 @@ struct Polygon
   std::vector<Vertex> vertices; // vertex list in counter-clockwise orientation
   bool phase; // phase of the enclosed medium
   double A0, A, Amax, alpha0, alpha; // target, actual & division area, area growth rate
-  std::vector<double> D, k, p, u, threshold; // local morphogen concentration and threshold
-  bool flag; // general purpose flag ToDo: make vector to allow multiple flags
-  std::vector<Index> children; // stores the indices of the FD grid points within the polygon
+  std::vector<double> D, k, p, u, threshold; // diffusion, kinetic coefficients, production, concentration, threshold
+  bool flag; // general purpose flag
+  std::vector<Index> children; // stores the indices of the FD grid points that lie within the polygon
 
   double area()
   {
@@ -550,7 +550,7 @@ struct Ensemble
       }
     }
     t += dt; // advance the time
-  } // NM: end step()
+  }
   
   void boxes()
   {
