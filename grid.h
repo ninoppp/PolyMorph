@@ -5,6 +5,7 @@
 #include <fstream>
 #include <cmath>
 #include <sstream>
+#include <iostream>
 
 struct Index {
   int i; 
@@ -39,7 +40,8 @@ size_t Grid<std::vector<double>>::sizeZ() const {
 template<typename T>
 std::string Grid<T>::to_vtk(std::string name) { // arr_size ignored  
     std::stringstream xml;
-    xml << "<DataArray type=\"Float64\" Name=\"" << name << "\" format=\"ascii\">" << std::endl;
+    xml << "<DataArray type=\"Float64\" Name=\"" << name 
+    << "\" format=\"ascii\">" << std::endl;
     for (int i = 0; i < sizeX(); i++) {
         for (int j = 0; j < sizeY(); j++) {
             xml << data[i][j] << " ";
@@ -53,16 +55,19 @@ std::string Grid<T>::to_vtk(std::string name) { // arr_size ignored
 template<>  // TODO use vector components in vtk
 std::string Grid<std::vector<double>>::to_vtk(std::string name) {
     std::stringstream xml;
-    for (int k = 0; k < sizeZ(); k++) {
-        xml << "<DataArray type=\"Float64\" Name=\"" << name << std::to_string(k) << "\" format=\"ascii\">" << std::endl;
-        for (int i = 0; i < sizeX(); i++) {
-            for (int j = 0; j < sizeY(); j++) {
+    xml << "<DataArray type=\"Float64\" Name=\"" << name 
+        << "\" NumberOfComponents=\"" << sizeZ() 
+        << "\" format=\"ascii\">" << std::endl;
+    for (int i = 0; i < sizeX(); i++) {
+        for (int j = 0; j < sizeY(); j++) {
+            for (int k = 0; k < sizeZ(); k++) {
                 xml << data[i][j][k] << " ";
             }
-            xml << std::endl;
         }
-        xml << "</DataArray>" << std::endl;
+        xml << std::endl;
     }
+    xml << "</DataArray>" << std::endl;
+    
     return xml.str();
 }
 
