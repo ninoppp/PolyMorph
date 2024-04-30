@@ -52,7 +52,7 @@ std::string Grid<T>::to_vtk(std::string name) { // arr_size ignored
     return xml.str();
 }
 
-template<>  // TODO use vector components in vtk
+template<>
 std::string Grid<std::vector<double>>::to_vtk(std::string name) {
     std::stringstream xml;
     xml << "<DataArray type=\"Float64\" Name=\"" << name 

@@ -23,14 +23,14 @@ struct Chemistry {
       } else if (cell.p[0] > 0 && !is_producing(cell)) {
         cell.p = std::vector<double>(NUM_SPECIES, 0);
       }
-      // flag below threshold
-      if (!cell.flag && cell.u < cell.threshold) {
+      // flag below threshold TODO: fix for multi species
+      /*if (!cell.flag && cell.u < cell.threshold) {
         cell.flag = true;
         if (growth_control) cell.alpha = 0;
       } else if (cell.flag && cell.u > cell.threshold){
         cell.flag = false;
         if (growth_control) cell.alpha = cell.alpha0; 
-      }
+      }*/
     }
   }  
 

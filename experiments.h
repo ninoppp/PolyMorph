@@ -22,7 +22,7 @@ void default_testrun() {
     for (std::size_t f = 1; f <= Nf; ++f) {
         for (std::size_t s = 0; s < Ns; ++s) {
             ensemble.step(); 
-            //chemistry.update();
+            chemistry.update();
             interpolator.scatter();
             solver.step();
             interpolator.gather();

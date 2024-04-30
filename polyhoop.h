@@ -676,13 +676,12 @@ struct Ensemble
     file << "        </DataArray>\n";
     // polymorph extension
     // u
-    for (int i = 0; i < NUM_SPECIES; i++){
-      file << "        <DataArray type=\"Float64\" Name=\"u" << i << "\" format=\"ascii\">\n";
-      for (auto& p : polygons)
+    file << "        <DataArray type=\"Float64\" Name=\"u\" NumberOfComponents=\"" << NUM_SPECIES << "\" format=\"ascii\">\n";
+    for (auto& p : polygons) 
+      for (int i = 0; i < NUM_SPECIES; i++)
         file << p.u[i] << " ";
-      file << "\n";
-      file << "        </DataArray>\n";
-    }
+    file << "\n";
+    file << "        </DataArray>\n";
     // D
     file << "        <DataArray type=\"Float64\" Name=\"D\" NumberOfComponents=\"" << NUM_SPECIES << "\" format=\"ascii\">\n";
     for (auto& p : polygons) 
