@@ -19,11 +19,9 @@ enum class BoundaryCondition {
 };
 
 struct Solver { 
-    double box_position_x, box_position_y; // bottom left corner of RD box
+    double x0, y0; // offset/position of the grid
     size_t Nx, Ny; // number of grid points
-    double D0; // diffusion coefficient. Later also a grid datastructure
     double dx; // grid spacing
-    double dt; // time step
     Reaction R; // reaction term
     Grid<int> parent_idx; // polygon idx
     Grid<std::vector<double>> u; // concentrations
@@ -32,28 +30,26 @@ struct Solver {
     Grid<std::vector<double>> k; // kinetic coefficients
  
     // initialize the grid with a given initial condition
-    Solver(const Grid<std::vector<double>> u0, const double D0, const double dx, 
-            double dt, Reaction R) {
+    Solver(const Grid<std::vector<double>> u0, const double dx, Reaction R) {
         this->u = u0;
-        this->D0 = D0;
         this->dx = dx;
-        this->dt = dt;
         this->R = R;
         this->Nx = u.sizeX();
         this->Ny = u.sizeY();
         std::cout << "solver dimensions Nx=" << Nx << " Ny=" << Ny << std::endl;
-        // ToDo: find better way to initialize all this below
-        box_position_x = -0.5 * Nx * dx; // midpoint at 0
-        box_position_y = -0.5 * Ny * dx;
+        // ToDo: make x0, y0 optional constructor arguments
+        x0 = -0.5 * Nx * dx; // midpoint at 0
+        y0 = -0.5 * Ny * dx;
         std::cout << "dx=" << dx << std::endl;
-        std::cout << "RD box x=" << box_position_x << " y=" << box_position_y << std::endl;
+        std::cout << "x0=" << x0 << " y0=" << y0 << std::endl;
+        // initialize with background values
         parent_idx = Grid<int>(Nx, Ny, -2);
-        D = Grid<std::vector<double>>(Nx, Ny, std::vector<double>(NUM_SPECIES, D0));
-        p = Grid<std::vector<double>>(Nx, Ny, std::vector<double>(NUM_SPECIES, 0.0));
-        k = Grid<std::vector<double>>(Nx, Ny, std::vector<double>(NUM_KIN, 0.0)); 
+        D = Grid<std::vector<double>>(Nx, Ny, D0);
+        p = Grid<std::vector<double>>(Nx, Ny, p0);
+        k = Grid<std::vector<double>>(Nx, Ny, k0); 
     }
 
-    void step() { 
+    void step(double dt) { 
         Grid<std::vector<double>> unew(Nx, Ny, std::vector<double>(NUM_SPECIES, 0.0));
         // Forward Euler with central differences
         // ToDo: separate inner nodes and boundary to efficiently parallelize and vectorize inner nodes
@@ -77,14 +73,32 @@ struct Solver {
                 }
             }
         }
-        // temporary dirichlet 0 bdc
+        // temporary dirichlet 1 bdc for 2nd morphogen
         /*for (int j = 0; j < Ny; j++) {
-            unew(Nx-1, j) = 0.0; // Dirichlet BC
+            unew(0, j)[1] = 1.0; 
         }*/
-        u = unew;    
+        u = unew;
     }
 
-    void rescale(size_t Nx_new, size_t Ny_new) {}
+    // allows expanding of the FD solver box during runtime
+    void rescale(size_t Nx_new, size_t Ny_new, double x0_new, double y0_new) {
+        if (Nx_new == Nx && Ny_new == Ny) return; // nothing to do
+        if (Nx_new < Nx || Ny_new < Ny) {
+            std::cerr << "Rescaling to smaller grid not allowed" << std::endl;
+            exit(1);
+        }
+        x0 = x0_new;
+        y0 = y0_new;
+        Nx = Nx_new;
+        Ny = Ny_new;
+        int grid_offset_x = (x0_new - x0) / dx; // offset where to start copying
+        int grid_offset_y = (y0_new - y0) / dx;
+        u.rescale(Nx, Ny, grid_offset_x, grid_offset_y, std::vector<double>(NUM_SPECIES, 0.0)); // ToDo: initialize with boundary values
+        D.rescale(Nx, Ny, grid_offset_x, grid_offset_y, D0);
+        p.rescale(Nx, Ny, grid_offset_x, grid_offset_y, p0);
+        k.rescale(Nx, Ny, grid_offset_x, grid_offset_y, k0);
+        parent_idx.rescale(Nx, Ny, grid_offset_x, grid_offset_y, -2);
+    } 
 
     void output(const std::size_t frame) {
         char filename [19]; 
@@ -100,8 +114,8 @@ struct Solver {
         file << "<DataArray type=\"Float64\" NumberOfComponents=\"3\" format=\"ascii\">" << std::endl;
         for (int i = 0; i < Nx; i++) {
             for (int j = 0; j < Ny; j++) {
-                double x = box_position_x + i * dx;
-                double y = box_position_y + j * dx;
+                double x = x0 + i * dx;
+                double y = y0 + j * dx;
                 file << x << " " << y << " 0" << std::endl;
             }
         }
@@ -109,15 +123,10 @@ struct Solver {
         file << "</Points>" << std::endl;
         file << "<PointData Scalars=\"scalars\">" << std::endl; // start point data
         
-        // u
         if (Output::u) file << u.to_vtk("u");
-        // parent_idx
         if (Output::parent_idx) file << parent_idx.to_vtk("parent_idx");
-        // D
         if (Output::D) file << D.to_vtk("D");
-        // k
         if (Output::k) file << k.to_vtk("k");
-        // p
         if (Output::p) file << p.to_vtk("p");
         
         file << "</PointData>" << std::endl;    // end of point data
