@@ -73,7 +73,7 @@ std::vector<double> sample(std::vector<std::lognormal_distribution<>>& dists, st
 
 // writes a nice welcome message to console to lift my mood
 void welcome() {
-  std::cout << "--------------------------" << std::endl
+    std::cout << "--------------------------" << std::endl
             << "|  Welcome to PolyMorph  |" << std::endl
             << "--------------------------" << std::endl;
 }
