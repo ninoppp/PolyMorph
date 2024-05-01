@@ -84,7 +84,7 @@ struct Polygon
   bool phase; // phase of the enclosed medium
   double A0, A, Amax, alpha0, alpha; // target, actual & division area, area growth rate
   std::vector<double> D, k, p, u, threshold; // diffusion, kinetic coefficients, production, concentration, threshold
-  bool flag; // general purpose flag
+  bool flag = false; // general purpose flag
   std::vector<Index> children; // stores the indices of the FD grid points that lie within the polygon
 
   double area()
@@ -675,47 +675,53 @@ struct Ensemble
     file << "\n";
     file << "        </DataArray>\n";
     // polymorph extension
-    // u
-    file << "        <DataArray type=\"Float64\" Name=\"u\" NumberOfComponents=\"" << NUM_SPECIES << "\" format=\"ascii\">\n";
-    for (auto& p : polygons) 
-      for (int i = 0; i < NUM_SPECIES; i++)
-        file << p.u[i] << " ";
-    file << "\n";
-    file << "        </DataArray>\n";
-    // D
-    file << "        <DataArray type=\"Float64\" Name=\"D\" NumberOfComponents=\"" << NUM_SPECIES << "\" format=\"ascii\">\n";
-    for (auto& p : polygons) 
-      for (int i = 0; i < NUM_SPECIES; i++)
-        file << p.D[i] << " ";
-    file << "\n";
-    file << "        </DataArray>\n";
-    // k
-    file << "        <DataArray type=\"Float64\" Name=\"k\" NumberOfComponents=\"" << NUM_KIN << "\" format=\"ascii\">\n";
-    for (auto& p : polygons)
-      for (int i = 0; i < NUM_KIN; i++)
-        file << p.k[i] << " ";
-    file << "\n";
-    file << "        </DataArray>\n";
-    // p
-    file << "        <DataArray type=\"Float64\" Name=\"p\" NumberOfComponents=\"" << NUM_SPECIES << "\" format=\"ascii\">\n";
-    for (auto& p : polygons)
-      for (int i = 0; i < NUM_SPECIES; i++)
-        file << p.p[i] << " ";
-    file << "\n";
-    file << "        </DataArray>\n";
-    // threshold
-    file << "        <DataArray type=\"Float64\" Name=\"threshold\" NumberOfComponents=\"" << NUM_SPECIES << "\" format=\"ascii\">\n";
-    for (auto& p : polygons)
-      for (int i = 0; i < NUM_SPECIES; i++)
-        file << p.threshold[i] << " ";
-    file << "\n";
-    file << "        </DataArray>\n";
-    // flag
-    file << "        <DataArray type=\"Int8\" Name=\"flag\" format=\"ascii\">\n";
-    for (auto& p : polygons)
-      file << p.flag << " ";
-    file << "\n";
-    file << "        </DataArray>\n";
+    if (Output::u) {
+      file << "        <DataArray type=\"Float64\" Name=\"u\" NumberOfComponents=\"" << NUM_SPECIES << "\" format=\"ascii\">\n";
+      for (auto& p : polygons) 
+        for (int i = 0; i < NUM_SPECIES; i++)
+          file << p.u[i] << " ";
+      file << "\n";
+      file << "        </DataArray>\n";
+    }
+    if (Output::D) {
+      file << "        <DataArray type=\"Float64\" Name=\"D\" NumberOfComponents=\"" << NUM_SPECIES << "\" format=\"ascii\">\n";
+      for (auto& p : polygons) 
+        for (int i = 0; i < NUM_SPECIES; i++)
+          file << p.D[i] << " ";
+      file << "\n";
+      file << "        </DataArray>\n";
+    }
+    if (Output::k) {
+      file << "        <DataArray type=\"Float64\" Name=\"k\" NumberOfComponents=\"" << NUM_KIN << "\" format=\"ascii\">\n";
+      for (auto& p : polygons)
+        for (int i = 0; i < NUM_KIN; i++)
+          file << p.k[i] << " ";
+      file << "\n";
+      file << "        </DataArray>\n";
+    }
+    if (Output::parent_idx) {
+      file << "        <DataArray type=\"Float64\" Name=\"p\" NumberOfComponents=\"" << NUM_SPECIES << "\" format=\"ascii\">\n";
+      for (auto& p : polygons)
+        for (int i = 0; i < NUM_SPECIES; i++)
+          file << p.p[i] << " ";
+      file << "\n";
+      file << "        </DataArray>\n";
+    }
+    if (Output::threshold) {
+      file << "        <DataArray type=\"Float64\" Name=\"threshold\" NumberOfComponents=\"" << NUM_SPECIES << "\" format=\"ascii\">\n";
+      for (auto& p : polygons)
+        for (int i = 0; i < NUM_SPECIES; i++)
+          file << p.threshold[i] << " ";
+      file << "\n";
+      file << "        </DataArray>\n";
+    }
+    if (Output::flag) {
+      file << "        <DataArray type=\"Int8\" Name=\"flag\" format=\"ascii\">\n";
+      for (auto& p : polygons)
+        file << p.flag << " ";
+      file << "\n";
+      file << "        </DataArray>\n";
+    }
     // end polymorph extension
     file << "        <DataArray type=\"Float64\" Name=\"perimeter\" format=\"ascii\">\n";
     for (auto& p : polygons)
