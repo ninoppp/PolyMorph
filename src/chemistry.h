@@ -6,12 +6,11 @@
 #include "polyhoop.h"
 #include "utils.h"
 
-// Handles polygon modification due to signaling effects. 
-// Could also be done in ensemble.step()
+// Handles polygon modification due to signaling effects (growth control, chemotaxis, etc.)
 struct Chemistry {
   Ensemble& ensemble;
   bool growth_control = false; // set true to stop growth when below threshold
-  std::function<bool(Polygon&)> is_producing = [](Polygon& p) { return false;};
+  std::function<std::vector<bool>(Polygon&)> is_producing = [](Polygon& p) { return std::vector(NUM_SPECIES, false); };
 
   Chemistry(Ensemble& ensemble) : ensemble(ensemble) {}
 
@@ -20,12 +19,20 @@ struct Chemistry {
     for (int i = Nr; i < ensemble.polygons.size(); i++) {
       auto& cell = ensemble.polygons[i];
       // set production
-      double p_sum = std::accumulate(cell.p.begin(), cell.p.end(), 0.0); // assuming p_i >= 0. ToDo: allow sinks
-      if (p_sum == 0 && is_producing(cell)) {
-        cell.p = sample(p_dist, rng);
-      } else if (p_sum > 0 && !is_producing(cell)) {
-        cell.p = std::vector<double>(NUM_SPECIES, 0);
+      std::vector<bool> producing = is_producing(cell); // which species are produced by the cell
+      if (producing.size() != NUM_SPECIES) {
+        std::cerr << "is_producing function must return a vector of size NUM_SPECIES" << std::endl;
+        exit(1);
       }
+      std::vector<double> production_rate = sample(p_dist, rng);
+      for (int i = 0; i < NUM_SPECIES; i++) {
+        if (cell.p[i] == 0 && producing[i]) {
+          cell.p[i] = production_rate[i];
+        } else if (cell.p[i] > 0 && !producing[i]) {
+          cell.p[i] = 0;
+        }
+      }
+
       // flag below threshold
       if (!cell.flag && cell.u[0] < cell.threshold[0]) {  // atm only consider first species
         cell.flag = true;
@@ -37,7 +44,8 @@ struct Chemistry {
     }
   }  
 
-  double get_border_sharpness() { // "width" of border
+  // currently assumes left to right gradient
+  double get_precision_zone_width() {
     double xmin = ensemble.x1;
     double xmax = ensemble.x0;
     for (int p = Nr; p < ensemble.polygons.size(); p++) {
@@ -59,6 +67,7 @@ struct Chemistry {
     for (int p = Nr; p < ensemble.polygons.size(); p++) {
       auto& cell = ensemble.polygons[p];
       for (auto& vertex : cell.vertices) {
+        // ToDo
         // move towards higher concentration
         // manipulate vertex acceleration
         // Q: how to get morphogen gradient cheaply?
