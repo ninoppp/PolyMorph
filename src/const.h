@@ -34,37 +34,37 @@ constexpr double cc = 30; // [1/T] collision damping rate
 constexpr double dt = 1e-4; // [T] time step // default 1e-4
 
 constexpr std::size_t Nf = 100; // number of output frames
-constexpr std::size_t Ns = 1000; // number of time steps between frames // default 1000
+constexpr std::size_t Ns = 2000; // number of time steps between frames // default 1000
 constexpr std::size_t Nr = 0; // number of rigid polygons
 
 constexpr double drmax = h + sh + ss; // maximum interaction distance
 
-// Diffusion parameters
+// Diffusion parameters // TODO: make vectors
 constexpr double dx = 0.25; // [L] grid spacing for solver
-constexpr double D0 = 64.0; // [L^2/T] diffusion coefficient background
-constexpr double k0 = 0.0; // [1/T] reaction rate background
-constexpr double p0 = 0.0; // [1/T] reaction rate background
-
 constexpr int NUM_SPECIES = 2; // number of diffusable species (size of D, k, p)
 constexpr int NUM_KIN = 3; // number of kinetic coefficients (size of k)
-const std::vector<double> k_mu = {1.0, 1.0, 4.0}; // reaction koefficient mean
-const std::vector<double> k_CV = {0.3, 0.3, 0.3}; // [-] reaction coefficients CV
+const std::vector<double> k0 = {0, 0, 0}; // reaction coefficients background
+const std::vector<double> k_mu = {1.0, 1.0, 10.0}; // reaction coefficients mean
+const std::vector<double> k_CV = {0.1, 0.1, 0.1}; // [-] reaction coefficients CV
+const std::vector<double> D0 = {64, 32}; // [L^2/T] diffusion coefficient background
 const std::vector<double> D_mu = {64, 32}; // [L^2/T] diffusion coefficient mean
 const std::vector<double> D_CV = {0.3, 0.3}; // [-] coefficient of variation of diffusion
-const std::vector<double> p_mu = {24, 24}; // [1/T] production rate mean
-const std::vector<double> p_CV = {0.3, 0.3}; // [-] coefficient of variation of production rate
-const std::vector<double> threshold_mu = {0.1, 0.1}; // [-] threshold mean 
+const std::vector<double> p0 = {0, 0}; // [1/T] production rate background (should be zero)
+const std::vector<double> p_mu = {24, 1}; // [1/T] production rate mean. Note: mu must be strictly positive. 
+const std::vector<double> p_CV = {0.3, 0}; // [-] coefficient of variation of production rate
+const std::vector<double> threshold_mu = {0.25, 0.1}; // [-] threshold mean 
 const std::vector<double> threshold_CV = {0.1, 0.1}; // [-] coefficient of variation of threshold
 constexpr double cutoff_factor = 2.0; // [-] lognormal dists are cutoff at mu*factor to maintain stability
 
-struct Output { // define what to output to save space
-    static const bool u = true; // concentration
-    static const bool D = true; // diffusion coefficient
-    static const bool p = true; // production rate
-    static const bool k = true; // kinetic coefficients
-    static const bool parent_idx = true; // polygon idx grid
-    static const bool threshold = true; // threshold
-    static const bool flag = true; // boolean polygon flag 
+// define what to write to vtk for visualization/debugging to save space 
+namespace Output { 
+    constexpr bool u = true; // concentration
+    constexpr bool D = true; // diffusion coefficient
+    constexpr bool p = true; // production rate
+    constexpr bool k = true; // kinetic coefficients
+    constexpr bool parent_idx = true; // polygon idx grid
+    constexpr bool threshold = true; // threshold
+    constexpr bool flag = true; // boolean polygon flag 
 }; 
 
 #endif
