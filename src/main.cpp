@@ -8,13 +8,6 @@
 #include "utils.h"
 #include <cassert>
 
-void welcome() {
-  std::cout << "--------------------------" << std::endl
-            << "|  Welcome to PolyMorph  |" << std::endl
-            << "--------------------------" << std::endl;
-}
-
-
 int main() {
   welcome();
   validate_parameters();

@@ -6,16 +6,26 @@
 #include "utils.h"
 #include <iostream>
 
+/*! \brief This file contains multiple "main" functions for different experiments
+ *
+ *  The main routines are called from the main() function in main.cpp
+ *  and contain the logic for different simulation runs.
+ */
+
 void default_testrun() {
     Ensemble ensemble("ensemble/default.off"); // read the input file
     unsigned L = 50;
     unsigned N = L/dx; 
     Grid<std::vector<double>> u0 = Grid(N, N, std::vector<double>(NUM_SPECIES, 0.0)); // initial condition, just zeros
     Reaction R = Inhibition();
-    Solver solver(u0, D0, dx, dt, R); // init solver
+    Solver solver(u0, dx, R); // init solver
     Interpolator interpolator(ensemble, solver);
     Chemistry chemistry(ensemble);
-    chemistry.is_producing = [](const Polygon& p) { return p.vertices[0].p == Nr; }; // mother cell
+    chemistry.is_producing = [L](const Polygon& p) { 
+      return std::vector<bool> {p.vertices[0].p == Nr, 
+                                p.midpoint().x < -0.3*L}; 
+    };
+    chemistry.growth_control = true; // stop growth if flagged
     
     ensemble.output(0); // print the initial state
     solver.output(0); // print the initial state
@@ -24,7 +34,7 @@ void default_testrun() {
             ensemble.step(); 
             chemistry.update();
             interpolator.scatter();
-            solver.step();
+            solver.step(dt);
             interpolator.gather();
         } 
         ensemble.output(f);
@@ -54,7 +64,7 @@ void default_testrun() {
         Grid<double> u0(int(102/dx), int(52/dx)); // initial condition, just zeros
         Solver solver(u0, D0, dx, dt, k0); // init solver
         Interpolator interpolator(ensemble, solver);
-        chemistry.is_producing = [solver](const Polygon& p) { return p.midpoint().x < solver.box_position_x + 10; }; // heavyside
+        chemistry.is_producing = [solver](const Polygon& p) { return p.midpoint().x < solver.x0 + 10; }; // heavyside
         
         //ensemble.output(cv*10000); // print the initial state
         //solver.output(cv*10000); // print the initial state
@@ -72,7 +82,7 @@ void default_testrun() {
         }
         interpolator.gather(); // get u
         chemistry.update(); // flag
-        file << thresh_cv << " " << grad_cv << " " << chemistry.get_border_sharpness() << std::endl;
+        file << thresh_cv << " " << grad_cv << " " << chemistry.get_precision_zone_width() << std::endl;
       }
     } 
   }

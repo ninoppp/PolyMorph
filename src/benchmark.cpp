@@ -25,15 +25,15 @@ int main() {
 
         Grid<std::vector<double>> u0(N, N); // initial condition, just zeros
         Reaction R = LinearDegradation();
-        Solver solver(u0, D0, dx, dt, R); // init solver
+        Solver solver(u0, dx, R); // init solver
         Interpolator interpolator(ensemble, solver);
         Chemistry chemistry(ensemble);
-        chemistry.is_producing = [solver](const Polygon& p) { return p.midpoint().x < solver.box_position_x + 10; }; // heavyside
+        //chemistry.is_producing = [solver](const Polygon& p) { return p.midpoint().x < solver.x0 + 10; }; // heavyside
 
         for (std::size_t f = 1; f <= frames; ++f) {
             double start = walltime();
             for (std::size_t s = 0; s < timesteps; ++s) {
-                solver.step();
+                solver.step(dt);
             } 
             double end = walltime();
             size_t num_vertices = 0;
