@@ -72,17 +72,4 @@ std::string Grid<std::vector<double>>::to_vtk(std::string name) {
     return xml.str();
 }
 
-template<typename T>
-void Grid<T>::rescale(size_t Nx_new, size_t Ny_new, int offset_x, int offset_y, T default_value) {
-    std::vector<std::vector<T>> new_data(Nx_new, std::vector<T>(Ny_new, default_value));
-    for (int i = 0; i < sizeX(); i++) {
-        for (int j = 0; j < sizeY(); j++) {
-            if (i + offset_x >= 0 && i + offset_x < Nx_new && j + offset_y >= 0 && j + offset_y < Ny_new) {
-                new_data[i + offset_x][j + offset_y] = data[i][j];
-            }
-        }
-    }
-    data = new_data;
-}
-
 #endif

@@ -57,7 +57,7 @@ struct Solver {
         #pragma omp parallel for collapse(2)
         for (int i = 0; i < Nx; i++) {
             for (int j = 0; j < Ny; j++) {   
-                std::vector<double> r = R(u(i, j), k(i, j));
+                const std::vector<double> r = R(u(i, j), k(i, j));
                 assert(r.size() == NUM_SPECIES);
                 for (int sp = 0; sp < NUM_SPECIES; sp++) { // don't parallelize inner loop, access to same array 
                     // mirror past-boundary nodes
@@ -79,26 +79,6 @@ struct Solver {
         }*/
         u = unew;
     }
-
-    // allows expanding of the FD solver box during runtime
-    void rescale(size_t Nx_new, size_t Ny_new, double x0_new, double y0_new) {
-        if (Nx_new == Nx && Ny_new == Ny) return; // nothing to do
-        if (Nx_new < Nx || Ny_new < Ny) {
-            std::cerr << "Rescaling to smaller grid not allowed" << std::endl;
-            exit(1);
-        }
-        x0 = x0_new;
-        y0 = y0_new;
-        Nx = Nx_new;
-        Ny = Ny_new;
-        int grid_offset_x = (x0_new - x0) / dx; // offset where to start copying
-        int grid_offset_y = (y0_new - y0) / dx;
-        u.rescale(Nx, Ny, grid_offset_x, grid_offset_y, std::vector<double>(NUM_SPECIES, 0.0)); // ToDo: initialize with boundary values
-        D.rescale(Nx, Ny, grid_offset_x, grid_offset_y, D0);
-        p.rescale(Nx, Ny, grid_offset_x, grid_offset_y, p0);
-        k.rescale(Nx, Ny, grid_offset_x, grid_offset_y, k0);
-        parent_idx.rescale(Nx, Ny, grid_offset_x, grid_offset_y, -2);
-    } 
 
     void output(const std::size_t frame) {
         char filename [19]; 
