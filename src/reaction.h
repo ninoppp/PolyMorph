@@ -3,14 +3,14 @@
 
 
 struct Reaction {
-    std::vector<double> operator()(std::vector<double> u, std::vector<double> k) {
+    std::vector<double> operator()(const std::vector<double>& u, const std::vector<double>& k) {
         std::vector<double> r(NUM_SPECIES);
         return r;
     }
 };
 
 struct LinearDegradation : Reaction {
-    std::vector<double> operator()(std::vector<double> u, std::vector<double> k) {
+    std::vector<double> operator()(const std::vector<double>& u, const std::vector<double>& k) {
         std::vector<double> r(NUM_SPECIES);
         for (int i = 0; i < NUM_SPECIES; i++) {
             r[i] = -k[i]*u[i];
@@ -20,7 +20,7 @@ struct LinearDegradation : Reaction {
 };
 
 struct Inhibition : Reaction {
-    std::vector<double> operator()(std::vector<double> u, std::vector<double> k) {
+    std::vector<double> operator()(const std::vector<double>& u, const std::vector<double>& k) {
         std::vector<double> r(NUM_SPECIES);
         r = {
             -k[0]*u[0] - k[2]*u[0]*u[1], // species 2 inhibits species 1
