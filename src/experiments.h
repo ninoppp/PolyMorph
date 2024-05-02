@@ -23,7 +23,7 @@ void default_testrun() {
     Chemistry chemistry(ensemble);
     chemistry.is_producing = [L](const Polygon& p) { 
       return std::vector<bool> {p.vertices[0].p == Nr, 
-                                p.midpoint().x < -0.3*L}; 
+                                p.midpoint().x < -0.2*L}; 
     };
     chemistry.growth_control = true; // stop growth if flagged
     
@@ -40,6 +40,34 @@ void default_testrun() {
         ensemble.output(f);
         solver.output(f);
     }
+}
+
+void two_opposing() {
+  Ensemble ensemble("ensemble/rect_100x50.off"); // read the input file
+  Grid<std::vector<double>> u0 = Grid(100/dx, 50/dx, std::vector<double>(NUM_SPECIES, 0.0)); // initial condition, just zeros
+  Reaction R = Inhibition();
+  Solver solver(u0, dx, R); // init solver
+  Interpolator interpolator(ensemble, solver);
+  Chemistry chemistry(ensemble);
+  chemistry.is_producing = [solver](const Polygon& p) { 
+      return std::vector<bool> {p.midpoint().x < solver.x0 + 10, 
+                                p.midpoint().x > solver.x0 + 90}; 
+    };
+  
+  ensemble.output(0); // print the initial state
+  solver.output(0); // print the initial state
+  ensemble.step(); 
+  chemistry.update();
+  interpolator.scatter();
+  for (std::size_t f = 1; f <= Nf; ++f) {
+      for (std::size_t s = 0; s < Ns; ++s) {
+          solver.step(dt);
+      } 
+      chemistry.update();
+      interpolator.gather();
+      ensemble.output(f);
+      solver.output(f);
+  }
 }
 
 /*void sharpness_experiment() {

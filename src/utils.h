@@ -84,7 +84,7 @@ void write_config() {
         << "Date=" << __DATE__ << std::endl
         << "Time=" << __TIME__ << std::endl
         << "NUM_SPECIES=" << NUM_SPECIES << std::endl
-        << "NUM_KIN" << NUM_KIN << std::endl
+        << "NUM_KIN=" << NUM_KIN << std::endl
         << "D0=" << to_string(D0) << std::endl
         << "k0=" << to_string(k0) << std::endl
         << "p0=" << to_string(p0) << std::endl
