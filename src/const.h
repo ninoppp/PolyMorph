@@ -41,6 +41,7 @@ constexpr double drmax = h + sh + ss; // maximum interaction distance
 
 // Diffusion parameters // TODO: make vectors
 constexpr double dx = 0.5; // [L] grid spacing for solver
+constexpr double anisotropy = 1.0; // [-] diffusion anisotropy (default 1)
 constexpr int NUM_SPECIES = 2; // number of diffusable species (size of D, k, p)
 constexpr int NUM_KIN = 3; // number of kinetic coefficients (size of k)
 const std::vector<double> k0 = {0, 0, 0}; // reaction coefficients background
