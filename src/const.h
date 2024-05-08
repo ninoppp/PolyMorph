@@ -35,7 +35,7 @@ constexpr double dt = 1e-4; // [T] time step // default 1e-4
 
 constexpr std::size_t Nf = 100; // number of output frames
 constexpr std::size_t Ns = 1000; // number of time steps between frames // default 1000
-constexpr std::size_t Nr = 1; // number of rigid polygons
+constexpr std::size_t Nr = 0; // number of rigid polygons
 
 constexpr double drmax = h + sh + ss; // maximum interaction distance
 

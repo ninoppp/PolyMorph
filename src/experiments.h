@@ -14,6 +14,7 @@
 
 void default_testrun() {
     Ensemble ensemble("ensemble/default.off"); // read the input file
+    assert(Nr == 0 && "Nr must be 0 for default testrun");
     unsigned L = 50;
     unsigned N = L/dx; 
     Grid<std::vector<double>> u0 = Grid(N, N, std::vector<double>(NUM_SPECIES, 0.0)); // initial condition, just zeros
@@ -44,6 +45,7 @@ void default_testrun() {
 
 void two_opposing() {
   Ensemble ensemble("ensemble/rect_100x50.off"); // read the input file
+  assert(Nr == 1 && "Nr must be 1 for running in box");
   Grid<std::vector<double>> u0 = Grid(100/dx, 50/dx, std::vector<double>(NUM_SPECIES, 0.0)); // initial condition, just zeros
   Reaction R = Inhibition();
   Solver solver(u0, dx, R); // init solver

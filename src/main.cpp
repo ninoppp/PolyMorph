@@ -13,6 +13,6 @@ int main() {
   validate_parameters();
   rng.seed(90178009);
   write_config();
-  two_opposing();
+  default_testrun();
 }
 
