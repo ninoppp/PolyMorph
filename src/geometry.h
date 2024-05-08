@@ -6,7 +6,7 @@
 #include <map>
 #include <algorithm>
 
-#include "grid.h"
+#include "utils.h"
 
 struct Point  // basically a 2D vector
 {

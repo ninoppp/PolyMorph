@@ -57,7 +57,7 @@ const std::vector<double> threshold_mu = {0.25, 0.1}; // [1/L^2] concentration t
 const std::vector<double> threshold_CV = {0.1, 0.1}; // [-] coefficient of variation of threshold
 constexpr double cutoff_factor = 2.0; // [-] lognormal dists are cutoff at mu*factor to maintain stability
 
-// define what to write to vtk for visualization/debugging to save space 
+// define what to write to vtk files for visualization/debugging. disable to save space 
 namespace Output { 
     constexpr bool u = true; // concentration
     constexpr bool D = true; // diffusion coefficient
@@ -66,6 +66,7 @@ namespace Output {
     constexpr bool parent_idx = true; // polygon idx grid
     constexpr bool threshold = true; // threshold
     constexpr bool flag = true; // boolean polygon flag 
+    constexpr bool velocity = true; // velocity field
 }; 
 
 #endif

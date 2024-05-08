@@ -7,11 +7,8 @@
 #include <sstream>
 #include <iostream>
 
-struct Index {
-  int i; 
-  int j;
-  Index(int i, int j): i(i), j(j) {}
-};
+#include "geometry.h"
+#include "utils.h"
 
 template<typename T> // make sure to use double and not float, might break things otherwise
 struct Grid {
@@ -38,8 +35,8 @@ size_t Grid<std::vector<double>>::sizeZ() const {
     return data[0][0].size();
 }
 
-template<typename T>
-std::string Grid<T>::to_vtk(std::string name) { // arr_size ignored  
+template<typename T> // for scalar grids
+std::string Grid<T>::to_vtk(std::string name) {
     std::stringstream xml;
     xml << "<DataArray type=\"Float64\" Name=\"" << name 
     << "\" format=\"ascii\">" << std::endl;
@@ -64,6 +61,22 @@ std::string Grid<std::vector<double>>::to_vtk(std::string name) {
             for (int k = 0; k < sizeZ(); k++) {
                 xml << data[i][j][k] << " ";
             }
+        }
+        xml << std::endl;
+    }
+    xml << "</DataArray>" << std::endl;
+    
+    return xml.str();
+}
+
+template<>
+std::string Grid<Point>::to_vtk(std::string name) {
+    std::stringstream xml;
+    xml << "<DataArray type=\"Float64\" Name=\"" << name 
+        << "\" NumberOfComponents=\"2\" format=\"ascii\">" << std::endl;
+    for (int i = 0; i < sizeX(); i++) {
+        for (int j = 0; j < sizeY(); j++) {
+            xml << data[i][j].x << " " << data[i][j].y << " ";
         }
         xml << std::endl;
     }

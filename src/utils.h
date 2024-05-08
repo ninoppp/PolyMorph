@@ -10,6 +10,13 @@
 
 #include "const.h"
 
+// easier to read than a pair
+struct Index {
+  int i; 
+  int j;
+  Index(int i, int j): i(i), j(j) {}
+};
+
 void validate_parameters() {
     assert(D_mu.size() == NUM_SPECIES && D_CV.size() == NUM_SPECIES);
     assert(p_mu.size() == NUM_SPECIES && p_CV.size() == NUM_SPECIES);

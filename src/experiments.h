@@ -26,7 +26,7 @@ void default_testrun() {
       return std::vector<bool> {p.vertices[0].p == Nr, 
                                 p.midpoint().x < -0.2*L}; 
     };
-    chemistry.growth_control = true; // stop growth if flagged
+    chemistry.growth_control = false; // stop growth if flagged?
     
     ensemble.output(0); // print the initial state
     solver.output(0); // print the initial state

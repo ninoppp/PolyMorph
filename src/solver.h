@@ -76,7 +76,7 @@ struct Solver {
                     const double dvdy = (velocity(i, j+1).y - velocity(i, j-1).y) / (2 * dx);
                     const double dilution = u(i, j)[sp] * (dvdx + dvdy);
                     // update grid point
-                    unew(i, j)[sp] = u(i, j)[sp] + dt * (diffusion + reaction[sp] + p(i, j)[sp]); 
+                    unew(i, j)[sp] = u(i, j)[sp] + dt * (diffusion + reaction[sp] + p(i, j)[sp] - advection - dilution); 
                 }
             }
         }
@@ -95,7 +95,7 @@ struct Solver {
                 const double dvdx = (velocity(i+1, j).x - velocity(i-1, j).x) / (2 * dx);
                 const double dvdy = 0; // zero-gradient velocity at boundary
                 const double dilution = u(i, j)[sp] * (dvdx + dvdy);
-                unew(i, j)[sp] = u(i, j)[sp] + dt * (diffusion + reaction[sp] + p(i, j)[sp]); 
+                unew(i, j)[sp] = u(i, j)[sp] + dt * (diffusion + reaction[sp] + p(i, j)[sp] - advection - dilution); 
             }
         }
         // south boundary
@@ -113,7 +113,7 @@ struct Solver {
                 const double dvdx = (velocity(i+1, j).x - velocity(i-1, j).x) / (2 * dx);
                 const double dvdy = 0; // zero-gradient velocity at boundary
                 const double dilution = u(i, j)[sp] * (dvdx + dvdy);
-                unew(i, j)[sp] = u(i, j)[sp] + dt * (diffusion + reaction[sp] + p(i, j)[sp]); 
+                unew(i, j)[sp] = u(i, j)[sp] + dt * (diffusion + reaction[sp] + p(i, j)[sp] - advection - dilution); 
             }
         }
         // east boundary
@@ -131,7 +131,7 @@ struct Solver {
                 const double dvdx = 0; // zero-gradient velocity at boundary
                 const double dvdy = (velocity(i, j+1).y - velocity(i, j-1).y) / (2 * dx);
                 const double dilution = u(i, j)[sp] * (dvdx + dvdy);
-                unew(i, j)[sp] = u(i, j)[sp] + dt * (diffusion + reaction[sp] + p(i, j)[sp]); 
+                unew(i, j)[sp] = u(i, j)[sp] + dt * (diffusion + reaction[sp] + p(i, j)[sp] - advection - dilution); 
             }
         }
         // west boundary
@@ -149,7 +149,7 @@ struct Solver {
                 const double dvdx = 0; // zero-gradient velocity at boundary
                 const double dvdy = (velocity(i, j+1).y - velocity(i, j-1).y) / (2 * dx);
                 const double dilution = u(i, j)[sp] * (dvdx + dvdy);
-                unew(i, j)[sp] = u(i, j)[sp] + dt * (diffusion + reaction[sp] + p(i, j)[sp]); 
+                unew(i, j)[sp] = u(i, j)[sp] + dt * (diffusion + reaction[sp] + p(i, j)[sp] - advection - dilution); 
             }
         }
         // ---- update state ----
@@ -184,6 +184,7 @@ struct Solver {
         if (Output::D) file << D.to_vtk("D");
         if (Output::k) file << k.to_vtk("k");
         if (Output::p) file << p.to_vtk("p");
+        if (Output::velocity) file << velocity.to_vtk("velocity");
         
         file << "</PointData>" << std::endl;    // end of point data
         file << "</Piece>" << std::endl;

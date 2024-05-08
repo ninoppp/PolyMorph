@@ -3,6 +3,7 @@
 
 #include "solver.h"
 #include "polyhoop.h"
+#include "grid.h"
 
 // takes care of the data scattering and gathering between ensemble and solver
 struct Interpolator {
