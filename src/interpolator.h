@@ -35,12 +35,24 @@ struct Interpolator {
     return -2; // background node (reached boundary of ensemble box)
   }
 
+  // returns the interpolated velocity at a grid point inside a parent polygon
   Point interior_velocity(Point grid_point, int parent_idx) {
     const Polygon& parent = ensemble.polygons[parent_idx];
-    Point vel = Point(0, 0);
-    for (const Vertex& vertex : parent.vertices) {
-      
+    std::vector<double> weights;
+    double total_weight = 0;
+    for (int i = 0; i < parent.vertices.size(); i++) {
+      const Vertex& vertex = parent.vertices[i];
+      double distance = (vertex.r - grid_point).length();
+      double weight = 1.0 / (distance + 1e-6); // avoid division by zero
+      weights.push_back(weight);
+      total_weight += weight;
     }    
+    Point vel = Point(0, 0);
+    for (int i = 0; i < parent.vertices.size(); i++) {
+      const Vertex& vertex = parent.vertices[i];
+      vel = vel + weights[i] / total_weight * vertex.v;
+    }
+    return vel;
   }
 
   // scatter coefficients D, k from polygons to grid points
@@ -76,10 +88,14 @@ struct Interpolator {
           solver.D(i, j) = D0; // background diffusion
           solver.k(i, j) = k0; // background degradation
           solver.p(i, j) = p0; // background production (should be zero)
+          // set velocity to zero
+          solver.velocity(i, j) = Point(0, 0);
         } else { 
           solver.D(i, j) = ensemble.polygons[new_idx(i, j)].D;
           solver.k(i, j) = ensemble.polygons[new_idx(i, j)].k;
           solver.p(i, j) = ensemble.polygons[new_idx(i, j)].p;
+          // interpolate velocity
+          solver.velocity(i, j) = interior_velocity(grid_point, new_idx(i, j));
         }
       }
     }
