@@ -11,6 +11,7 @@
 
 #include "reaction.h"
 #include "grid.h"
+#include "geometry.h"
 
 enum class BoundaryCondition {
     Dirichlet,
@@ -28,6 +29,7 @@ struct Solver {
     Grid<std::vector<double>> D; // diffusion coefficients
     Grid<std::vector<double>> p; // production rates
     Grid<std::vector<double>> k; // kinetic coefficients
+    Grid<Point> velocity; // velocity field
  
     // initialize the grid with a given initial condition
     Solver(const Grid<std::vector<double>> u0, const double dx, Reaction R) {
@@ -57,19 +59,18 @@ struct Solver {
         #pragma omp parallel for collapse(2)
         for (int i = 0; i < Nx; i++) {
             for (int j = 0; j < Ny; j++) {   
-                const std::vector<double> r = R(u(i, j), k(i, j));
-                assert(r.size() == NUM_SPECIES);
+                const std::vector<double> reaction = R(u(i, j), k(i, j));
+                assert(reaction.size() == NUM_SPECIES); 
                 for (int sp = 0; sp < NUM_SPECIES; sp++) { // don't parallelize inner loop, access to same array 
-                    // mirror past-boundary nodes
+                    // mirror past-boundary nodes ToDo: move outside of species loop
                     const double n = (j == Ny-1) ? u(i, j-1)[sp] : u(i, j+1)[sp]; // ToDo: option for different BDC
                     const double s = (j == 0)    ? u(i, j+1)[sp] : u(i, j-1)[sp];
                     const double e = (i == Nx-1) ? u(i-1, j)[sp] : u(i+1, j)[sp]; 
                     const double w = (i == 0)    ? u(i+1, j)[sp] : u(i-1, j)[sp]; 
-                    unew(i, j)[sp] = u(i, j)[sp] + dt * (
-                        D(i, j)[sp] / (dx*dx) * (n + s + e + w - 4 * u(i, j)[sp])
-                        + r[sp]
-                        + p(i, j)[sp]
-                    ); 
+                    // calculate diffusion term
+                    const double diffusion = D(i, j)[sp] / (dx*dx) * (e + w + anisotropy * (n + s) - 2 * (1 + anisotropy) * u(i, j)[sp]);
+                    // update grid point
+                    unew(i, j)[sp] = u(i, j)[sp] + dt * (diffusion + reaction[sp] + p(i, j)[sp]); 
                 }
             }
         }

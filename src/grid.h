@@ -13,7 +13,7 @@ struct Index {
   Index(int i, int j): i(i), j(j) {}
 };
 
-template<typename T>
+template<typename T> // make sure to use double and not float, might break things otherwise
 struct Grid {
     std::vector<std::vector<T>> data;
     Grid (size_t Nx, size_t Ny) : data(Nx, std::vector<T>(Ny)) {}
