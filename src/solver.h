@@ -49,35 +49,110 @@ struct Solver {
         D = Grid<std::vector<double>>(Nx, Ny, D0);
         p = Grid<std::vector<double>>(Nx, Ny, p0);
         k = Grid<std::vector<double>>(Nx, Ny, k0); 
+        velocity = Grid<Point>(Nx, Ny, Point(0, 0));
     }
 
     void step(double dt) { 
         Grid<std::vector<double>> unew(Nx, Ny, std::vector<double>(NUM_SPECIES, 0.0));
         // Forward Euler with central differences
-        // ToDo: separate inner nodes and boundary to efficiently parallelize and vectorize inner nodes
-        // while allowing different boundary conditions
+        // inner nodes
         #pragma omp parallel for collapse(2)
-        for (int i = 0; i < Nx; i++) {
-            for (int j = 0; j < Ny; j++) {   
+        for (int i = 1; i < Nx-1; i++) {
+            for (int j = 1; j < Ny-1; j++) {   
                 const std::vector<double> reaction = R(u(i, j), k(i, j));
-                assert(reaction.size() == NUM_SPECIES); 
-                for (int sp = 0; sp < NUM_SPECIES; sp++) { // don't parallelize inner loop, access to same array 
-                    // mirror past-boundary nodes ToDo: move outside of species loop
-                    const double n = (j == Ny-1) ? u(i, j-1)[sp] : u(i, j+1)[sp]; // ToDo: option for different BDC
-                    const double s = (j == 0)    ? u(i, j+1)[sp] : u(i, j-1)[sp];
-                    const double e = (i == Nx-1) ? u(i-1, j)[sp] : u(i+1, j)[sp]; 
-                    const double w = (i == 0)    ? u(i+1, j)[sp] : u(i-1, j)[sp]; 
+                // mirror past-boundary nodes
+                for (int sp = 0; sp < NUM_SPECIES; sp++) { // don't parallelize inner loop. likely to be vectorized
                     // calculate diffusion term
+                    const double n = u(i, j+1)[sp];
+                    const double s = u(i, j-1)[sp];
+                    const double e = u(i+1, j)[sp]; 
+                    const double w = u(i-1, j)[sp];
                     const double diffusion = D(i, j)[sp] / (dx*dx) * (e + w + anisotropy * (n + s) - 2 * (1 + anisotropy) * u(i, j)[sp]);
+                    // calculate advection term
+                    const Point grad_u = Point((e - w) / (2 * dx), (n - s) / (2 * dx));
+                    const double advection = velocity(i, j) * grad_u;
+                    // calculate dilution term
+                    const double dvdx = (velocity(i+1, j).x - velocity(i-1, j).x) / (2 * dx);
+                    const double dvdy = (velocity(i, j+1).y - velocity(i, j-1).y) / (2 * dx);
+                    const double dilution = u(i, j)[sp] * (dvdx + dvdy);
                     // update grid point
                     unew(i, j)[sp] = u(i, j)[sp] + dt * (diffusion + reaction[sp] + p(i, j)[sp]); 
                 }
             }
         }
-        // temporary dirichlet 1 bdc for 2nd morphogen
-        /*for (int j = 0; j < Ny; j++) {
-            unew(0, j)[1] = 1.0; 
-        }*/
+        // north boundary // ToDo: maybe parallelize, maybe not
+        for (int i = 1; i < Nx-1; i++) {
+            int j = Ny-1;
+            const std::vector<double> reaction = R(u(i, j), k(i, j));
+            for (int sp = 0; sp < NUM_SPECIES; sp++) {
+                const double n = u(i, j-1)[sp]; // mirror past-boundary nodes
+                const double s = u(i, j-1)[sp];
+                const double e = u(i+1, j)[sp]; 
+                const double w = u(i-1, j)[sp];
+                const double diffusion = D(i, j)[sp] / (dx*dx) * (e + w + anisotropy * (n + s) - 2 * (1 + anisotropy) * u(i, j)[sp]);
+                const Point grad_u = Point((e - w) / (2 * dx), (n - s) / (2 * dx));
+                const double advection = velocity(i, j) * grad_u;
+                const double dvdx = (velocity(i+1, j).x - velocity(i-1, j).x) / (2 * dx);
+                const double dvdy = 0; // zero-gradient velocity at boundary
+                const double dilution = u(i, j)[sp] * (dvdx + dvdy);
+                unew(i, j)[sp] = u(i, j)[sp] + dt * (diffusion + reaction[sp] + p(i, j)[sp]); 
+            }
+        }
+        // south boundary
+        for (int i = 1; i < Nx-1; i++) {
+            int j = 0;
+            const std::vector<double> reaction = R(u(i, j), k(i, j));
+            for (int sp = 0; sp < NUM_SPECIES; sp++) {
+                const double n = u(i, j+1)[sp];
+                const double s = u(i, j+1)[sp]; // mirror past-boundary nodes
+                const double e = u(i+1, j)[sp]; 
+                const double w = u(i-1, j)[sp];
+                const double diffusion = D(i, j)[sp] / (dx*dx) * (e + w + anisotropy * (n + s) - 2 * (1 + anisotropy) * u(i, j)[sp]);
+                const Point grad_u = Point((e - w) / (2 * dx), (n - s) / (2 * dx));
+                const double advection = velocity(i, j) * grad_u;
+                const double dvdx = (velocity(i+1, j).x - velocity(i-1, j).x) / (2 * dx);
+                const double dvdy = 0; // zero-gradient velocity at boundary
+                const double dilution = u(i, j)[sp] * (dvdx + dvdy);
+                unew(i, j)[sp] = u(i, j)[sp] + dt * (diffusion + reaction[sp] + p(i, j)[sp]); 
+            }
+        }
+        // east boundary
+        for (int j = 1; j < Ny-1; j++) {
+            int i = Nx-1;
+            const std::vector<double> reaction = R(u(i, j), k(i, j));
+            for (int sp = 0; sp < NUM_SPECIES; sp++) {
+                const double n = u(i, j+1)[sp];
+                const double s = u(i, j-1)[sp];
+                const double e = u(i-1, j)[sp]; // mirror past-boundary nodes
+                const double w = u(i-1, j)[sp];
+                const double diffusion = D(i, j)[sp] / (dx*dx) * (e + w + anisotropy * (n + s) - 2 * (1 + anisotropy) * u(i, j)[sp]);
+                const Point grad_u = Point((e - w) / (2 * dx), (n - s) / (2 * dx));
+                const double advection = velocity(i, j) * grad_u;
+                const double dvdx = 0; // zero-gradient velocity at boundary
+                const double dvdy = (velocity(i, j+1).y - velocity(i, j-1).y) / (2 * dx);
+                const double dilution = u(i, j)[sp] * (dvdx + dvdy);
+                unew(i, j)[sp] = u(i, j)[sp] + dt * (diffusion + reaction[sp] + p(i, j)[sp]); 
+            }
+        }
+        // west boundary
+        for (int j = 1; j < Ny-1; j++) {
+            int i = 0;
+            const std::vector<double> reaction = R(u(i, j), k(i, j));
+            for (int sp = 0; sp < NUM_SPECIES; sp++) {
+                const double n = u(i, j+1)[sp];
+                const double s = u(i, j-1)[sp];
+                const double e = u(i+1, j)[sp]; 
+                const double w = u(i+1, j)[sp]; // mirror past-boundary nodes
+                const double diffusion = D(i, j)[sp] / (dx*dx) * (e + w + anisotropy * (n + s) - 2 * (1 + anisotropy) * u(i, j)[sp]);
+                const Point grad_u = Point((e - w) / (2 * dx), (n - s) / (2 * dx));
+                const double advection = velocity(i, j) * grad_u;
+                const double dvdx = 0; // zero-gradient velocity at boundary
+                const double dvdy = (velocity(i, j+1).y - velocity(i, j-1).y) / (2 * dx);
+                const double dilution = u(i, j)[sp] * (dvdx + dvdy);
+                unew(i, j)[sp] = u(i, j)[sp] + dt * (diffusion + reaction[sp] + p(i, j)[sp]); 
+            }
+        }
+        // ---- update state ----
         u = unew;
     }
 
