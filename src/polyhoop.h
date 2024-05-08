@@ -19,6 +19,7 @@
 #include "const.h"
 #include "grid.h"
 #include "utils.h"
+#include "geometry.h"
 
 // distributions
 std::mt19937 rng; // random number generator
@@ -32,101 +33,6 @@ std::vector<std::lognormal_distribution<>> D_dist = create_lognormal(D_mu, D_CV)
 std::vector<std::lognormal_distribution<>> k_dist = create_lognormal(k_mu, k_CV);
 std::vector<std::lognormal_distribution<>> p_dist = create_lognormal(p_mu, p_CV);
 std::vector<std::lognormal_distribution<>> threshold_dist = create_lognormal(threshold_mu, threshold_CV);
-
-struct Point  // basically a 2D vector
-{
-  double x, y; // coordinates
-  Point () : x(0), y(0) {} // default constructor
-  Point (const double x, const double y) : x(x), y(y) {} // constructor
-  Point operator+(const Point& r) const { return {x + r.x, y + r.y}; } // vector sum
-  Point operator-(const Point& r) const { return {x - r.x, y - r.y}; } // vector difference
-  Point cross() const { return {-y, x}; } // perpendicular vector
-  double operator*(const Point& r) const { return x * r.x + y * r.y; } // dot product
-  double operator^(const Point& r) const { return x * r.y - y * r.x; } // wedge product
-  double length2() const { return x * x + y * y; } // squared norm
-  double length() const { return std::sqrt(length2()); } // norm
-  void add(const double a, const Point& r)
-  {
-    #pragma omp atomic
-    x += a * r.x;
-    #pragma omp atomic
-    y += a * r.y;
-  }
-  // Polymorph extension: lexographical comparison for std::map (used in writeOFF)
-  bool operator<(const Point& r) const {
-    if (x == r.x) return y < r.y;
-    return x < r.x;
-  }
-};
-Point operator*(const double a, const Point& r) { return {a * r.x, a * r.y}; }
-
-double point_edge_dist2(const Point& r0, const Point& r1, const Point& r2, double& xi, double& xit, Point& dr)
-{
-  const Point r12 = r2 - r1;
-  const Point r10 = r0 - r1;
-  xi = r10 * r12 / (r12 * r12);
-  xit = std::min(std::max(xi, 0.), 1.);
-  dr = r10 - xit * r12;
-  return dr * dr;
-}
-
-struct Vertex
-{
-  Point r, v, a; // position, velocity, acceleration
-  std::size_t p; // polygon index
-  Vertex* next; // pointer to next vertex in same box
-  double l0; // rest length of edge to the right
-};
-
-struct Polygon
-{
-  std::vector<Vertex> vertices; // vertex list in counter-clockwise orientation
-  bool phase; // phase of the enclosed medium
-  double A0, A, Amax, alpha0, alpha; // target, actual & division area, area growth rate
-  std::vector<double> D, k, p, u, threshold; // diffusion, kinetic coefficients, production, concentration, threshold
-  bool flag = false; // general purpose flag
-  std::vector<Index> children; // stores the indices of the FD grid points that lie within the polygon
-
-  double area()
-  {
-    A = 0;
-    for (std::size_t i = vertices.size() - 1, j = 0; j < vertices.size(); i = j++)
-      A += vertices[i].r ^ vertices[j].r;
-    return A /= 2;
-  }
-  double perimeter() const
-  {
-    double L = 0;
-    for (std::size_t i = vertices.size() - 1, j = 0; j < vertices.size(); i = j++)
-      L += (vertices[j].r - vertices[i].r).length();
-    return L;
-  }
-  double perimeter0() const
-  {
-    double L0 = 0;
-    for (auto& v : vertices)
-      L0 += v.l0;
-    return L0;
-  }
-  bool contains(const Point& r) const
-  {
-    bool in = false;
-    for (std::size_t i = vertices.size() - 1, j = 0; j < vertices.size(); i = j++)
-      if ((vertices[i].r.y > r.y) != (vertices[j].r.y > r.y) &&
-          r.x < (vertices[i].r.x - vertices[j].r.x) * (r.y - vertices[j].r.y) / (vertices[i].r.y - vertices[j].r.y) + vertices[j].r.x)
-        in = !in;
-    return in; // true if the point lies inside this polygon
-  }
-  // Polymorph extension. Calculate (geometric?) midpoint of polygon
-  Point midpoint() const 
-  {
-    Point midp;
-    for (const Vertex& v : vertices) {
-      midp = midp + v.r;
-    }
-    return 1.0/vertices.size() * midp;
-  }
-};
 
 struct Ensemble
 {

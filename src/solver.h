@@ -11,6 +11,7 @@
 
 #include "reaction.h"
 #include "grid.h"
+#include "geometry.h"
 
 enum class BoundaryCondition {
     Dirichlet,
@@ -28,6 +29,7 @@ struct Solver {
     Grid<std::vector<double>> D; // diffusion coefficients
     Grid<std::vector<double>> p; // production rates
     Grid<std::vector<double>> k; // kinetic coefficients
+    Grid<Point> velocity; // velocity field
  
     // initialize the grid with a given initial condition
     Solver(const Grid<std::vector<double>> u0, const double dx, Reaction R) {

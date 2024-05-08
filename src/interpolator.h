@@ -35,6 +35,14 @@ struct Interpolator {
     return -2; // background node (reached boundary of ensemble box)
   }
 
+  Point interior_velocity(Point grid_point, int parent_idx) {
+    const Polygon& parent = ensemble.polygons[parent_idx];
+    Point vel = Point(0, 0);
+    for (const Vertex& vertex : parent.vertices) {
+      
+    }    
+  }
+
   // scatter coefficients D, k from polygons to grid points
   void scatter() { // ToDo: make this function prettier
     Grid<int>& prev_idx = solver.parent_idx; // stores the polygon index of the cell in which a grid point lies (its parent)
@@ -77,7 +85,7 @@ struct Interpolator {
     }
     solver.parent_idx = new_idx;  // ToDo: update in place
   }
-
+  // ToDo: rename cell to smth else. only place where this is used
   // gather concentration u from grid points to polygons
   // important: depends on scatter being called every iteration to build the parent_idx
   void gather() {
