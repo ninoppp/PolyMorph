@@ -62,6 +62,10 @@ struct Chemistry {
     return xmax - xmin;
   }
 
+  double get_positional_error() {
+    return 0;
+  }
+
   void chemotaxis() {
     #pragma omp parallel for
     for (int p = Nr; p < ensemble.polygons.size(); p++) {

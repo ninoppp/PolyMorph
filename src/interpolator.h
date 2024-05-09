@@ -90,13 +90,17 @@ struct Interpolator {
           solver.k(i, j) = k0; // background degradation
           solver.p(i, j) = p0; // background production (should be zero)
           // set velocity to zero
-          solver.velocity(i, j) = Point(0, 0);
+          if (ADVECTION_DILUTION) {
+            solver.velocity(i, j) = Point(0, 0);
+          }
         } else { 
           solver.D(i, j) = ensemble.polygons[new_idx(i, j)].D;
           solver.k(i, j) = ensemble.polygons[new_idx(i, j)].k;
           solver.p(i, j) = ensemble.polygons[new_idx(i, j)].p;
           // interpolate velocity
-          solver.velocity(i, j) = interior_velocity(grid_point, new_idx(i, j));
+          if (ADVECTION_DILUTION) {
+            solver.velocity(i, j) = interior_velocity(grid_point, new_idx(i, j));
+          }
         }
       }
     }

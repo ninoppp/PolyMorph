@@ -92,6 +92,7 @@ void write_config() {
         << "Time=" << __TIME__ << std::endl
         << "NUM_SPECIES=" << NUM_SPECIES << std::endl
         << "NUM_KIN=" << NUM_KIN << std::endl
+        << "ADVECTION_DILUTION=" << ADVECTION_DILUTION << std::endl
         << "D0=" << to_string(D0) << std::endl
         << "k0=" << to_string(k0) << std::endl
         << "p0=" << to_string(p0) << std::endl
@@ -115,7 +116,8 @@ void write_config() {
         << "Output::k=" << Output::k << std::endl
         << "Output::parent_idx=" << Output::parent_idx << std::endl
         << "Output::threshold=" << Output::threshold << std::endl
-        << "Output::flag=" << Output::flag << std::endl;
+        << "Output::flag=" << Output::flag << std::endl
+        << "Output::velocity=" << Output::velocity << std::endl;
         // expand if more parameters become relevant
     config.close();
 }
