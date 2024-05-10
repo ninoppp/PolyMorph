@@ -69,6 +69,7 @@ struct Interpolator {
     assert(solver.y0 + jstart * solver.dx >= ensemble.y0);
     assert(solver.x0 + iend * solver.dx <= ensemble.x1);
     assert(solver.y0 + jend * solver.dx <= ensemble.y1);*/
+    // ToDo: print warning if ensemble box greater than solver box (only once)
 
     #pragma omp parallel for collapse(2)
     for (int i = istart; i < iend; i++) {

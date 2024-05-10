@@ -62,8 +62,35 @@ struct Chemistry {
     return xmax - xmin;
   }
 
-  double get_positional_error() {
-    return 0;
+  // returns the standard deviation of the x-coordinates of the border vertices
+  double get_positional_error() { // PROBLEM: This doesn't work. Also counts right end cells plus cells beyond the border. FIX? use fact that adjecent vertex very close by
+    double mean_border_x; 
+    std::vector<double> border_x;
+    // find all vertices that lie at the border
+    for (int p = Nr; p < ensemble.polygons.size(); p++) {
+      const auto& cell = ensemble.polygons[p];
+      if (cell.flag) {
+        for (auto& vertex : cell.vertices) {
+          const std::size_t bxi = (vertex.r.x - ensemble.x0) / ensemble.bs + 1; // box index in x direction
+          const std::size_t byi = (vertex.r.y - ensemble.y0) / ensemble.bs + 1; // box index in y direction
+          for (size_t bxj = bxi - 1; bxj <= bxi; bxj++) { // check this box and one to the left for neighbouring vertices
+            for (Vertex* v = ensemble.first[bxi * ensemble.Ny + byi]; v; v = v->next) { // loop over vertices in box
+              if (vertex.r < v->r && !ensemble.polygons[v->p].flag) { // if vertex is to the left and in an unflagged cell
+                border_x.push_back(vertex.r.x);
+              }
+            }
+          }
+        }
+      }
+    }
+    if (border_x.size() == 0) return 0;
+    mean_border_x = std::accumulate(border_x.begin(), border_x.end(), 0.0) / border_x.size();
+    double variance = 0;
+    for (auto x : border_x) {
+      variance += (x - mean_border_x) * (x - mean_border_x);
+    }
+    double std_dev = std::sqrt(variance / border_x.size());
+    return std_dev;
   }
 
   void chemotaxis() {
