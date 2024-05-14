@@ -47,10 +47,12 @@ struct Solver {
         D = Grid<std::vector<double>>(Nx, Ny, D0);
         p = Grid<std::vector<double>>(Nx, Ny, p0);
         k = Grid<std::vector<double>>(Nx, Ny, k0); 
-        velocity = Grid<Point>(Nx, Ny, Point(0, 0));
+        if (ADVECTION_DILUTION) {
+            velocity = Grid<Point>(Nx, Ny, Point(0, 0));
+        }
     }
 
-    void step(double dt) { 
+    void step(double dt) {
         Grid<std::vector<double>> unew(Nx, Ny, std::vector<double>(NUM_SPECIES, 0.0));
         // Forward Euler with central differences
         // inner nodes
@@ -74,11 +76,14 @@ struct Solver {
                     const double dvdy = (velocity(i, j+1).y - velocity(i, j-1).y) / (2 * dx);
                     const double dilution = u(i, j)[sp] * (dvdx + dvdy);
                     // update grid point
-                    unew(i, j)[sp] = u(i, j)[sp] + dt * (diffusion + reaction[sp] + p(i, j)[sp] - advection - dilution); 
+                    unew(i, j)[sp] = u(i, j)[sp] + dt * (diffusion + reaction[sp] + p(i, j)[sp]); 
+                    if(ADVECTION_DILUTION) {
+                        unew(i, j)[sp] -= dt * (advection + dilution);
+                    }
                 }
             }
         }
-        // north boundary // ToDo: maybe parallelize, maybe not
+        // north boundary // ToDo: maybe parallelize, maybe not. Maybe merge back into loop above (add Neumann coeff and Dirichlet option)
         for (int i = 1; i < Nx-1; i++) {
             int j = Ny-1;
             const std::vector<double> reaction = R(u(i, j), k(i, j));
@@ -93,7 +98,10 @@ struct Solver {
                 const double dvdx = (velocity(i+1, j).x - velocity(i-1, j).x) / (2 * dx);
                 const double dvdy = 0; // zero-gradient velocity at boundary
                 const double dilution = u(i, j)[sp] * (dvdx + dvdy);
-                unew(i, j)[sp] = u(i, j)[sp] + dt * (diffusion + reaction[sp] + p(i, j)[sp] - advection - dilution); 
+                unew(i, j)[sp] = u(i, j)[sp] + dt * (diffusion + reaction[sp] + p(i, j)[sp]); 
+                if(ADVECTION_DILUTION) {
+                    unew(i, j)[sp] -= dt * (advection + dilution);
+                } 
             }
         }
         // south boundary
@@ -111,7 +119,10 @@ struct Solver {
                 const double dvdx = (velocity(i+1, j).x - velocity(i-1, j).x) / (2 * dx);
                 const double dvdy = 0; // zero-gradient velocity at boundary
                 const double dilution = u(i, j)[sp] * (dvdx + dvdy);
-                unew(i, j)[sp] = u(i, j)[sp] + dt * (diffusion + reaction[sp] + p(i, j)[sp] - advection - dilution); 
+                unew(i, j)[sp] = u(i, j)[sp] + dt * (diffusion + reaction[sp] + p(i, j)[sp]); 
+                if(ADVECTION_DILUTION) {
+                    unew(i, j)[sp] -= dt * (advection + dilution); 
+                }
             }
         }
         // east boundary
@@ -129,7 +140,10 @@ struct Solver {
                 const double dvdx = 0; // zero-gradient velocity at boundary
                 const double dvdy = (velocity(i, j+1).y - velocity(i, j-1).y) / (2 * dx);
                 const double dilution = u(i, j)[sp] * (dvdx + dvdy);
-                unew(i, j)[sp] = u(i, j)[sp] + dt * (diffusion + reaction[sp] + p(i, j)[sp] - advection - dilution); 
+                unew(i, j)[sp] = u(i, j)[sp] + dt * (diffusion + reaction[sp] + p(i, j)[sp]); 
+                if(ADVECTION_DILUTION) {
+                    unew(i, j)[sp] -= dt * (advection + dilution); 
+                }
             }
         }
         // west boundary
@@ -147,7 +161,10 @@ struct Solver {
                 const double dvdx = 0; // zero-gradient velocity at boundary
                 const double dvdy = (velocity(i, j+1).y - velocity(i, j-1).y) / (2 * dx);
                 const double dilution = u(i, j)[sp] * (dvdx + dvdy);
-                unew(i, j)[sp] = u(i, j)[sp] + dt * (diffusion + reaction[sp] + p(i, j)[sp] - advection - dilution); 
+                unew(i, j)[sp] = u(i, j)[sp] + dt * (diffusion + reaction[sp] + p(i, j)[sp]); 
+                if(ADVECTION_DILUTION) {
+                    unew(i, j)[sp] -= dt * (advection + dilution); 
+                }
             }
         }
         // ---- update state ----
@@ -182,7 +199,7 @@ struct Solver {
         if (Output::D) file << D.to_vtk("D");
         if (Output::k) file << k.to_vtk("k");
         if (Output::p) file << p.to_vtk("p");
-        if (Output::velocity) file << velocity.to_vtk("velocity");
+        if (Output::velocity && ADVECTION_DILUTION) file << velocity.to_vtk("velocity");
         
         file << "</PointData>" << std::endl;    // end of point data
         file << "</Piece>" << std::endl;
