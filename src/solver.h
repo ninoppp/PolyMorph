@@ -12,6 +12,7 @@
 #include "reaction.h"
 #include "grid.h"
 #include "geometry.h"
+#include "domain.h"
 
 enum class BoundaryCondition {
     Dirichlet,
@@ -20,7 +21,7 @@ enum class BoundaryCondition {
 };
 
 struct Solver { 
-    double x0, y0; // offset/position of the grid
+    Domain& domain;
     size_t Nx, Ny; // number of grid points
     double dx; // grid spacing
     Reaction R; // reaction term
@@ -32,18 +33,15 @@ struct Solver {
     Grid<Point> velocity; // velocity field
  
     // initialize the grid with a given initial condition
-    Solver(const Grid<std::vector<double>> u0, const double dx, Reaction R) {
+    Solver(Domain& domain, const Grid<std::vector<double>> u0, const double dx, Reaction R) : domain(domain) {
         this->u = u0;
         this->dx = dx;
         this->R = R;
         this->Nx = u.sizeX();
         this->Ny = u.sizeY();
         std::cout << "solver dimensions Nx=" << Nx << " Ny=" << Ny << std::endl;
-        // ToDo: make x0, y0 optional constructor arguments
-        x0 = -0.5 * Nx * dx; // midpoint at 0
-        y0 = -0.5 * Ny * dx;
         std::cout << "dx=" << dx << std::endl;
-        std::cout << "x0=" << x0 << " y0=" << y0 << std::endl;
+        std::cout << "domain: [" << domain.x0 << ", " << domain.x1 << "] x [" << domain.y0 << ", " << domain.y1 << "]" << std::endl;
         // initialize with background values
         parent_idx = Grid<int>(Nx, Ny, -2);
         D = Grid<std::vector<double>>(Nx, Ny, D0);
@@ -170,8 +168,8 @@ struct Solver {
         file << "<DataArray type=\"Float64\" NumberOfComponents=\"3\" format=\"ascii\">" << std::endl;
         for (int i = 0; i < Nx; i++) {
             for (int j = 0; j < Ny; j++) {
-                double x = x0 + i * dx;
-                double y = y0 + j * dx;
+                double x = domain.x0 + i * dx;
+                double y = domain.y0 + j * dx;
                 file << x << " " << y << " 0" << std::endl;
             }
         }

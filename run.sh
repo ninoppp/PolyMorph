@@ -4,7 +4,7 @@
 move_files() {
     echo "moving output files to desktop ..."
     local timestamp=$(date +%Y-%m-%d_%H-%M)
-    local path="/mnt/c/Users/Nico/Desktop/PolymorphOutput" # change this to your desktop path (muell)
+    local path="/mnt/c/Users/muell/Desktop/PolymorphOutput" # change this to your desktop path (muell)
     mkdir $path/$timestamp
     mv *.vtp $path/$timestamp/
     mv *.vts $path/$timestamp/ 

@@ -61,10 +61,10 @@ struct Interpolator {
     Grid<int>& prev_idx = solver.parent_idx; // stores the polygon index of the cell in which a grid point lies (its parent)
     Grid<int> new_idx(solver.Nx, solver.Ny, -1); // negative indices indicate a background node. ToDo: could make this in place
     
-    istart = std::max(int((ensemble.x0 - solver.x0) / solver.dx) + 1, 0);
-    jstart = std::max(int((ensemble.y0 - solver.y0) / solver.dx) + 1, 0);
-    iend = std::min(size_t((ensemble.x1 - solver.x0) / solver.dx), solver.Nx);
-    jend = std::min(size_t((ensemble.y1 - solver.y0) / solver.dx), solver.Ny); // plus 1 maybe problem
+    istart = std::max(int((ensemble.x0 - solver.domain.x0) / solver.dx) + 1, 0);
+    jstart = std::max(int((ensemble.y0 - solver.domain.y0) / solver.dx) + 1, 0);
+    iend = std::min(size_t((ensemble.x1 - solver.domain.x0) / solver.dx), solver.Nx);
+    jend = std::min(size_t((ensemble.y1 - solver.domain.y0) / solver.dx), solver.Ny); // plus 1 maybe problem
     /*assert(solver.x0 + istart * solver.dx >= ensemble.x0);
     assert(solver.y0 + jstart * solver.dx >= ensemble.y0);
     assert(solver.x0 + iend * solver.dx <= ensemble.x1);
@@ -74,8 +74,8 @@ struct Interpolator {
     for (int i = istart; i < iend; i++) {
       for (int j = jstart; j < jend; j++) { 
         // spatial coordinates of grid point
-        const double x = solver.x0 + i * solver.dx;
-        const double y = solver.y0 + j * solver.dx;
+        const double x = solver.domain.x0 + i * solver.dx;
+        const double y = solver.domain.y0 + j * solver.dx;
         const Point grid_point(x, y);
         // check if still the same parent (ignore rigid)
         if (prev_idx(i, j) >= int(Nr) && ensemble.polygons[prev_idx(i, j)].contains(grid_point)) { // ToDo: check if in bounds

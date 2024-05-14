@@ -1,9 +1,14 @@
-#include "utils.h"
+#ifndef DOMAIN_H
+#define DOMAIN_H
+
 #include "geometry.h"
 
 struct Domain {
     double x0, y0, x1, y1;
     double growth_rate[4]; // E, N, W, S
+    // ToDo: add boundary stiffness or smth similar
+
+    Domain() : x0(0), y0(0), x1(1), y1(1) {}
     Domain(double x0, double y0, double x1, double y1) : 
             x0(x0), y0(y0), x1(x1), y1(y1) {}
 
@@ -41,5 +46,6 @@ struct Domain {
         growth_rate[2] = rate_W;
         growth_rate[3] = rate_S;
     }
-
 };
+
+#endif // DOMAIN_H

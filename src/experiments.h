@@ -4,6 +4,7 @@
 #include "interpolator.h"
 #include "chemistry.h"
 #include "utils.h"
+#include "domain.h"
 #include <iostream>
 
 /*! \brief This file contains multiple "main" functions for different experiments
@@ -13,13 +14,14 @@
  */
 
 void default_testrun() {
-    Ensemble ensemble("ensemble/default.off"); // read the input file
+    double L = 50;
+    Domain domain(-L/2, -L/2, L/2, L/2);
+    Ensemble ensemble("ensemble/default.off", domain); // read the input file
     assert(Nr == 0 && "Nr must be 0 for default testrun");
-    unsigned L = 50;
     unsigned N = L/dx; 
     Grid<std::vector<double>> u0 = Grid(N, N, std::vector<double>(NUM_SPECIES, 0.0)); // initial condition, just zeros
-    Reaction R = Inhibition();
-    Solver solver(u0, dx, R); // init solver
+    Reaction reaction = Inhibition();
+    Solver solver(domain, u0, dx, reaction); // init solver
     Interpolator interpolator(ensemble, solver);
     Chemistry chemistry(ensemble);
     chemistry.is_producing = [L](const Polygon& p) { 
@@ -44,16 +46,17 @@ void default_testrun() {
 }
 
 void two_opposing() {
-  Ensemble ensemble("ensemble/rect_100x50.off"); // read the input file
+  Domain domain(-50, -25, 50, 25);
+  Ensemble ensemble("ensemble/rect_100x50.off", domain); // read the input file
   assert(Nr == 1 && "Nr must be 1 for running in box");
   Grid<std::vector<double>> u0 = Grid(100/dx, 50/dx, std::vector<double>(NUM_SPECIES, 0.0)); // initial condition, just zeros
   Reaction R = Inhibition();
-  Solver solver(u0, dx, R); // init solver
+  Solver solver(domain, u0, dx, R); // init solver
   Interpolator interpolator(ensemble, solver);
   Chemistry chemistry(ensemble);
-  chemistry.is_producing = [solver](const Polygon& p) { 
-      return std::vector<bool> {p.midpoint().x < solver.x0 + 10, 
-                                p.midpoint().x > solver.x0 + 90}; 
+  chemistry.is_producing = [domain](const Polygon& p) { 
+      return std::vector<bool> {p.midpoint().x < domain.x0 + 10, 
+                                p.midpoint().x > domain.x0 + 90}; 
     };
   
   ensemble.output(0); // print the initial state
