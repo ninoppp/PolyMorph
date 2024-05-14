@@ -44,7 +44,7 @@ struct Interpolator {
     for (int i = 0; i < parent.vertices.size(); i++) {
       const Vertex& vertex = parent.vertices[i];
       double distance = (vertex.r - grid_point).length();
-      double weight = 1.0 / (distance + 1e-6); // avoid division by zero
+      double weight = 1.0 / (distance + 1e-6 * h); // avoid division by zero TODO: scale epsilon with length scale
       weights.push_back(weight);
       total_weight += weight;
     }    
