@@ -4,6 +4,7 @@
 #include "solver.h"
 #include "polyhoop.h"
 #include "grid.h"
+#include "utils.h"
 
 // takes care of the data scattering and gathering between ensemble and solver
 struct Interpolator {
@@ -63,8 +64,8 @@ struct Interpolator {
     
     istart = std::max(int((ensemble.x0 - solver.domain.x0) / solver.dx) + 1, 0);
     jstart = std::max(int((ensemble.y0 - solver.domain.y0) / solver.dx) + 1, 0);
-    iend = std::min(size_t((ensemble.x1 - solver.domain.x0) / solver.dx), solver.Nx);
-    jend = std::min(size_t((ensemble.y1 - solver.domain.y0) / solver.dx), solver.Ny); // plus 1 maybe problem
+    iend = std::min(int((ensemble.x1 - solver.domain.x0) / solver.dx), solver.Nx);
+    jend = std::min(int((ensemble.y1 - solver.domain.y0) / solver.dx), solver.Ny); // plus 1 maybe problem
     /*assert(solver.x0 + istart * solver.dx >= ensemble.x0);
     assert(solver.y0 + jstart * solver.dx >= ensemble.y0);
     assert(solver.x0 + iend * solver.dx <= ensemble.x1);
@@ -90,9 +91,9 @@ struct Interpolator {
           solver.D(i, j) = D0; // background diffusion
           solver.k(i, j) = k0; // background degradation
           solver.p(i, j) = p0; // background production (should be zero)
-          // set velocity to zero
+          // set velocity to zero ToDo: remove duplication (done below in vel-field interpolation)
           if (ADVECTION_DILUTION) {
-            solver.velocity(i, j) = Point(0, 0);
+            //solver.velocity(i, j) = Point(0, 0);
           }
         } else { 
           solver.D(i, j) = ensemble.polygons[new_idx(i, j)].D;
@@ -106,6 +107,29 @@ struct Interpolator {
       }
     }
     solver.parent_idx = new_idx;  // ToDo: update in place
+
+    // interpolate remaining velocity field
+    // set boundary to domain velocity
+    for (int i = 0; i < solver.Nx; i++) {
+      solver.velocity(i, 0) = solver.domain.growth_rate[3] * Point(0, -1); // south
+      solver.velocity(i, solver.Ny - 1) = solver.domain.growth_rate[1] * Point(0, 1); // north
+    }
+    for (int j = 0; j < solver.Ny; j++) {
+      solver.velocity(0, j) = solver.domain.growth_rate[2] * Point(-1, 0); // west
+      solver.velocity(solver.Nx - 1, j) = solver.domain.growth_rate[0] * Point(1, 0); // east
+    }
+    // interior points
+    for (int i = 1; i < solver.Nx - 1; i++) {
+      for (int j = 1; j < solver.Ny - 1; j++) {
+        if (solver.parent_idx(i, j) < int(Nr)) { // background node
+          Point vel = Point(0, 0);
+          for (const Index& neighbor : neighbors(Index{i, j})) { // average over 4 neighbours
+            vel = vel + solver.velocity(neighbor);
+          }
+          solver.velocity(i, j) = 0.25 * vel;
+        }
+      }
+    }
   }
   // ToDo: rename cell to smth else. only place where this is used
   // gather concentration u from grid points to polygons

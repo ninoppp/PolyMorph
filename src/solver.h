@@ -22,7 +22,7 @@ enum class BoundaryCondition {
 
 struct Solver { 
     Domain& domain;
-    size_t Nx, Ny; // number of grid points
+    int Nx, Ny; // number of grid points
     double dx; // grid spacing
     Reaction R; // reaction term
     Grid<int> parent_idx; // polygon idx

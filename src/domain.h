@@ -5,7 +5,7 @@
 
 struct Domain {
     double x0, y0, x1, y1;
-    double growth_rate[4]; // E, N, W, S
+    double growth_rate[4]; // E, N, W, S. Positive values mean growth, negative mean shrinkage
     // ToDo: add boundary stiffness or smth similar
 
     Domain() : x0(0), y0(0), x1(1), y1(1) {}

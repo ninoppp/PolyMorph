@@ -39,6 +39,7 @@ void default_testrun() {
             interpolator.scatter();
             solver.step(dt);
             interpolator.gather();
+            domain.step(dt); // only needed if domain is growing/shrinking
         } 
         ensemble.output(f);
         solver.output(f);
