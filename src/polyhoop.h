@@ -424,6 +424,12 @@ struct Ensemble
         v[i].a.add(-8 * kb, (a0 / ((l0 + l1) * b0)) * (e0.cross() - a0 * e0)
                           - (a1 / ((l1 + l2) * b1)) * (n - a1 * (e1 - e2))
                           + (a2 / ((l2 + l3) * b2)) * (e3.cross() + a2 * e3));
+
+        // domain boundaries
+        polygons[p].vertices[i].a.add((polygons[p].vertices[i].r.x < domain.x0) * kr, {(domain.x0 - polygons[p].vertices[i].r.x), 0});
+        polygons[p].vertices[i].a.add((polygons[p].vertices[i].r.x > domain.x1) * kr, {(domain.x1 - polygons[p].vertices[i].r.x), 0});
+        polygons[p].vertices[i].a.add((polygons[p].vertices[i].r.y < domain.y0) * kr, {0, (domain.y0 - polygons[p].vertices[i].r.y)});
+        polygons[p].vertices[i].a.add((polygons[p].vertices[i].r.y > domain.y1) * kr, {0, (domain.y1 - polygons[p].vertices[i].r.y)});
       }
     }
     
