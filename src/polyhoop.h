@@ -20,6 +20,7 @@
 #include "grid.h"
 #include "utils.h"
 #include "geometry.h"
+#include "domain.h"
 
 // distributions
 std::mt19937 rng; // random number generator
@@ -36,14 +37,14 @@ std::vector<std::lognormal_distribution<>> threshold_dist = create_lognormal(thr
 
 struct Ensemble
 {
-  Domain domain; // simulation domain
+  Domain& domain; // simulation domain
   std::vector<Polygon> polygons; // list of polygons
   std::vector<Vertex*> first; // pointer to first vertex in each box
   std::size_t Nx, Ny; // number of boxes in x,y direction
   double x0, y0, x1, y1, bs; // box offset, box end, and size
   double t; // time
   
-  Ensemble(const char* name, Domain domain) : t(0)
+  Ensemble(const char* name, Domain& domain) : t(0), domain(domain)
   {
     // read OFF file header
     std::ifstream file(name);

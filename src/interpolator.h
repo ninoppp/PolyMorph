@@ -109,24 +109,26 @@ struct Interpolator {
     solver.parent_idx = new_idx;  // ToDo: update in place
 
     // interpolate remaining velocity field
-    // set boundary to domain velocity
-    for (int i = 0; i < solver.Nx; i++) {
-      solver.velocity(i, 0) = solver.domain.growth_rate[3] * Point(0, -1); // south
-      solver.velocity(i, solver.Ny - 1) = solver.domain.growth_rate[1] * Point(0, 1); // north
-    }
-    for (int j = 0; j < solver.Ny; j++) {
-      solver.velocity(0, j) = solver.domain.growth_rate[2] * Point(-1, 0); // west
-      solver.velocity(solver.Nx - 1, j) = solver.domain.growth_rate[0] * Point(1, 0); // east
-    }
-    // interior points
-    for (int i = 1; i < solver.Nx - 1; i++) {
-      for (int j = 1; j < solver.Ny - 1; j++) {
-        if (solver.parent_idx(i, j) < int(Nr)) { // background node
-          Point vel = Point(0, 0);
-          for (const Index& neighbor : neighbors(Index{i, j})) { // average over 4 neighbours
-            vel = vel + solver.velocity(neighbor);
+    if (ADVECTION_DILUTION) {
+      // set boundary to domain velocity
+      for (int i = 0; i < solver.Nx; i++) {
+        solver.velocity(i, 0) = solver.domain.growth_rate[3] * Point(0, -1); // south
+        solver.velocity(i, solver.Ny - 1) = solver.domain.growth_rate[1] * Point(0, 1); // north
+      }
+      for (int j = 0; j < solver.Ny; j++) {
+        solver.velocity(0, j) = solver.domain.growth_rate[2] * Point(-1, 0); // west
+        solver.velocity(solver.Nx - 1, j) = solver.domain.growth_rate[0] * Point(1, 0); // east
+      }
+      // interior points
+      for (int i = 1; i < solver.Nx - 1; i++) {
+        for (int j = 1; j < solver.Ny - 1; j++) {
+          if (solver.parent_idx(i, j) < int(Nr)) { // only treat background nodes
+            Point vel = Point(0, 0);
+            for (const Index& neighbor : neighbors(Index{i, j})) { // average over 4 neighbours
+              vel = vel + solver.velocity(neighbor);
+            }
+            solver.velocity(i, j) = 0.25 * vel;
           }
-          solver.velocity(i, j) = 0.25 * vel;
         }
       }
     }
