@@ -16,6 +16,7 @@
 void default_testrun() {
     double L = 50;
     Domain domain(-L/2, -L/2, L/2, L/2);
+    domain.set_growth_rate(0);
     Ensemble ensemble("ensemble/default.off", domain); // read the input file
     assert(Nr == 0 && "Nr must be 0 for default testrun");
     unsigned N = L/dx; 

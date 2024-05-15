@@ -38,7 +38,7 @@ struct Interpolator {
   }
 
   // returns the interpolated velocity at a grid point inside a parent polygon
-  Point interior_velocity(Point grid_point, int parent_idx) {
+  Point interior_velocity(const Point& grid_point, const int parent_idx) {
     const Polygon& parent = ensemble.polygons[parent_idx];
     std::vector<double> weights;
     double total_weight = 0;
@@ -56,6 +56,8 @@ struct Interpolator {
     }
     return vel;
   }
+
+  const Point&  bidirectional_vel_interpolation(); // TODO
 
   // scatter coefficients D, k from polygons to grid points
   void scatter() { // ToDo: make this function prettier
