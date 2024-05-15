@@ -11,7 +11,7 @@
 int main() {
   welcome();
   validate_parameters();
-  rng.seed(90178009);
+  rng.seed(RNG_SEED);
   write_config();
   default_testrun();
 }

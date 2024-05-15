@@ -58,6 +58,8 @@ const std::vector<double> threshold_mu = {0.25, 0.1}; // [1/L^2] concentration t
 const std::vector<double> threshold_CV = {0.1, 0.1}; // [-] coefficient of variation of threshold
 constexpr double cutoff_factor = 2.0; // [-] lognormal dists are cutoff at mu*factor to maintain stability
 
+constexpr int RNG_SEED = 90178009; // random number generator seed
+
 // define what to write to vtk files for visualization/debugging. disable to save space 
 namespace Output { 
     constexpr bool u = true; // concentration
