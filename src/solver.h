@@ -32,7 +32,7 @@ struct Solver {
     Grid<std::vector<double>> k; // kinetic coefficients
     Grid<Point> velocity; // velocity field
  
-    // initialize the grid with a given initial condition
+    // initialize the grid with a given initial condition ToDo: make u0 optional and calculate Nx/Ny from domain and dx
     Solver(Domain& domain, const Grid<std::vector<double>> u0, const double dx, Reaction R) : domain(domain) {
         this->u = u0;
         this->dx = dx;
@@ -52,7 +52,30 @@ struct Solver {
         }
     }
 
+    // rescale all grids
+    void rescale(size_t Nx_new, size_t Ny_new, int offset_x, int offset_y) {
+        u.rescale(Nx_new, Ny_new, offset_x, offset_y, std::vector<double>(NUM_SPECIES, 0.0));
+        D.rescale(Nx_new, Ny_new, offset_x, offset_y, D0);
+        p.rescale(Nx_new, Ny_new, offset_x, offset_y, p0);
+        k.rescale(Nx_new, Ny_new, offset_x, offset_y, k0);
+        parent_idx.rescale(Nx_new, Ny_new, offset_x, offset_y, -2);
+        if (ADVECTION_DILUTION) {
+            velocity.rescale(Nx_new, Ny_new, offset_x, offset_y, Point(0, 0));
+        }
+        this->Nx = Nx_new;
+        this->Ny = Ny_new;
+        std::cout << "rescaled solver to Nx=" << Nx << " Ny=" << Ny << std::endl;
+    }
+
     void step(double dt) {
+        // resize grids if necessary
+        if (domain.width() >= (Nx + 1) * dx || domain.height() >= (Ny + 1) * dx
+            || domain.width() <= (Nx - 1) * dx || domain.height() <= (Ny - 1) * dx) {
+            int Nx_new = floor(domain.width() / dx);
+            int Ny_new = floor(domain.height() / dx);
+            rescale(Nx_new, Ny_new, 0, 0);
+        }
+
         Grid<std::vector<double>> unew(Nx, Ny, std::vector<double>(NUM_SPECIES, 0.0));
         // Forward Euler with central differences
         // inner nodes
@@ -205,7 +228,28 @@ struct Solver {
         file << "</Piece>" << std::endl;
         file << "</StructuredGrid>" << std::endl;
         file << "</VTKFile>" << std::endl;
-        file.close();         
+        file.close();  
+
+        //std::cout << "Solver frame with: (Nx,Ny) =" << Nx << "," << Ny << std::endl
+        //    << "Nx*dx=" << Nx*dx << " domain width=" << domain.width() << std::endl;  
+
+        if (frame == Nf) output_pvd(); // output pvd file on last frame. Necessary for varying grid sizes          
+    }
+
+    void output_pvd() {       
+        std::ofstream file("rd_frame.pvd");
+        file << "<?xml version=\"1.0\"?>" << std::endl;
+        file << "<VTKFile type=\"Collection\" version=\"0.1\">" << std::endl;
+        file << "<Collection>" << std::endl;
+        for (std::size_t f = 0; f <= Nf; ++f) {
+            char filename [19]; 
+            snprintf(filename, 19, "rd_frame%06zu.vts", f);
+            file << "<DataSet timestep=\"" << f << "\" file=\"" << filename << "\"/>" << std::endl;
+        }
+        file << "</Collection>" << std::endl;
+        file << "</VTKFile>" << std::endl;
+        file << std::endl;
+        file.close();
     }
 };
 

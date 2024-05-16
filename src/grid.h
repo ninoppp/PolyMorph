@@ -18,11 +18,13 @@ struct Grid {
     Grid () { Grid(100, 100); } // ToDo: get rid of magic numbers
     T& operator()(int i, int j) { return data[i][j]; }
     T& operator()(Index idx) { return data[idx.i][idx.j]; }
+    T operator()(int i, int j) const { return data[i][j]; }
+    T operator()(Index idx) const { return data[idx.i][idx.j]; }
     size_t sizeX() const { return data.size(); }
     size_t sizeY() const { return data.empty() ? 0 : data[0].size(); }
     size_t sizeZ() const; // only defined for T=vector
     std::string to_vtk(std::string name);
-    void rescale(size_t Nx, size_t Ny, int offset_x, int offset_y, T default_value);
+    void rescale(size_t Nx, size_t Ny, int offset_x, int offset_y, T fill_value);
 };
 
 template<typename T>
@@ -83,6 +85,17 @@ std::string Grid<Point>::to_vtk(std::string name) {
     xml << "</DataArray>" << std::endl;
     
     return xml.str();
+}
+
+template<typename T>
+void Grid<T>::rescale(size_t Nx_new, size_t Ny_new, int offset_x, int offset_y, T fill_value) {
+    std::vector<std::vector<T>> new_data(Nx_new, std::vector<T>(Ny_new, fill_value));
+    for (int i = 0; i < std::min(Nx_new, sizeX()); i++) {
+        for (int j = 0; j < std::min(Ny_new, sizeY()); j++) {
+            new_data[i + offset_x][j + offset_y] = data[i][j];
+        }
+    }
+    data = new_data;
 }
 
 #endif
