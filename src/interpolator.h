@@ -122,6 +122,7 @@ struct Interpolator {
         solver.velocity(solver.Nx - 1, j) = solver.domain.growth_rate[0] * Point(1, 0); // east
       }
       // interior points
+      #pragma omp parallel for collapse(2)
       for (int i = 1; i < solver.Nx - 1; i++) {
         for (int j = 1; j < solver.Ny - 1; j++) {
           if (solver.parent_idx(i, j) < int(Nr)) { // only treat background nodes
