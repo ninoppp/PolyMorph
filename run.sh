@@ -4,11 +4,12 @@
 move_files() {
     echo "moving output files to desktop ..."
     local timestamp=$(date +%Y-%m-%d_%H-%M)
-    local path="/mnt/c/Users/nico/Desktop/PolymorphOutput" # change this to your desktop path (muell)
+    local path="/mnt/c/Users/muell/Desktop/PolymorphOutput" # change this to your desktop path (nico or muell)
     mkdir $path/$timestamp
     mv *.vtp $path/$timestamp/
     mv *.vts $path/$timestamp/ 
     mv *.cfg $path/$timestamp/
+    mv *.pvd $path/$timestamp/
 }
 
 cleanup_files() {
@@ -16,6 +17,7 @@ cleanup_files() {
     rm *.vtp
     rm *.vts
     rm *.cfg
+    rm *.pvd
 }
 
 compile_polyhoop() {

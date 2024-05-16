@@ -6,6 +6,7 @@
 #include "utils.h"
 #include "domain.h"
 #include <iostream>
+#include <cmath>
 
 /*! \brief This file contains multiple "main" functions for different experiments
  *
@@ -14,9 +15,8 @@
  */
 
 void default_testrun() {
-    double L = 50;
+    double L = 5;
     Domain domain(-L/2, -L/2, L/2, L/2);
-    domain.set_growth_rate(0);
     Ensemble ensemble("ensemble/default.off", domain); // read the input file
     assert(Nr == 0 && "Nr must be 0 for default testrun");
     unsigned N = L/dx; 
@@ -24,13 +24,14 @@ void default_testrun() {
     Reaction reaction = Inhibition();
     Solver solver(domain, u0, dx, reaction); // init solver
     Interpolator interpolator(ensemble, solver);
-    Chemistry chemistry(ensemble);
+    Chemistry chemistry(ensemble, solver);
     chemistry.is_producing = [L](const Polygon& p) { 
       return std::vector<bool> {p.vertices[0].p == Nr, 
                                 p.midpoint().x < -0.2*L}; 
     };
     chemistry.growth_control = false; // stop growth if flagged?
-    
+    domain.set_growth_rate(0);
+
     ensemble.output(0); // print the initial state
     solver.output(0); // print the initial state
     for (std::size_t f = 1; f <= Nf; ++f) {
@@ -44,6 +45,9 @@ void default_testrun() {
         } 
         ensemble.output(f);
         solver.output(f);
+        if (f == Nf/3) {
+            domain.set_growth_rate(2.0, 0, 0, 0);
+        }
     }
 }
 
@@ -55,7 +59,7 @@ void two_opposing() {
   Reaction R = Inhibition();
   Solver solver(domain, u0, dx, R); // init solver
   Interpolator interpolator(ensemble, solver);
-  Chemistry chemistry(ensemble);
+  Chemistry chemistry(ensemble, solver);
   chemistry.is_producing = [domain](const Polygon& p) { 
       return std::vector<bool> {p.midpoint().x < domain.x0 + 10, 
                                 p.midpoint().x > domain.x0 + 90}; 
@@ -77,6 +81,57 @@ void two_opposing() {
   }
 }
 
+void grow_tissue(Domain& domain) {
+  Ensemble ensemble("ensemble/default.off", domain); // read the input file
+  assert(Nr == 0 && "Nr must be 0");
+  double eps = 0.1;
+  int Ns = 0;
+  while (ensemble.x0 - eps > domain.x0 || ensemble.x1 + eps < domain.x1
+        || ensemble.y0 - eps > domain.y0 || ensemble.y1 + eps < domain.y1 ) {
+    ensemble.step();
+    Ns++;
+  }
+  for (int s = 0; s < Ns/2; s++)  // ToDo: find better way. This is just an estimate
+    ensemble.step();
+}
+
+void positional_error_experiment() {
+    std::ofstream file("sharpness.csv");
+    file << "frame border_x pos_err" << std::endl;
+
+    Domain domain(-5, -5, 5, 5);
+    Ensemble ensemble("ensemble/default.off", domain); // read the input file
+    assert(Nr == 0 && "Nr must be 0 for default testrun");
+    Grid<std::vector<double>> u0 = Grid(100/dx, 50/dx, std::vector<double>(NUM_SPECIES, 0.0)); // initial condition, just zeros
+    Reaction reaction = LinearDegradation();
+    Solver solver(domain, u0, dx, reaction); // init solver
+    Interpolator interpolator(ensemble, solver);
+    Chemistry chemistry(ensemble, solver);
+    chemistry.is_producing = [domain](const Polygon& p) { 
+      return std::vector<bool> {p.midpoint().x < -40,
+                                0}; 
+    };
+    chemistry.growth_control = false; // stop growth if flagged?
+    ensemble.output(0); // print the initial state
+    solver.output(0); // print the initial state
+    grow_tissue(domain);
+    ensemble.writeOFF("rect_100x50_nobox.off");
+    return;
+    chemistry.update();
+    interpolator.scatter();
+    for (std::size_t f = 1; f <= Nf; ++f) {
+        for (std::size_t s = 0; s < Ns; ++s) {
+            solver.step(dt);
+        } 
+        interpolator.gather();
+        ensemble.output(f);
+        solver.output(f);
+        auto [mean, std] = chemistry.get_positional_error();
+        file << f << "," << mean << "," << std << std::endl;
+    }
+    file.close();
+}
+
 /*void sharpness_experiment() {
   std::ofstream file("sharpness.csv");
   file << "ThreshCV GradCV sharpness" << std::endl;
@@ -84,7 +139,7 @@ void two_opposing() {
 
   for (double thresh_cv : CV) {
     double tlnCV = std::log(1 + thresh_cv*thresh_cv);
-    threshold_dist = std::lognormal_distribution<double>(std::log(threshold_mu) - tlnCV/2, std::sqrt(tlnCV));
+    std::lognormal_distribution threshold_dist = std::lognormal_distribution<double>(std::log(threshold_mu[0]) - tlnCV/2, std::sqrt(tlnCV));
     
     for (double grad_cv : CV) {
       for (int rep = 0; rep < 5; rep++) { // repeat each experiment 5 times
@@ -122,8 +177,9 @@ void two_opposing() {
     } 
   }
   file.close();
-}
+}*/
 
+/*
 void differentiation_experiment() {
     Ensemble ensemble("ensemble/singlecell.off"); // read the input file
     unsigned L = 50;

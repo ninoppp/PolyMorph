@@ -13,6 +13,7 @@ int main() {
   validate_parameters();
   rng.seed(RNG_SEED);
   write_config();
-  default_testrun();
+  //default_testrun();
+  positional_error_experiment();
 }
 

@@ -24,8 +24,10 @@ std::vector<Index> neighbors(Index idx) {
 void validate_parameters() {
     assert(D_mu.size() == NUM_SPECIES && D_CV.size() == NUM_SPECIES);
     assert(p_mu.size() == NUM_SPECIES && p_CV.size() == NUM_SPECIES);
-    assert(k_mu.size() == k_CV.size());
+    assert(k_mu.size() == NUM_KIN && k_CV.size() == NUM_KIN);
     assert(threshold_mu.size() == threshold_CV.size());
+    assert(D0.size() == NUM_SPECIES && p0.size() == NUM_SPECIES);
+    assert(k0.size() == NUM_KIN);
 }
 
 template <typename T>
