@@ -96,11 +96,12 @@ void grow_tissue() {
 void positional_error_experiment() {
     std::ofstream file("sharpness.csv");
     file << "frame border_x pos_err" << std::endl;
-    Domain domain(-30, -15, 30, 15);
+    Domain domain(-31, -16, 31, 16);
     Ensemble ensemble("ensemble/rect_60x30_nobox.off", domain); // read the input file
     assert(Nr == 0 && "Nr must be 0");
     Reaction reaction = LinearDegradation();
     Solver solver(domain, dx, reaction); // init solver
+    solver.boundary.east = {BoundaryCondition::Type::Dirichlet, 0};
     Interpolator interpolator(ensemble, solver);
     Chemistry chemistry(ensemble, solver);
     chemistry.is_producing = [domain](const Polygon& p) { 
