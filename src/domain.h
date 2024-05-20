@@ -7,7 +7,7 @@ struct Domain {
     double x0, y0, x1, y1;
     // Growth normal to the domain boundary.
     // E, N, W, S. Positive values mean growth, negative mean shrinkage. 
-    double growth_rate[4]; 
+    double growth_rate[4]; // [L/T]
     
     // ToDo: add boundary stiffness or smth similar
 

@@ -8,7 +8,7 @@
 
 // Handles polygon modification due to signaling effects (growth control, chemotaxis, etc.)
 struct Chemistry {
-  Ensemble& ensemble;
+  Ensemble& ensemble; // ToDo: don't store ens and solver but pass to functions. move some functions to ensemble and solver
   Solver& solver;
   bool growth_control = false; // set true to stop growth when below threshold
   std::function<std::vector<bool>(Polygon&)> is_producing = [](Polygon& p) { return std::vector(NUM_SPECIES, false); };

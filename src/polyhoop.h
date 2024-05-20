@@ -52,6 +52,8 @@ struct Ensemble
     std::size_t Nv, Np, Ne; // number of vertices, polygons, edges
     file >> Nv >> Np >> Ne; // Ne unused
     std::cout << "rigid polygons: " << Nr << ". total polygons: " << Np << std::endl; 
+    std::cout << NUM_SPECIES << " species and " << NUM_KIN << " kinetic coefficients" << std::endl;
+
 
     // read all vertices
     std::vector<Point> points(Nv);
