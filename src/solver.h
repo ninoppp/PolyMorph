@@ -26,13 +26,22 @@ struct BoundaryCondition {
 
 struct Boundary {
     BoundaryCondition north, south, east, west;
+    
+    static Boundary zeroFlux() {
+        return {
+            {BoundaryCondition::Type::Neumann, 0},
+            {BoundaryCondition::Type::Neumann, 0},
+            {BoundaryCondition::Type::Neumann, 0},
+            {BoundaryCondition::Type::Neumann, 0}
+        };
+    }
 };
 
 struct Solver { 
     Domain& domain;
-    Boundary& boundary;
     int Nx, Ny; // number of grid points
     double dx; // grid spacing
+    Boundary boundary; // boundary conditions
     Reaction R; // reaction term
     Grid<int> parent_idx; // polygon idx
     Grid<std::vector<double>> u; // concentrations
@@ -41,11 +50,8 @@ struct Solver {
     Grid<std::vector<double>> k; // kinetic coefficients
     Grid<Point> velocity; // velocity field
 
- 
     // initialize the grid with a given initial condition ToDo: make u0 optional and calculate Nx/Ny from domain and dx
-    Solver(Domain& domain, const double dx, Reaction R) : domain(domain) {
-        this->dx = dx;
-        this->R = R;
+    Solver(Domain& domain, const double dx, Reaction R, Boundary bd = Boundary::zeroFlux()) : domain(domain), boundary(boundary), R(R), dx(dx) {
         this->Nx = domain.width() / dx;
         this->Ny = domain.height() / dx;
         this->u = Grid<std::vector<double>>(Nx, Ny, std::vector<double>(NUM_SPECIES, 0.0));
@@ -79,7 +85,7 @@ struct Solver {
         std::cout << "rescaled solver to Nx=" << Nx << " Ny=" << Ny << std::endl;
     }
 
-    double handle_boundary(int i, int j, BoundaryCondition bc, int sp) {
+    double handleBoundary(int i, int j, BoundaryCondition bc, int sp) {
         switch (bc.type) {
             case BoundaryCondition::Type::Dirichlet:
                 return bc.value;
