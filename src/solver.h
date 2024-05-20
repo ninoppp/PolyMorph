@@ -49,6 +49,7 @@ struct Solver {
     Grid<std::vector<double>> p; // production rates
     Grid<std::vector<double>> k; // kinetic coefficients
     Grid<Point> velocity; // velocity field
+    Grid<std::vector<Point>> grad_u; // concentration gradient
 
     Solver(Domain& domain, const double dx, Reaction R, Boundary bd = Boundary::zeroFlux()) : domain(domain), boundary(boundary), R(R), dx(dx) {
         this->Nx = domain.width() / dx;
@@ -61,9 +62,10 @@ struct Solver {
 
         // initialize with background values
         parent_idx = Grid<int>(Nx, Ny, -2);
-        D = Grid<std::vector<double>>(Nx, Ny, D0);
+        D = Grid<std::vector<double>>(Nx, Ny, D0); // ToDo: Benchmark and maybe remove D,p,k grids (just use values from parent polygon)
         p = Grid<std::vector<double>>(Nx, Ny, p0);
         k = Grid<std::vector<double>>(Nx, Ny, k0); 
+        grad_u = Grid<std::vector<Point>>(Nx, Ny);
         if (ADVECTION_DILUTION) {
             velocity = Grid<Point>(Nx, Ny, Point(0, 0));
         }
@@ -118,8 +120,8 @@ struct Solver {
                         unew(i, j)[sp] = u(i, j)[sp] + dt * (diffusion + reaction[sp] + p(i, j)[sp]); 
                         
                         if(ADVECTION_DILUTION) {
-                            const Point grad_u = Point((e - w) / (2 * dx), (n - s) / (2 * dx));
-                            const double advection = velocity(i, j) * grad_u; // dot product
+                            grad_u(i, j)[sp] = {(e - w) / (2 * dx), (n - s) / (2 * dx)};
+                            const double advection = velocity(i, j) * grad_u(i, j)[sp]; // dot product
                             const double dvdx = (j == Ny-1 || j == 0) ? 0 : (velocity(i, j+1).y - velocity(i, j-1).y) / (2 * dx);
                             const double dvdy = (i == Nx-1 || i == 0) ? 0 : (velocity(i+1, j).x - velocity(i-1, j).x) / (2 * dx);
                             const double dilution = u(i, j)[sp] * (dvdx + dvdy);

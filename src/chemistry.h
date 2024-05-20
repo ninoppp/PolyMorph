@@ -15,11 +15,11 @@ struct Chemistry {
 
   Chemistry(Ensemble& ensemble, Solver& solver) : ensemble(ensemble), solver(solver) {}
 
-  void update() { // ToDo: split into flag() and produce()
+  void update() {
     #pragma omp parallel for
     for (int i = Nr; i < ensemble.polygons.size(); i++) {
       auto& cell = ensemble.polygons[i];
-      // set production
+      // set production. ToDo: move to ensemble
       std::vector<bool> producing = is_producing(cell); // which species are produced by the cell
       if (producing.size() != NUM_SPECIES) {
         std::cerr << "is_producing function must return a vector of size NUM_SPECIES" << std::endl;
@@ -34,7 +34,7 @@ struct Chemistry {
         }
       }
 
-      // flag below threshold
+      // flag below threshold ToDo move to ensemble or Interpolator
       if (!cell.flag && cell.u[0] < cell.threshold[0]) {  // atm only consider first species
         cell.flag = true;
         if (growth_control) cell.alpha = 0;
@@ -91,11 +91,13 @@ struct Chemistry {
     for (int p = Nr; p < ensemble.polygons.size(); p++) {
       auto& cell = ensemble.polygons[p];
       for (auto& vertex : cell.vertices) {
-        // ToDo
-        // move towards higher concentration
-        // manipulate vertex acceleration
-        // Q: measure concentration gradient at each vertex, average, then add force vector to vertices. 
-        ; 
+        // move towards concentration gradient
+        int i = (vertex.r.x - solver.domain.x0) / solver.dx;
+        int j = (vertex.r.y - solver.domain.y0) / solver.dx;
+        for (int sp = 0; sp < NUM_SPECIES; sp++) {
+          const Point& grad = solver.grad_u(i, j)[sp];
+          vertex.a.add(chemotaxis_strength[sp], grad);
+        }
       }
     }
   }
