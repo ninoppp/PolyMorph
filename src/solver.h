@@ -30,6 +30,7 @@ struct Boundary {
 
 struct Solver { 
     Domain& domain;
+    Boundary& boundary;
     int Nx, Ny; // number of grid points
     double dx; // grid spacing
     Reaction R; // reaction term
@@ -50,8 +51,8 @@ struct Solver {
         this->u = Grid<std::vector<double>>(Nx, Ny, std::vector<double>(NUM_SPECIES, 0.0));
 
         std::cout << "solver dimensions Nx=" << Nx << " Ny=" << Ny << std::endl;
-        std::cout << "dx=" << dx << std::endl;
         std::cout << "domain: [" << domain.x0 << ", " << domain.x1 << "] x [" << domain.y0 << ", " << domain.y1 << "]" << std::endl;
+        std::cout << "dx=" << dx << std::endl;
 
         // initialize with background values
         parent_idx = Grid<int>(Nx, Ny, -2);
@@ -76,6 +77,20 @@ struct Solver {
         this->Nx = Nx_new;
         this->Ny = Ny_new;
         std::cout << "rescaled solver to Nx=" << Nx << " Ny=" << Ny << std::endl;
+    }
+
+    double handle_boundary(int i, int j, BoundaryCondition bc, int sp) {
+        switch (bc.type) {
+            case BoundaryCondition::Type::Dirichlet:
+                return bc.value;
+            case BoundaryCondition::Type::Neumann:
+                if (i == 0) return u(1, j)[sp] - bc.value * 2 * dx;
+                if (i == Nx-1) return u(Nx-2, j)[sp] + bc.value * 2 * dx;
+                if (j == 0) return u(i, 1)[sp] - bc.value * 2 * dx;
+                if (j == Ny-1) return u(i, Ny-2)[sp] + bc.value * 2 * dx;
+                break;
+        }
+        return 0;
     }
 
     void step(double dt) {
