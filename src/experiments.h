@@ -12,24 +12,21 @@
  *
  *  The main routines are called from the main() function in main.cpp
  *  and contain the logic for different simulation runs.
+ * 
+ * ToDo: split into separate cpp files in an experiments folder
  */
 
 void default_testrun() {
-    double L = 5;
+    double L = 50;
     Domain domain(-L/2, -L/2, L/2, L/2);
     Ensemble ensemble("ensemble/default.off", domain); // read the input file
     assert(Nr == 0 && "Nr must be 0 for default testrun");
     unsigned N = L/dx; 
-    Grid<std::vector<double>> u0 = Grid(N, N, std::vector<double>(NUM_SPECIES, 0.0)); // initial condition, just zeros
-    Reaction reaction = Inhibition();
-    Solver solver(domain, u0, dx, reaction); // init solver
+    Reaction reaction = LinearDegradation();
+    Solver solver(domain, dx, reaction); // init solver
     Interpolator interpolator(ensemble, solver);
     Chemistry chemistry(ensemble, solver);
-    chemistry.is_producing = [L](const Polygon& p) { 
-      return std::vector<bool> {p.vertices[0].p == Nr, 
-                                p.midpoint().x < -0.2*L}; 
-    };
-    chemistry.growth_control = false; // stop growth if flagged?
+    chemistry.is_producing = [](const Polygon& p) { return std::vector<bool> {p.vertices[0].p == Nr}; };
     domain.set_growth_rate(0);
 
     ensemble.output(0); // print the initial state
@@ -45,9 +42,6 @@ void default_testrun() {
         } 
         ensemble.output(f);
         solver.output(f);
-        if (f == Nf/3) {
-            domain.set_growth_rate(2.0, 0, 0, 0);
-        }
     }
 }
 
@@ -55,9 +49,8 @@ void two_opposing() {
   Domain domain(-50, -25, 50, 25);
   Ensemble ensemble("ensemble/rect_100x50.off", domain); // read the input file
   assert(Nr == 1 && "Nr must be 1 for running in box");
-  Grid<std::vector<double>> u0 = Grid(100/dx, 50/dx, std::vector<double>(NUM_SPECIES, 0.0)); // initial condition, just zeros
   Reaction R = Inhibition();
-  Solver solver(domain, u0, dx, R); // init solver
+  Solver solver(domain, dx, R); // init solver
   Interpolator interpolator(ensemble, solver);
   Chemistry chemistry(ensemble, solver);
   chemistry.is_producing = [domain](const Polygon& p) { 
@@ -104,9 +97,8 @@ void positional_error_experiment() {
     Domain domain(-30, -15, 30, 15);
     Ensemble ensemble("ensemble/rect_60x30_nobox.off", domain); // read the input file
     assert(Nr == 0 && "Nr must be 0");
-    Grid<std::vector<double>> u0 = Grid(60/dx, 30/dx, std::vector<double>(NUM_SPECIES, 0.0)); // initial condition, just zeros
     Reaction reaction = LinearDegradation();
-    Solver solver(domain, u0, dx, reaction); // init solver
+    Solver solver(domain, dx, reaction); // init solver
     Interpolator interpolator(ensemble, solver);
     Chemistry chemistry(ensemble, solver);
     chemistry.is_producing = [domain](const Polygon& p) { 

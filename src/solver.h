@@ -14,10 +14,18 @@
 #include "geometry.h"
 #include "domain.h"
 
-enum class BoundaryCondition {
-    Dirichlet,
-    Neumann,
-    Mixed, // 1 at west boundary, 0 at east boundary, zero-flux at north and south
+struct BoundaryCondition {
+    enum class Type {
+        Dirichlet,
+        Neumann
+    };
+
+    Type type;
+    double value; // Dirichlet value or Neumann flux
+};
+
+struct Boundary {
+    BoundaryCondition north, south, east, west;
 };
 
 struct Solver { 
@@ -31,17 +39,20 @@ struct Solver {
     Grid<std::vector<double>> p; // production rates
     Grid<std::vector<double>> k; // kinetic coefficients
     Grid<Point> velocity; // velocity field
+
  
     // initialize the grid with a given initial condition ToDo: make u0 optional and calculate Nx/Ny from domain and dx
-    Solver(Domain& domain, const Grid<std::vector<double>> u0, const double dx, Reaction R) : domain(domain) {
-        this->u = u0;
+    Solver(Domain& domain, const double dx, Reaction R) : domain(domain) {
         this->dx = dx;
         this->R = R;
-        this->Nx = u.sizeX();
-        this->Ny = u.sizeY();
+        this->Nx = domain.width() / dx;
+        this->Ny = domain.height() / dx;
+        this->u = Grid<std::vector<double>>(Nx, Ny, std::vector<double>(NUM_SPECIES, 0.0));
+
         std::cout << "solver dimensions Nx=" << Nx << " Ny=" << Ny << std::endl;
         std::cout << "dx=" << dx << std::endl;
         std::cout << "domain: [" << domain.x0 << ", " << domain.x1 << "] x [" << domain.y0 << ", " << domain.y1 << "]" << std::endl;
+
         // initialize with background values
         parent_idx = Grid<int>(Nx, Ny, -2);
         D = Grid<std::vector<double>>(Nx, Ny, D0);
