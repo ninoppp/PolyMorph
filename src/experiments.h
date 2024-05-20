@@ -24,6 +24,8 @@ void default_testrun() {
     unsigned N = L/dx; 
     Reaction reaction = LinearDegradation();
     Solver solver(domain, dx, reaction); // init solver
+    //solver.boundary.north = {BoundaryCondition::Type::Dirichlet, 1};
+    //solver.boundary.east = {BoundaryCondition::Type::Neumann, 5};
     Interpolator interpolator(ensemble, solver);
     Chemistry chemistry(ensemble, solver);
     chemistry.is_producing = [](const Polygon& p) { return std::vector<bool> {p.vertices[0].p == Nr}; };

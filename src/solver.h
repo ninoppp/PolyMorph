@@ -21,10 +21,10 @@ struct BoundaryCondition {
     };
 
     Type type;
-    double value; // Dirichlet value or Neumann flux
+    double value; // value at boundary (Dirichlet case) or derivative at boundary (Neumann case)
 };
 
-struct Boundary {
+struct Boundary { // ToDo: allow multiple species
     BoundaryCondition north, south, east, west;
     
     static Boundary zeroFlux() {
@@ -50,7 +50,6 @@ struct Solver {
     Grid<std::vector<double>> k; // kinetic coefficients
     Grid<Point> velocity; // velocity field
 
-    // initialize the grid with a given initial condition ToDo: make u0 optional and calculate Nx/Ny from domain and dx
     Solver(Domain& domain, const double dx, Reaction R, Boundary bd = Boundary::zeroFlux()) : domain(domain), boundary(boundary), R(R), dx(dx) {
         this->Nx = domain.width() / dx;
         this->Ny = domain.height() / dx;
@@ -85,20 +84,6 @@ struct Solver {
         std::cout << "rescaled solver to Nx=" << Nx << " Ny=" << Ny << std::endl;
     }
 
-    double handleBoundary(int i, int j, BoundaryCondition bc, int sp) {
-        switch (bc.type) {
-            case BoundaryCondition::Type::Dirichlet:
-                return bc.value;
-            case BoundaryCondition::Type::Neumann:
-                if (i == 0) return u(1, j)[sp] - bc.value * 2 * dx;
-                if (i == Nx-1) return u(Nx-2, j)[sp] + bc.value * 2 * dx;
-                if (j == 0) return u(i, 1)[sp] - bc.value * 2 * dx;
-                if (j == Ny-1) return u(i, Ny-2)[sp] + bc.value * 2 * dx;
-                break;
-        }
-        return 0;
-    }
-
     void step(double dt) {
         // resize grids if necessary
         if (domain.width() >= (Nx + 1) * dx || domain.height() >= (Ny + 1) * dx
@@ -113,29 +98,35 @@ struct Solver {
         // inner nodes
         #pragma omp parallel for collapse(2)
         for (int i = 0; i < Nx; i++) {
-            for (int j = 1; j < Ny; j++) {   
+            for (int j = 0; j < Ny; j++) {   
                 const std::vector<double> reaction = R(u(i, j), k(i, j));
-                // mirror past-boundary nodes
-                for (int sp = 0; sp < NUM_SPECIES; sp++) { // don't parallelize inner loop. likely to be vectorized
-                    // account for neumann BDC
-                    const double n = (j == Ny-1) ? u(i, j-1)[sp] : u(i, j+1)[sp]; // ToDo: allow for fluxes different from 0
-                    const double s = (j == 0)    ? u(i, j+1)[sp] : u(i, j-1)[sp];
-                    const double e = (i == Nx-1) ? u(i-1, j)[sp] : u(i+1, j)[sp];
-                    const double w = (i == 0)    ? u(i+1, j)[sp] : u(i-1, j)[sp];
-                    // calculate diffusion term
-                    const double diffusion = D(i, j)[sp] / (dx*dx) * (e + w + anisotropy * (n + s) - 2 * (1 + anisotropy) * u(i, j)[sp]);
-                    // update grid point
-                    unew(i, j)[sp] = u(i, j)[sp] + dt * (diffusion + reaction[sp] + p(i, j)[sp]); 
-                    
-                    if(ADVECTION_DILUTION) {
-                        const Point grad_u = Point((e - w) / (2 * dx), (n - s) / (2 * dx));
-                        const double advection = velocity(i, j) * grad_u; // dot product
-                        const double dvdx = (j == Ny-1 || j == 0) ? 0 : (velocity(i, j+1).y - velocity(i, j-1).y) / (2 * dx);
-                        const double dvdy = (i == Nx-1 || i == 0) ? 0 : (velocity(i+1, j).x - velocity(i-1, j).x) / (2 * dx);
-                        const double dilution = u(i, j)[sp] * (dvdx + dvdy);
+                for (int sp = 0; sp < NUM_SPECIES; sp++) {
+                    // dirichlet boundary conditions
+                    if      (i == 0     && boundary.west.type  == BoundaryCondition::Type::Dirichlet) { unew(i, j)[sp] = boundary.west.value; continue; } 
+                    else if (i == Nx-1  && boundary.east.type  == BoundaryCondition::Type::Dirichlet) { unew(i, j)[sp] = boundary.east.value; continue; } 
+                    else if (j == 0     && boundary.south.type == BoundaryCondition::Type::Dirichlet) { unew(i, j)[sp] = boundary.south.value; continue; } 
+                    else if (j == Ny-1  && boundary.north.type == BoundaryCondition::Type::Dirichlet) { unew(i, j)[sp] = boundary.north.value; continue; } 
+                    else {
+                        // account for neumann BDC
+                        const double n = (j == Ny-1) ? u(i, j-1)[sp] + 2*dx*boundary.north.value : u(i, j+1)[sp]; 
+                        const double s = (j == 0)    ? u(i, j+1)[sp] - 2*dx*boundary.south.value : u(i, j-1)[sp];
+                        const double e = (i == Nx-1) ? u(i-1, j)[sp] + 2*dx*boundary.east.value  : u(i+1, j)[sp];
+                        const double w = (i == 0)    ? u(i+1, j)[sp] - 2*dx*boundary.west.value  : u(i-1, j)[sp];
+                        // calculate diffusion term
+                        const double diffusion = D(i, j)[sp] / (dx*dx) * (e + w + anisotropy * (n + s) - 2 * (1 + anisotropy) * u(i, j)[sp]);
                         // update grid point
-                        unew(i, j)[sp] -= dt * (advection + dilution);
-                    }                    
+                        unew(i, j)[sp] = u(i, j)[sp] + dt * (diffusion + reaction[sp] + p(i, j)[sp]); 
+                        
+                        if(ADVECTION_DILUTION) {
+                            const Point grad_u = Point((e - w) / (2 * dx), (n - s) / (2 * dx));
+                            const double advection = velocity(i, j) * grad_u; // dot product
+                            const double dvdx = (j == Ny-1 || j == 0) ? 0 : (velocity(i, j+1).y - velocity(i, j-1).y) / (2 * dx);
+                            const double dvdy = (i == Nx-1 || i == 0) ? 0 : (velocity(i+1, j).x - velocity(i-1, j).x) / (2 * dx);
+                            const double dilution = u(i, j)[sp] * (dvdx + dvdy);
+                            // update grid point
+                            unew(i, j)[sp] -= dt * (advection + dilution);
+                        }                    
+                    }
                 }
             }
         }
