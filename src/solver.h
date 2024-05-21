@@ -118,9 +118,9 @@ struct Solver {
                         const double diffusion = D(i, j)[sp] / (dx*dx) * (e + w + anisotropy * (n + s) - 2 * (1 + anisotropy) * u(i, j)[sp]);
                         // update grid point
                         unew(i, j)[sp] = u(i, j)[sp] + dt * (diffusion + reaction[sp] + p(i, j)[sp]); 
+                        grad_u(i, j)[sp] = {(e - w) / (2 * dx), (n - s) / (2 * dx)};
                         
                         if(ADVECTION_DILUTION) {
-                            grad_u(i, j)[sp] = {(e - w) / (2 * dx), (n - s) / (2 * dx)};
                             const double advection = velocity(i, j) * grad_u(i, j)[sp]; // dot product
                             const double dvdx = (j == Ny-1 || j == 0) ? 0 : (velocity(i, j+1).y - velocity(i, j-1).y) / (2 * dx);
                             const double dvdy = (i == Nx-1 || i == 0) ? 0 : (velocity(i+1, j).x - velocity(i-1, j).x) / (2 * dx);
