@@ -12,7 +12,6 @@
 #include <set>
 #include <random>
 #include <algorithm>
-#include <cassert>
 #include <unordered_set>
 #include <map>
 
@@ -48,6 +47,11 @@ struct Ensemble
   {
     // read OFF file header
     std::ifstream file(name);
+    if (!file.is_open())
+    {
+      std::cerr << "Error: could not open off file " << name << std::endl;
+      std::exit(1);
+    }
     file.ignore(3); // ignore "OFF"
     std::size_t Nv, Np, Ne; // number of vertices, polygons, edges
     file >> Nv >> Np >> Ne; // Ne unused
@@ -429,10 +433,17 @@ struct Ensemble
                           + (a2 / ((l2 + l3) * b2)) * (e3.cross() + a2 * e3));
 
         // domain boundaries
-        polygons[p].vertices[i].a.add((polygons[p].vertices[i].r.x < domain.x0) * kr, {(domain.x0 - polygons[p].vertices[i].r.x), 0});
-        polygons[p].vertices[i].a.add((polygons[p].vertices[i].r.x > domain.x1) * kr, {(domain.x1 - polygons[p].vertices[i].r.x), 0});
-        polygons[p].vertices[i].a.add((polygons[p].vertices[i].r.y < domain.y0) * kr, {0, (domain.y0 - polygons[p].vertices[i].r.y)});
-        polygons[p].vertices[i].a.add((polygons[p].vertices[i].r.y > domain.y1) * kr, {0, (domain.y1 - polygons[p].vertices[i].r.y)});
+        v[i].a.add((polygons[p].vertices[i].r.x < domain.x0) * kr, {(domain.x0 - polygons[p].vertices[i].r.x), 0});
+        v[i].a.add((polygons[p].vertices[i].r.x > domain.x1) * kr, {(domain.x1 - polygons[p].vertices[i].r.x), 0});
+        v[i].a.add((polygons[p].vertices[i].r.y < domain.y0) * kr, {0, (domain.y0 - polygons[p].vertices[i].r.y)});
+        v[i].a.add((polygons[p].vertices[i].r.y > domain.y1) * kr, {0, (domain.y1 - polygons[p].vertices[i].r.y)});
+
+        // chemotaxis
+        for (int sp = 0; sp < NUM_SPECIES; sp++) {
+          if (!CHEM_ONLY_FLAGGED || polygons[p].flag) {
+            v[i].a.add(chemotaxis_strength[sp], v[i].grad_u[sp]);
+          }
+        }
       }
     }
     

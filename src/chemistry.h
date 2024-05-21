@@ -12,7 +12,7 @@ struct Chemistry {
   Solver& solver;
   bool growth_control = false; // set true to stop growth when below threshold
   std::function<std::vector<bool>(Polygon&)> is_producing = [](Polygon& p) { return std::vector(NUM_SPECIES, false); };
-
+  std::function<bool(Polygon&)> flag = [](Polygon& p) { return p.u[0] < p.threshold[0]; };
   Chemistry(Ensemble& ensemble, Solver& solver) : ensemble(ensemble), solver(solver) {}
 
   void update() {
@@ -34,14 +34,8 @@ struct Chemistry {
         }
       }
 
-      // flag below threshold ToDo move to ensemble or Interpolator
-      if (!cell.flag && cell.u[0] < cell.threshold[0]) {  // atm only consider first species
-        cell.flag = true;
-        if (growth_control) cell.alpha = 0;
-      } else if (cell.flag && cell.u[0] > cell.threshold[0]){
-        cell.flag = false;
-        if (growth_control) cell.alpha = cell.alpha0; 
-      }
+      cell.flag = flag(cell); // set flag ToDo: move to interpolator or ensemble   
+      if (growth_control && cell.flag) cell.alpha = 0;
     }
   }  
 
@@ -84,22 +78,6 @@ struct Chemistry {
     }
     double std_dev = std::sqrt(variance / border_x.size());
     return {mean_border_x, std_dev};
-  }
-
-  void chemotaxis() {
-    #pragma omp parallel for
-    for (int p = Nr; p < ensemble.polygons.size(); p++) {
-      auto& cell = ensemble.polygons[p];
-      for (auto& vertex : cell.vertices) {
-        // move towards concentration gradient
-        int i = (vertex.r.x - solver.domain.x0) / solver.dx;
-        int j = (vertex.r.y - solver.domain.y0) / solver.dx;
-        for (int sp = 0; sp < NUM_SPECIES; sp++) {
-          const Point& grad = solver.grad_u(i, j)[sp];
-          vertex.a.add(chemotaxis_strength[sp], grad);
-        }
-      }
-    }
   }
 };
 
