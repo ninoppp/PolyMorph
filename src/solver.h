@@ -7,7 +7,6 @@
 #include <cmath>
 #include <sstream>
 #include <iostream>
-#include <cassert>
 
 #include "reaction.h"
 #include "grid.h"
@@ -64,8 +63,8 @@ struct Solver {
         parent_idx = Grid<int>(Nx, Ny, -2);
         D = Grid<std::vector<double>>(Nx, Ny, D0); // ToDo: Benchmark and maybe remove D,p,k grids (just use values from parent polygon)
         p = Grid<std::vector<double>>(Nx, Ny, p0);
-        k = Grid<std::vector<double>>(Nx, Ny, k0); 
-        grad_u = Grid<std::vector<Point>>(Nx, Ny);
+        k = Grid<std::vector<double>>(Nx, Ny, k0);
+        grad_u = Grid<std::vector<Point>>(Nx, Ny, std::vector<Point>(NUM_SPECIES, Point(0, 0)));
         if (ADVECTION_DILUTION) {
             velocity = Grid<Point>(Nx, Ny, Point(0, 0));
         }
