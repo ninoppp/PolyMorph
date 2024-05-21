@@ -46,14 +46,14 @@ void default_testrun() {
 void chemotaxis_experiment() {
     double L = 40;
     Domain domain(-L/2, -L/2, L/2, L/2);
-    Ensemble ensemble("ensemble/tissue_127.off", domain); // read the input file
+    Ensemble ensemble("ensemble/tissue_127.off", domain);
     unsigned N = L/dx; 
     Reaction reaction = LinearDegradation();
-    Solver solver(domain, dx, reaction); // init solver
+    Solver solver(domain, dx, reaction); 
     Interpolator interpolator(ensemble, solver);
     Chemistry chemistry(ensemble, solver);
     chemistry.is_producing = [](const Polygon& p) { return std::vector<bool> {p.vertices[0].p == Nr}; };
-    chemistry.flag = [](const Polygon& p) { return p.vertices[0].p % 2 == 0; }; // flag every 2nd cell
+    chemistry.flag = [](const Polygon& p) { return p.vertices[0].p % 3 == 1; }; // flag every 2nd cell
     ensemble.output(0); // print the initial state
     solver.output(0); // print the initial state
     for (std::size_t f = 1; f <= Nf; ++f) {
@@ -69,6 +69,14 @@ void chemotaxis_experiment() {
     }
 }
 
+void turing_patterns_experiment() {
+  assert(NUM_SPECIES == 2 && "Turing patterns require two species");
+  double L = 60;
+  Domain domain(-L/2, -L/2, L/2, L/2);
+  Ensemble ensemble("ensemble/tissue_127.off", domain);
+  Reaction reaction = Turing(0.1, 0.9, 800);
+
+}
 
 void two_opposing() {
   Domain domain(-50, -25, 50, 25);

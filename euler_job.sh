@@ -6,15 +6,15 @@
 #SBATCH --constraint=EPYC_7763    # Select node with CPU
 #SBATCH --cpus-per-task=32         # Number of CPUs per task
 #SBATCH --mem-per-cpu=1024        # Memory per CPU
-#SBATCH --time=08:00:00           # Wall clock time limit
+#SBATCH --time=00:30:00           # Wall clock time limit
 
 module load gcc
 module list
 
 echo "compiling polymorph ... "
 rm -f polymorph.out
-g++ -fopenmp -O3 -o polymorph.out main.cpp
-OMP_NUM_THREADS=32
+g++ -fopenmp -O3 -o polymorph.out src/main.cpp
+OMP_NUM_THREADS=8
 export OMP_NUM_THREADS
 echo "running polymorph in parallel with $OMP_NUM_THREADS threads... "
 ./polymorph.out
