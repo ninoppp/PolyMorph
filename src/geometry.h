@@ -51,6 +51,7 @@ struct Vertex
   std::size_t p; // polygon index
   Vertex* next; // pointer to next vertex in same box
   double l0; // rest length of edge to the right
+  std::vector<Point> grad_u = std::vector<Point>(NUM_SPECIES, Point(0, 0)); // local concentration gradient
 };
 
 struct Polygon
