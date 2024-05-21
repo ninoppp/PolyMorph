@@ -17,19 +17,15 @@
  */
 
 void default_testrun() {
-    double L = 50;
+    double L = 40;
     Domain domain(-L/2, -L/2, L/2, L/2);
-    Ensemble ensemble("ensemble/default.off", domain); // read the input file
+    Ensemble ensemble("ensemble/default.off", domain); 
     assert(Nr == 0 && "Nr must be 0 for default testrun");
-    unsigned N = L/dx; 
     Reaction reaction = LinearDegradation();
     Solver solver(domain, dx, reaction); // init solver
-    //solver.boundary.north = {BoundaryCondition::Type::Dirichlet, 1};
-    //solver.boundary.east = {BoundaryCondition::Type::Neumann, 5};
     Interpolator interpolator(ensemble, solver);
     Chemistry chemistry(ensemble, solver);
     chemistry.is_producing = [](const Polygon& p) { return std::vector<bool> {p.vertices[0].p == Nr}; };
-    domain.set_growth_rate(0);
 
     ensemble.output(0); // print the initial state
     solver.output(0); // print the initial state
@@ -46,6 +42,33 @@ void default_testrun() {
         solver.output(f);
     }
 }
+
+void chemotaxis_experiment() {
+    double L = 40;
+    Domain domain(-L/2, -L/2, L/2, L/2);
+    Ensemble ensemble("ensemble/tissue_127.off", domain); // read the input file
+    unsigned N = L/dx; 
+    Reaction reaction = LinearDegradation();
+    Solver solver(domain, dx, reaction); // init solver
+    Interpolator interpolator(ensemble, solver);
+    Chemistry chemistry(ensemble, solver);
+    chemistry.is_producing = [](const Polygon& p) { return std::vector<bool> {p.vertices[0].p == Nr}; };
+    chemistry.flag = [](const Polygon& p) { return p.vertices[0].p % 2 == 0; }; // flag every 2nd cell
+    ensemble.output(0); // print the initial state
+    solver.output(0); // print the initial state
+    for (std::size_t f = 1; f <= Nf; ++f) {
+        for (std::size_t s = 0; s < Ns; ++s) {
+            ensemble.step(); 
+            chemistry.update();
+            interpolator.scatter();
+            solver.step(dt);
+            interpolator.gather();
+        } 
+        ensemble.output(f);
+        solver.output(f);
+    }
+}
+
 
 void two_opposing() {
   Domain domain(-50, -25, 50, 25);

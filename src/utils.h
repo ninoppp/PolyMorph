@@ -116,6 +116,7 @@ void write_config() {
         << "Ns=" << Ns << std::endl
         << "Nr=" << Nr << std::endl
         << "cutoff_factor=" << cutoff_factor << std::endl
+        << "chemotaixs_strength=" << to_string(chemotaxis_strength) << std::endl
         << "RNG_SEED=" << RNG_SEED << std::endl
         << "Output::u=" << Output::u << std::endl
         << "Output::D=" << Output::D << std::endl

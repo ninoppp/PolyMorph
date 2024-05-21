@@ -68,10 +68,12 @@ struct Interpolator {
     jstart = std::max(int((ensemble.y0 - solver.domain.y0) / solver.dx) + 1, 0);
     iend = std::min(int((ensemble.x1 - solver.domain.x0) / solver.dx), solver.Nx);
     jend = std::min(int((ensemble.y1 - solver.domain.y0) / solver.dx), solver.Ny); // plus 1 maybe problem
-    /*assert(solver.x0 + istart * solver.dx >= ensemble.x0);
+    #if DEBUG 
+    assert(solver.x0 + istart * solver.dx >= ensemble.x0);
     assert(solver.y0 + jstart * solver.dx >= ensemble.y0);
     assert(solver.x0 + iend * solver.dx <= ensemble.x1);
-    assert(solver.y0 + jend * solver.dx <= ensemble.y1);*/
+    assert(solver.y0 + jend * solver.dx <= ensemble.y1);
+    #endif
     // ToDo: print warning if ensemble box greater than solver box (only once)
 
     #pragma omp parallel for collapse(2)
@@ -165,6 +167,14 @@ struct Interpolator {
       if (cell.children.size() > 0) { // avoid division by zero if cells exceed RD box
         for (int i = 0; i < NUM_SPECIES; i++) {
           cell.u[i] /= cell.children.size();
+        }
+      }
+      // store gradient at vertices
+      for (auto& vertex : cell.vertices) {
+        const int i = std::round((vertex.r.x - solver.domain.x0) / solver.dx);
+        const int j = std::round((vertex.r.y - solver.domain.y0) / solver.dx);
+        if (i >= 0 && i < solver.Nx && j >= 0 && j < solver.Ny) {
+          vertex.grad_u = solver.grad_u(i, j);
         }
       }
     }

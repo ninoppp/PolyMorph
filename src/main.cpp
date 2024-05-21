@@ -14,6 +14,7 @@ int main() {
   rng.seed(RNG_SEED);
   write_config();
   //default_testrun();
-  positional_error_experiment();
+  //positional_error_experiment();
+  chemotaxis_experiment();
 }
 

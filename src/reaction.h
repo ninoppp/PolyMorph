@@ -1,6 +1,7 @@
 #include <vector>
 #include "const.h"
 
+// ToDo: replace functors with lambdas
 
 struct Reaction {
     std::vector<double> operator()(const std::vector<double>& u, const std::vector<double>& k) {
