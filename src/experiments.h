@@ -79,6 +79,7 @@ void turing_patterns_experiment() {
   Ensemble ensemble("ensemble/tissue_127.off", domain);
   Reaction reaction = Turing();
   Solver solver(domain, dx, reaction);
+  //solver.boundary.west = {BoundaryCondition::Type::Dirichlet, 1};
   Interpolator interpolator(ensemble, solver);
   ensemble.output(0); // print the initial state
   solver.output(0); // print the initial state
