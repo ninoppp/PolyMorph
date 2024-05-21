@@ -44,6 +44,7 @@ void default_testrun() {
 }
 
 void chemotaxis_experiment() {
+    assert(NUM_SPECIES == 1 && "Chemotaxis assumes one species");
     double L = 40;
     Domain domain(-L/2, -L/2, L/2, L/2);
     Ensemble ensemble("ensemble/tissue_127.off", domain);
@@ -53,7 +54,7 @@ void chemotaxis_experiment() {
     Interpolator interpolator(ensemble, solver);
     Chemistry chemistry(ensemble, solver);
     chemistry.is_producing = [](const Polygon& p) { return std::vector<bool> {p.vertices[0].p == Nr}; };
-    chemistry.flag = [](const Polygon& p) { return p.vertices[0].p % 3 == 1; }; // flag every 2nd cell
+    chemistry.flag = [](const Polygon& p) { return p.vertices[0].p % 2 == 1; }; // flag every 2nd cell
     ensemble.output(0); // print the initial state
     solver.output(0); // print the initial state
     for (std::size_t f = 1; f <= Nf; ++f) {
@@ -70,12 +71,27 @@ void chemotaxis_experiment() {
 }
 
 void turing_patterns_experiment() {
-  assert(NUM_SPECIES == 2 && "Turing patterns require two species");
+  assert(NUM_SPECIES == 2 && "Turing requires two species");
+  assert(NUM_KIN == 3 && "Turing requires 3 kinetic coefficients (a, b, gamma)");
+  assert(p_mu[0] == 0 && p_mu[1] == 0 && "Production rates must be zero");
   double L = 60;
   Domain domain(-L/2, -L/2, L/2, L/2);
   Ensemble ensemble("ensemble/tissue_127.off", domain);
-  Reaction reaction = Turing(0.1, 0.9, 800);
-
+  Reaction reaction = Turing();
+  Solver solver(domain, dx, reaction);
+  Interpolator interpolator(ensemble, solver);
+  ensemble.output(0); // print the initial state
+  solver.output(0); // print the initial state
+  for (std::size_t f = 1; f <= Nf; ++f) {
+      for (std::size_t s = 0; s < Ns; ++s) {
+          ensemble.step(); 
+          interpolator.scatter();
+          solver.step(dt);
+          interpolator.gather();
+      } 
+      ensemble.output(f);
+      solver.output(f);
+  }
 }
 
 void two_opposing() {

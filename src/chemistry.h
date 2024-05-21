@@ -15,7 +15,7 @@ struct Chemistry {
   std::function<bool(Polygon&)> flag = [](Polygon& p) { return p.u[0] < p.threshold[0]; };
   Chemistry(Ensemble& ensemble, Solver& solver) : ensemble(ensemble), solver(solver) {}
 
-  void update() {
+  void update() { // currently flagging and settings production rate
     #pragma omp parallel for
     for (int i = Nr; i < ensemble.polygons.size(); i++) {
       auto& cell = ensemble.polygons[i];
@@ -25,10 +25,10 @@ struct Chemistry {
         std::cerr << "is_producing function must return a vector of size NUM_SPECIES" << std::endl;
         exit(1);
       }
-      std::vector<double> production_rate = sample(p_dist, rng);
+      std::vector<double> p_sample = sample(p_dist, rng);
       for (int i = 0; i < NUM_SPECIES; i++) {
         if (cell.p[i] == 0 && producing[i]) {
-          cell.p[i] = production_rate[i];
+          cell.p[i] = p_sample[i];
         } else if (cell.p[i] > 0 && !producing[i]) {
           cell.p[i] = 0;
         }

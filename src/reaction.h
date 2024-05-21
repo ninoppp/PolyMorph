@@ -32,10 +32,11 @@ struct Inhibition : Reaction {
 };
 
 struct Turing : Reaction { // ToDo: get a,b,gamma as kinetic coefficients
-    double a, b, gamma;
-    Turing(double a, double b, double gamma) : a(a), b(b), gamma(gamma) {}
     std::vector<double> operator()(const std::vector<double>& u, const std::vector<double>& k) {
         std::vector<double> r(NUM_SPECIES);
+        const double a = k[0];
+        const double b = k[1];
+        const double gamma = k[2];
         r = {
             gamma * (a - u[0] + u[0]*u[0]*u[1]),
             gamma * (b -        u[0]*u[0]*u[1])
