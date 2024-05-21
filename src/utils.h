@@ -7,6 +7,7 @@
 #include <sstream>
 #include <vector>
 #include <random>
+#include <sys/time.h>
 
 #include "const.h"
 
@@ -19,6 +20,15 @@ struct Index {
 
 std::vector<Index> neighbors(Index idx) {
     return {Index(idx.i-1, idx.j), Index(idx.i+1, idx.j), Index(idx.i, idx.j-1), Index(idx.i, idx.j+1)};
+}
+
+double walltime(){
+    struct timeval time;
+    if (gettimeofday(&time, NULL)) {
+        std::cout << "Unexpected error in get_wall_time" << std::endl;
+        return 0;
+    }
+    return (double)time.tv_sec + (double)time.tv_usec * .000001;
 }
 
 void validate_parameters() {
