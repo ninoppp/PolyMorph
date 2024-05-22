@@ -42,7 +42,7 @@ void print_grid(Grid<double> u, int N) {
 void run_solver() {
     std::cout << "running 2d solver" << std::endl;
     Grid<double> u(N, 3);
-    Solver solver(u, D, dx, dt, LinearDegradation(k));
+    Solver solver(u, D, dx, dt, linearDegradation(k));
     for (int f = 0; f < Nf; f++) {
         for (int s = 0; s < Ns; s++) {
             solver.step();

@@ -21,8 +21,7 @@ void default_testrun() {
     Domain domain(-L/2, -L/2, L/2, L/2);
     Ensemble ensemble("ensemble/default.off", domain); 
     assert(Nr == 0 && "Nr must be 0 for default testrun");
-    Reaction reaction = LinearDegradation();
-    Solver solver(domain, dx, reaction); // init solver
+    Solver solver(domain, dx, Reactions::linearDegradation); // init solver
     Interpolator interpolator(ensemble, solver);
     Chemistry chemistry(ensemble, solver);
     chemistry.is_producing = [](const Polygon& p) { return std::vector<bool> {p.vertices[0].p == Nr}; };
@@ -49,8 +48,7 @@ void chemotaxis_experiment() {
     Domain domain(-L/2, -L/2, L/2, L/2);
     Ensemble ensemble("ensemble/tissue_127.off", domain);
     unsigned N = L/dx; 
-    Reaction reaction = LinearDegradation();
-    Solver solver(domain, dx, reaction); 
+    Solver solver(domain, dx, Reactions::linearDegradation); 
     Interpolator interpolator(ensemble, solver);
     Chemistry chemistry(ensemble, solver);
     chemistry.is_producing = [](const Polygon& p) { return std::vector<bool> {p.vertices[0].p == Nr}; };
@@ -74,12 +72,10 @@ void turing_patterns_experiment() {
   assert(NUM_SPECIES == 2 && "Turing requires two species");
   assert(NUM_KIN == 3 && "Turing requires 3 kinetic coefficients (a, b, gamma)");
   assert(p_mu[0] == 0 && p_mu[1] == 0 && "Production rates must be zero");
-  double L = 60;
+  double L = 40;
   Domain domain(-L/2, -L/2, L/2, L/2);
   Ensemble ensemble("ensemble/tissue_127.off", domain);
-  Reaction reaction = Turing();
-  Solver solver(domain, dx, reaction);
-  //solver.boundary.west = {BoundaryCondition::Type::Dirichlet, 1};
+  Solver solver(domain, dx, Reactions::turing);
   Interpolator interpolator(ensemble, solver);
   ensemble.output(0); // print the initial state
   solver.output(0); // print the initial state
@@ -99,7 +95,7 @@ void two_opposing() {
   Domain domain(-50, -25, 50, 25);
   Ensemble ensemble("ensemble/rect_100x50.off", domain); // read the input file
   assert(Nr == 1 && "Nr must be 1 for running in box");
-  Reaction R = Inhibition();
+  Reaction R = Reactions::inhibition;
   Solver solver(domain, dx, R); // init solver
   Interpolator interpolator(ensemble, solver);
   Chemistry chemistry(ensemble, solver);
@@ -147,7 +143,7 @@ void positional_error_experiment() {
     Domain domain(-30, -15, 30, 15);
     Ensemble ensemble("ensemble/rect_60x30_nobox.off", domain); // read the input file
     assert(Nr == 0 && "Nr must be 0");
-    Reaction reaction = LinearDegradation();
+    Reaction reaction = Reactions::linearDegradation;
     Solver solver(domain, dx, reaction); // init solver
     solver.boundary.east = {BoundaryCondition::Type::Dirichlet, 0};
     Interpolator interpolator(ensemble, solver);

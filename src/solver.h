@@ -13,6 +13,7 @@
 #include "geometry.h"
 #include "domain.h"
 
+
 struct BoundaryCondition {
     enum class Type {
         Dirichlet,
@@ -41,7 +42,7 @@ struct Solver {
     int Nx, Ny; // number of grid points
     double dx; // grid spacing
     Boundary boundary; // boundary conditions
-    Reaction R; // reaction term
+    Reaction R = [](const std::vector<double>& u, const std::vector<double>& k) { return std::vector<double>(NUM_SPECIES, 0.0); }; // reaction term
     Grid<int> parent_idx; // polygon idx
     Grid<std::vector<double>> u; // concentrations
     Grid<std::vector<double>> D; // diffusion coefficients

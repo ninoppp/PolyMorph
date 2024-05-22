@@ -168,7 +168,9 @@ struct Interpolator {
         for (int i = 0; i < NUM_SPECIES; i++) {
           cell.u[i] /= cell.children.size();
         }
-      }
+        // TURING: adjust proliferation
+        cell.alpha = cell.alpha0 * cell.u[0] * cell.u[0] * cell.u[1]; // alpha = alpha0 * R^2 * L
+      } 
       // store gradient at vertices
       for (auto& vertex : cell.vertices) {
         const int i = std::round((vertex.r.x - solver.domain.x0) / solver.dx);

@@ -24,7 +24,7 @@ int main() {
     for (int N = 2048; N <= 8192; N *= 2) {
 
         Grid<std::vector<double>> u0(N, N); // initial condition, just zeros
-        Reaction R = LinearDegradation();
+        Reaction R = linearDegradation();
         Solver solver(u0, dx, R); // init solver
         Interpolator interpolator(ensemble, solver);
         Chemistry chemistry(ensemble);
