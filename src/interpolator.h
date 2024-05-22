@@ -169,7 +169,7 @@ struct Interpolator {
           cell.u[i] /= cell.children.size();
         }
         // TURING: adjust proliferation
-        cell.alpha = cell.alpha0 * cell.u[0] * cell.u[0] * cell.u[1]; // alpha = alpha0 * R^2 * L
+        cell.alpha = cell.alpha0 * (cell.u[0] * cell.u[0] * cell.u[1]) / 2; // alpha = alpha0 * R^2 * L
       } 
       // store gradient at vertices
       for (auto& vertex : cell.vertices) {

@@ -36,7 +36,7 @@ constexpr double cc = 30; // [1/T] collision damping rate
 constexpr double dt = 1e-4; // [T] time step // default 1e-4
 
 constexpr std::size_t Nf = 100; // number of output frames
-constexpr std::size_t Ns = 500; // number of time steps between frames // default 1000
+constexpr std::size_t Ns = 1000; // number of time steps between frames // default 1000
 constexpr std::size_t Nr = 0; // number of rigid polygons
 
 constexpr double drmax = h + sh + ss; // maximum interaction distance
@@ -48,7 +48,7 @@ constexpr bool ADVECTION_DILUTION = true; // calculate velocity field for advect
 constexpr int NUM_SPECIES = 2; // [-] number of diffusable species (size of D, k, p)
 constexpr int NUM_KIN = 3; // [-] number of kinetic coefficients (size of k)
 const std::vector<double> k0 =   {0, 0, 0}; // [?] reaction coefficients background
-const std::vector<double> k_mu = {0.1, 0.9, 800}; // [?] reaction coefficients mean
+const std::vector<double> k_mu = {0.1, 0.9, 2}; // [?] reaction coefficients mean
 const std::vector<double> k_CV = {0, 0, 0}; // [-] reaction coefficients CV
 const std::vector<double> D0 =   {0, 0}; // [L^2/T] diffusion coefficient background
 const std::vector<double> D_mu = {1, 2}; // [L^2/T] diffusion coefficient mean
