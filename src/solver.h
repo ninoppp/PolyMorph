@@ -88,10 +88,10 @@ struct Solver {
 
     void step(double dt) {
         // resize grids if necessary
-        if (domain.width() >= (Nx + 1) * dx || domain.height() >= (Ny + 1) * dx
-            || domain.width() <= (Nx - 1) * dx || domain.height() <= (Ny - 1) * dx) {
-            int Nx_new = floor(domain.width() / dx);
-            int Ny_new = floor(domain.height() / dx);
+        if (domain.width() >= (double(Nx) + 0.5) * dx || domain.height() >= (double(Ny) + 0.5) * dx
+            || domain.width() <= (double(Nx) - 0.5) * dx || domain.height() <= (double(Ny) - 0.5) * dx) {
+            int Nx_new = round(domain.width() / dx);
+            int Ny_new = round(domain.height() / dx);
             rescale(Nx_new, Ny_new, 0, 0);
         }
 

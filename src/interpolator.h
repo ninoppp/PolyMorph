@@ -57,7 +57,41 @@ struct Interpolator {
     return vel;
   }
 
-  const Point&  bidirectional_vel_interpolation(); // TODO
+  Point bilinear_vel_interpolation(int i, int j) {
+    // find first non-background node or boundary node in each direction
+    int i_left = i - 1;
+    while (i_left > 0 && solver.parent_idx(i_left, j) < Nr) {
+      i_left--;
+    }
+    int i_right = i + 1;
+    while (i_right < solver.Nx-1 && solver.parent_idx(i_right, j) < Nr) {
+      i_right++;
+    }
+    int j_down = j - 1;
+    while (j_down > 0 && solver.parent_idx(i, j_down) < Nr) {
+      j_down--;
+    }
+    int j_up = j + 1;
+    while (j_up < solver.Ny-1 && solver.parent_idx(i, j_up) < Nr) {
+      j_up++;
+    }
+    // calculate distances
+    const double dx_left = i - i_left;
+    const double dx_right = i_right - i;
+    const double dy_down = j - j_down;
+    const double dy_up = j_up - j;
+    // calculate weights
+    const double w_left = dx_right / (dx_left + dx_right);
+    const double w_right = dx_left / (dx_left + dx_right);
+    const double w_down = dy_up / (dy_down + dy_up);
+    const double w_up = dy_down / (dy_down + dy_up);
+    // interpolate velocity
+    Point vel = w_left * solver.velocity(i_left, j) 
+              + w_right * solver.velocity(i_right, j) 
+              + w_down * solver.velocity(i, j_down) 
+              + w_up * solver.velocity(i, j_up);
+    return vel;
+  }
 
   // scatter coefficients D, k from polygons to grid points
   void scatter() { // ToDo: make this function prettier
@@ -128,12 +162,8 @@ struct Interpolator {
       for (int i = 1; i < solver.Nx - 1; i++) {
         for (int j = 1; j < solver.Ny - 1; j++) {
           if (solver.parent_idx(i, j) < int(Nr)) { // only treat background nodes
-            Point vel = Point(0, 0);
-            for (const Index& neighbor : neighbors(Index{i, j})) { // average over 4 neighbours
-              vel = vel + solver.velocity(neighbor);
-            }
-            solver.velocity(i, j) = 0.25 * vel;
-          }
+            solver.velocity(i, j) = bilinear_vel_interpolation(i, j);
+          } 
         }
       }
     }
@@ -168,8 +198,8 @@ struct Interpolator {
         for (int i = 0; i < NUM_SPECIES; i++) {
           cell.u[i] /= cell.children.size();
         }
-        // TURING: adjust proliferation
-        cell.alpha = cell.alpha0 * (cell.u[0] * cell.u[0] * cell.u[1]) / 2; // alpha = alpha0 * R^2 * L
+        // TURING: adjust proliferation 
+        //cell.alpha = cell.alpha0 * (cell.u[0] * cell.u[0] * cell.u[1]) / 2; // alpha = alpha0 * R^2 * L
       } 
       // store gradient at vertices
       for (auto& vertex : cell.vertices) {
