@@ -57,8 +57,7 @@ struct Chemistry {
     return xmax - xmin;
   }
 
-  // returns the standard deviation of the x-coordinates of the border vertices
-  std::pair<double, double> get_positional_error() { // PROBLEM: This doesn't work. Also counts right end cells plus cells beyond the border. FIX? use fact that adjecent vertex very close by
+  double mean_readout_position() {
     std::vector<double> border_x;
     // find first flagged grid point
     for (int j = 0; j < solver.Ny; j++) {
@@ -69,15 +68,8 @@ struct Chemistry {
         }
       }
     }
-
-    if (border_x.size() == 0) return {0, 0};
     const double mean_border_x = std::accumulate(border_x.begin(), border_x.end(), 0.0) / border_x.size();
-    double variance = 0;
-    for (auto x : border_x) {
-      variance += (x - mean_border_x) * (x - mean_border_x);
-    }
-    double std_dev = std::sqrt(variance / border_x.size());
-    return {mean_border_x, std_dev};
+    return mean_border_x;
   }
 };
 

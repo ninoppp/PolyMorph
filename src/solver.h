@@ -51,7 +51,8 @@ struct Solver {
     Grid<Point> velocity; // velocity field
     Grid<std::vector<Point>> grad_u; // concentration gradient
 
-    Solver(Domain& domain, const double dx, Reaction R, Boundary bd = Boundary::zeroFlux()) : domain(domain), boundary(boundary), R(R), dx(dx) {
+    Solver(Domain& domain, const double dx, Reaction R) : domain(domain), R(R), dx(dx) {
+        this->boundary = Boundary::zeroFlux();
         this->Nx = domain.width() / dx;
         this->Ny = domain.height() / dx;
         this->u = Grid<std::vector<double>>(Nx, Ny, std::vector<double>(NUM_SPECIES, 0.0));
@@ -88,10 +89,10 @@ struct Solver {
 
     void step(double dt) {
         // resize grids if necessary
-        if (domain.width() >= (double(Nx) + 0.5) * dx || domain.height() >= (double(Ny) + 0.5) * dx
-            || domain.width() <= (double(Nx) - 0.5) * dx || domain.height() <= (double(Ny) - 0.5) * dx) {
-            int Nx_new = round(domain.width() / dx);
-            int Ny_new = round(domain.height() / dx);
+        if (domain.width() >= (Nx + 1) * dx || domain.height() >= (Ny + 1) * dx
+            || domain.width() <= (Nx - 1) * dx || domain.height() <= (Ny - 1) * dx) {
+            int Nx_new = floor(domain.width() / dx);
+            int Ny_new = floor(domain.height() / dx);
             rescale(Nx_new, Ny_new, 0, 0);
         }
 
@@ -192,6 +193,22 @@ struct Solver {
         file << "</VTKFile>" << std::endl;
         file << std::endl;
         file.close();
+    }
+
+    // generate noisy initial condition
+    Grid<std::vector<double>> noisy_ic(double mean, double stddev) {
+        std::default_random_engine generator;
+        generator.seed(RNG_SEED);
+        std::normal_distribution dist(mean, stddev);
+        Grid<std::vector<double>> u0(Nx, Ny, std::vector<double>(NUM_SPECIES, 0.0));
+        for (int i = 0; i < Nx; i++) {
+            for (int j = 0; j < Ny; j++) {
+                for (int sp = 0; sp < NUM_SPECIES; sp++) {
+                    u0(i, j)[sp] = dist(generator);
+                }
+            }
+        }
+        return u0;
     }
 };
 

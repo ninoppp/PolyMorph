@@ -20,8 +20,9 @@ void default_testrun() {
     double L = 40;
     Domain domain(-L/2, -L/2, L/2, L/2);
     Ensemble ensemble("ensemble/default.off", domain); 
-    assert(Nr == 0 && "Nr must be 0 for default testrun");
     Solver solver(domain, dx, Reactions::linearDegradation); // init solver
+    //solver.boundary.west = {BoundaryCondition::Type::Dirichlet, 0};
+
     Interpolator interpolator(ensemble, solver);
     Chemistry chemistry(ensemble, solver);
     chemistry.is_producing = [](const Polygon& p) { return std::vector<bool> {p.vertices[0].p == Nr}; };
@@ -72,10 +73,11 @@ void turing_patterns_experiment() {
   assert(NUM_SPECIES == 2 && "Turing requires two species");
   assert(NUM_KIN == 3 && "Turing requires 3 kinetic coefficients (a, b, gamma)");
   assert(p_mu[0] == 0 && p_mu[1] == 0 && "Production rates must be zero");
-  double L = 40;
+  double L = 60;
   Domain domain(-L/2, -L/2, L/2, L/2);
   Ensemble ensemble("ensemble/tissue_127.off", domain);
   Solver solver(domain, dx, Reactions::turing);
+  solver.u = solver.noisy_ic(1, 0.1);
   Interpolator interpolator(ensemble, solver);
   ensemble.output(0); // print the initial state
   solver.output(0); // print the initial state
@@ -137,7 +139,7 @@ void grow_tissue() {
 }
 
 
-void positional_error_experiment() {
+void positional_error_experiment() { // ToDo: fix
     std::ofstream file("sharpness.csv");
     file << "frame border_x pos_err" << std::endl;
     Domain domain(-30, -15, 30, 15);
@@ -151,7 +153,6 @@ void positional_error_experiment() {
     chemistry.is_producing = [domain](const Polygon& p) { 
       return std::vector<bool> {p.midpoint().x < domain.x0 + 10}; 
     };
-    chemistry.growth_control = false; // stop growth if flagged?
     ensemble.output(0); // print the initial state
     solver.output(0); // print the initial state
     chemistry.update();
@@ -164,8 +165,8 @@ void positional_error_experiment() {
         chemistry.update();
         ensemble.output(f);
         solver.output(f);
-        auto [mean, std] = chemistry.get_positional_error();
-        file << f << "," << mean << "," << std << std::endl;
+        double readout_pos = chemistry.mean_readout_position();
+        //file << f << "," << mean << std::endl;
     }
     file.close();
 }
