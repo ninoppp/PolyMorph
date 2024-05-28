@@ -34,6 +34,9 @@ std::vector<std::lognormal_distribution<>> k_dist = create_lognormal(k_mu, k_CV)
 std::vector<std::lognormal_distribution<>> p_dist = create_lognormal(p_mu, p_CV);
 std::vector<std::lognormal_distribution<>> threshold_dist = create_lognormal(threshold_mu, threshold_CV);
 
+std::function<std::vector<bool>(Polygon&)> is_producing = [](Polygon& p) { return std::vector(NUM_SPECIES, false); };
+std::function<bool(Polygon&)> set_flag = [](Polygon& p) { return p.u[0] < p.threshold[0]; };
+
 struct Ensemble
 {
   Domain& domain; // simulation domain
@@ -400,6 +403,23 @@ struct Ensemble
           k = i, i = j++;
       }
       
+      // PolyMorph extension: set production
+      const std::vector<bool> producing = is_producing(polygons[p]); // which species are produced by the cell
+      const std::vector<double> p_sample = sample(p_dist, rng);
+      if (producing.size() != NUM_SPECIES) {
+        std::cerr << "is_producing function must return a vector of size NUM_SPECIES" << std::endl;
+        exit(1);
+      }
+      for (int i = 0; i < NUM_SPECIES; i++) {
+        if (polygons[p].p[i] == 0 && producing[i]) {
+          polygons[p].p[i] = p_sample[i];
+        } else if (polygons[p].p[i] != 0 && !producing[i]) {
+          polygons[p].p[i] = 0;
+        }
+      }
+      // set flag
+      polygons[p].flag = set_flag(polygons[p]);
+
       // compute vertex accelerations
       polygons[p].area(); // update the polygon area
       const double ls = polygons[p].perimeter0() / std::sqrt(Q * 4 * M_PI * polygons[p].A0); // inverse stretch ratio

@@ -2,7 +2,7 @@
 #include "polyhoop.h"
 #include "solver.h"
 #include "interpolator.h"
-#include "chemistry.h"
+#include "measurements.h"
 #include "utils.h"
 #include "domain.h"
 #include <iostream>
