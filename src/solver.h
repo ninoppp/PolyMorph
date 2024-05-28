@@ -53,8 +53,8 @@ struct Solver {
 
     Solver(Domain& domain, const double dx, Reaction R) : domain(domain), R(R), dx(dx) {
         this->boundary = Boundary::zeroFlux();
-        this->Nx = domain.width() / dx;
-        this->Ny = domain.height() / dx;
+        this->Nx = domain.width() / dx + 1;
+        this->Ny = domain.height() / dx + 1;
         this->u = Grid<std::vector<double>>(Nx, Ny, std::vector<double>(NUM_SPECIES, 0.0));
 
         std::cout << "solver dimensions Nx=" << Nx << " Ny=" << Ny << std::endl;
