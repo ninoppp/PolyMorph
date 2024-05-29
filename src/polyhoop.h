@@ -21,8 +21,7 @@
 #include "geometry.h"
 #include "domain.h"
 
-// distributions
-std::mt19937 rng; // random number generator
+// distributions TODO move to better place
 const double Amax_lnCV = std::log(1 + Amax_CV*Amax_CV);
 const double alpha_lnCV = std::log(1 + alpha_CV*alpha_CV);
 std::lognormal_distribution<> Amax_dist(std::log(Amax_mu) - Amax_lnCV/2, std::sqrt(Amax_lnCV)); // division area distribution
@@ -34,6 +33,7 @@ std::vector<std::lognormal_distribution<>> k_dist = create_lognormal(k_mu, k_CV)
 std::vector<std::lognormal_distribution<>> p_dist = create_lognormal(p_mu, p_CV);
 std::vector<std::lognormal_distribution<>> threshold_dist = create_lognormal(threshold_mu, threshold_CV);
 
+// lambda functions
 std::function<std::vector<bool>(Polygon&)> is_producing = [](Polygon& p) { return std::vector(NUM_SPECIES, false); };
 std::function<bool(Polygon&)> set_flag = [](Polygon& p) { return p.u[0] < p.threshold[0]; };
 
@@ -46,6 +46,8 @@ struct Ensemble
   double x0, y0, x1, y1, bs; // box offset, box end, and size
   double t; // time
   
+  std::mt19937 rng; // random number generator
+
   Ensemble(const char* name, Domain& domain) : t(0), domain(domain)
   {
     // read OFF file header

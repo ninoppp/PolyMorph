@@ -5,6 +5,7 @@
 #include "measurements.h"
 #include "utils.h"
 #include "domain.h"
+#include <omp.h>
 #include <iostream>
 #include <cmath>
 
@@ -24,15 +25,13 @@ void default_testrun() {
     //solver.boundary.west = {BoundaryCondition::Type::Dirichlet, 0};
 
     Interpolator interpolator(ensemble, solver);
-    Chemistry chemistry(ensemble, solver);
-    chemistry.is_producing = [](const Polygon& p) { return std::vector<bool> {p.vertices[0].p == Nr}; };
+    is_producing = [](const Polygon& p) { return std::vector<bool> {p.vertices[0].p == Nr}; };
 
     ensemble.output(0); // print the initial state
     solver.output(0); // print the initial state
     for (std::size_t f = 1; f <= Nf; ++f) {
         for (std::size_t s = 0; s < Ns; ++s) {
             ensemble.step(); 
-            chemistry.update();
             interpolator.scatter();
             solver.step(dt);
             interpolator.gather();
@@ -51,15 +50,13 @@ void chemotaxis_experiment() {
     unsigned N = L/dx; 
     Solver solver(domain, dx, Reactions::linearDegradation); 
     Interpolator interpolator(ensemble, solver);
-    Chemistry chemistry(ensemble, solver);
-    chemistry.is_producing = [](const Polygon& p) { return std::vector<bool> {p.vertices[0].p == Nr}; };
-    chemistry.flag = [](const Polygon& p) { return p.vertices[0].p % 2 == 1; }; // flag every 2nd cell
+    is_producing = [](const Polygon& p) { return std::vector<bool> {p.vertices[0].p == Nr}; };
+    set_flag = [](const Polygon& p) { return p.vertices[0].p % 2 == 1; }; // flag every 2nd cell
     ensemble.output(0); // print the initial state
     solver.output(0); // print the initial state
     for (std::size_t f = 1; f <= Nf; ++f) {
         for (std::size_t s = 0; s < Ns; ++s) {
             ensemble.step(); 
-            chemistry.update();
             interpolator.scatter();
             solver.step(dt);
             interpolator.gather();
@@ -93,82 +90,85 @@ void turing_patterns_experiment() {
   }
 }
 
-void two_opposing() {
-  Domain domain(-50, -25, 50, 25);
-  Ensemble ensemble("ensemble/rect_100x50.off", domain); // read the input file
-  assert(Nr == 1 && "Nr must be 1 for running in box");
-  Reaction R = Reactions::inhibition;
-  Solver solver(domain, dx, R); // init solver
-  Interpolator interpolator(ensemble, solver);
-  Chemistry chemistry(ensemble, solver);
-  chemistry.is_producing = [domain](const Polygon& p) { 
-      return std::vector<bool> {p.midpoint().x < domain.x0 + 10, 
-                                p.midpoint().x > domain.x0 + 90}; 
-    };
-  
-  ensemble.output(0); // print the initial state
-  solver.output(0); // print the initial state
-  ensemble.step(); 
-  chemistry.update();
-  interpolator.scatter();
-  for (std::size_t f = 1; f <= Nf; ++f) {
-      for (std::size_t s = 0; s < Ns; ++s) {
-          solver.step(dt);
-      } 
-      chemistry.update();
-      interpolator.gather();
-      ensemble.output(f);
-      solver.output(f);
-  }
-}
-
-
-void grow_tissue() {
-  Domain domain(-30, -15, 30, 15);
+// generate tissue filling out the given domain
+void grow_tissue(Domain& domain, const char* filename) {
   Ensemble ensemble("ensemble/default.off", domain); // read the input file
   assert(Nr == 0 && "Nr must be 0");
   double eps = 0.1;
-  
   for (int f = 0; f < Nf; f++) {
     for (int s = 0; s < Ns; s++) {
       ensemble.step();
     }
     std::cout << "Frame " << f << " num_polygons " << ensemble.polygons.size() << std::endl;
   }
-  ensemble.writeOFF("rect_60x30_nobox.off");
+  ensemble.writeOFF(filename);
 }
 
 
-void positional_error_experiment() { // ToDo: fix
-    std::ofstream file("sharpness.csv");
-    file << "frame border_x pos_err" << std::endl;
-    Domain domain(-30, -15, 30, 15);
-    Ensemble ensemble("ensemble/rect_60x30_nobox.off", domain); // read the input file
-    assert(Nr == 0 && "Nr must be 0");
-    Reaction reaction = Reactions::linearDegradation;
-    Solver solver(domain, dx, reaction); // init solver
-    solver.boundary.east = {BoundaryCondition::Type::Dirichlet, 0};
-    Interpolator interpolator(ensemble, solver);
-    Chemistry chemistry(ensemble, solver);
-    chemistry.is_producing = [domain](const Polygon& p) { 
-      return std::vector<bool> {p.midpoint().x < domain.x0 + 10}; 
-    };
-    ensemble.output(0); // print the initial state
-    solver.output(0); // print the initial state
-    chemistry.update();
-    interpolator.scatter();
-    for (std::size_t f = 1; f <= Nf; ++f) {
-        for (std::size_t s = 0; s < Ns; ++s) {
-            solver.step(dt);
+void positional_error_experiment() {
+  Domain domain(-30, -15, 30, 15);
+  is_producing = [domain](const Polygon& p) { 
+    return std::vector<bool> {p.midpoint().x < domain.x0 + 10}; 
+  };
+
+  std::ofstream file("positional_error.csv");
+  file << "thresh_cv,grad_cv,seed,readout_pos,time" << std::endl;
+
+  double cv[] = {0.01, 0.05, 0.1, 0.3, 0.7, 1.0};
+  double cv_small[] = {0.3};
+
+  omp_set_nested(1);
+  omp_set_dynamic(0);
+
+  for (double thresh_cv : cv_small) {
+    for (double grad_cv : cv_small) {
+      
+      double lnCV = std::log(1 + grad_cv*grad_cv);
+      double tlnCV = std::log(1 + thresh_cv*thresh_cv);
+      D_dist = create_lognormal(D_mu, {lnCV});
+      k_dist = create_lognormal(k_mu, {lnCV});
+      p_dist = create_lognormal(p_mu, {lnCV});
+      threshold_dist = create_lognormal(threshold_mu, {tlnCV});
+
+      #pragma omp parallel for num_threads(16)
+      for (int seed = 0; seed < 16; seed++) {
+
+        double start = walltime();
+        Ensemble ensemble("ensemble/rect_60x30_nobox.off", domain);
+        ensemble.rng.seed(seed);
+        Solver solver(domain, dx, Reactions::linearDegradation);
+        Interpolator interpolator(ensemble, solver);
+        solver.boundary.east = {BoundaryCondition::Type::Dirichlet, 0};
+
+        ensemble.step(); // update boxes
+        interpolator.scatter();
+        int num_steps = 100000; 
+        for (int step = 0; step < num_steps; step++) {
+          solver.step(dt);
         } 
         interpolator.gather();
-        chemistry.update();
-        ensemble.output(f);
-        solver.output(f);
-        double readout_pos = chemistry.mean_readout_position();
-        //file << f << "," << mean << std::endl;
+        double end = walltime();
+
+        Measurements::apply_flag(ensemble);
+        double readout_pos = Measurements::mean_readout_position(ensemble, solver);
+        #pragma omp critical
+        file << thresh_cv << "," << grad_cv << "," << seed << "," << readout_pos << "," << end - start << std::endl;
+      }
     }
-    file.close();
+  }
+  file.close();
+}
+
+void relax_tissue() {
+  Domain domain(-30, -15, 30, 15);
+  Ensemble ensemble("ensemble/rect_60x30_nobox.off", domain);
+  for (int f = 0; f < Nf; f++) {
+    for (int s = 0; s < Ns; s++) {
+      ensemble.step();
+    }
+    ensemble.output(f);
+  }
+  ensemble.writeOFF("rect_60x30_nobox_relaxed.off");
 }
 
 /*void sharpness_experiment() {

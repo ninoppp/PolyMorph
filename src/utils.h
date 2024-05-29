@@ -66,6 +66,7 @@ std::vector<double> get_means(const std::vector<std::lognormal_distribution<>>& 
 
 // creates a vector of lognormal distributions from vectors of means and CVs
 std::vector<std::lognormal_distribution<>> create_lognormal(const std::vector<double>& mu, const std::vector<double>& CV) {
+    assert(mu.size() == CV.size());
     std::vector<std::lognormal_distribution<>> dists;
     for (int i = 0; i < mu.size(); i++) {
         double sigma = std::sqrt(std::log(1 + CV[i]*CV[i]));  // Standard deviation of the underlying normal

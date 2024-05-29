@@ -89,17 +89,17 @@ struct Solver {
 
     void step(double dt) {
         // resize grids if necessary
-        if (domain.width() >= (Nx + 1) * dx || domain.height() >= (Ny + 1) * dx
+        /*if (domain.width() >= (Nx + 1) * dx || domain.height() >= (Ny + 1) * dx
             || domain.width() <= (Nx - 1) * dx || domain.height() <= (Ny - 1) * dx) {
             int Nx_new = floor(domain.width() / dx);
             int Ny_new = floor(domain.height() / dx);
             rescale(Nx_new, Ny_new, 0, 0);
-        }
+        }*/
 
         Grid<std::vector<double>> unew(Nx, Ny, std::vector<double>(NUM_SPECIES, 0.0));
         // Forward Euler with central differences
         // inner nodes
-        #pragma omp parallel for collapse(2)
+        #pragma omp parallel for collapse(2) num_threads(4)
         for (int i = 0; i < Nx; i++) {
             for (int j = 0; j < Ny; j++) {   
                 const std::vector<double> reaction = R(u(i, j), k(i, j));

@@ -39,6 +39,13 @@ namespace Measurements {
     const double mean_border_x = std::accumulate(border_x.begin(), border_x.end(), 0.0) / border_x.size();
     return mean_border_x;
   }
+
+  void apply_flag(Ensemble& ensemble) {
+    for (int p = Nr; p < ensemble.polygons.size(); p++) {
+      auto& cell = ensemble.polygons[p];
+      cell.flag = set_flag(cell);
+    }
+  }
 };
 
 #endif

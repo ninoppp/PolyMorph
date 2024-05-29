@@ -57,6 +57,7 @@ struct Interpolator {
     return vel;
   }
 
+  // ToDo: try with 8 directions
   Point bilinear_vel_interpolation(int i, int j) {
     // find first non-background node or boundary node in each direction
     int i_left = i - 1;
@@ -168,7 +169,7 @@ struct Interpolator {
       }
     }
   }
-  // ToDo: rename cell to smth else. only place where this is used
+
   // gather concentration u from grid points to polygons
   // important: depends on scatter being called every iteration to build the parent_idx
   void gather() {
