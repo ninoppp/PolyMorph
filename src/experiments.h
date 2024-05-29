@@ -112,16 +112,16 @@ void positional_error_experiment() {
   };
 
   std::ofstream file("positional_error.csv");
-  file << "thresh_cv,grad_cv,seed,readout_pos,time" << std::endl;
+  file << "thresh_cv,grad_cv,seed,readout_pos,time,num_threads" << std::endl;
 
   double cv[] = {0.01, 0.05, 0.1, 0.3, 0.7, 1.0};
-  double cv_small[] = {0.3};
+  double cv_small[] = {0.01, 0.1, 0.3, 1.0};
 
   omp_set_nested(1);
   omp_set_dynamic(0);
 
   for (double thresh_cv : cv_small) {
-    for (double grad_cv : cv_small) {
+    for (double grad_cv : cv) {
       
       double lnCV = std::log(1 + grad_cv*grad_cv);
       double tlnCV = std::log(1 + thresh_cv*thresh_cv);
@@ -130,12 +130,13 @@ void positional_error_experiment() {
       p_dist = create_lognormal(p_mu, {lnCV});
       threshold_dist = create_lognormal(threshold_mu, {tlnCV});
 
-      #pragma omp parallel for num_threads(16)
-      for (int seed = 0; seed < 16; seed++) {
+      #pragma omp parallel for num_threads(32)
+      for (int seed = 0; seed < 32; seed++) {
+        #pragma omp critical
+        std::cout << "Calculating with tcv=" << thresh_cv << " gcv=" << grad_cv << " seed=" << seed << std::endl;
 
         double start = walltime();
-        Ensemble ensemble("ensemble/rect_60x30_nobox.off", domain);
-        ensemble.rng.seed(seed);
+        Ensemble ensemble("ensemble/rect_60x30_nobox.off", domain, seed);
         Solver solver(domain, dx, Reactions::linearDegradation);
         Interpolator interpolator(ensemble, solver);
         solver.boundary.east = {BoundaryCondition::Type::Dirichlet, 0};
@@ -152,7 +153,7 @@ void positional_error_experiment() {
         Measurements::apply_flag(ensemble);
         double readout_pos = Measurements::mean_readout_position(ensemble, solver);
         #pragma omp critical
-        file << thresh_cv << "," << grad_cv << "," << seed << "," << readout_pos << "," << end - start << std::endl;
+        file << thresh_cv << "," << grad_cv << "," << seed << "," << readout_pos << "," << end - start << "," << omp_get_num_threads() << std::endl;
       }
     }
   }

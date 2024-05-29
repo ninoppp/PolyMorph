@@ -2,17 +2,17 @@
 #include "polyhoop.h"
 #include "solver.h"
 #include "interpolator.h"
-#include "chemistry.h"
-#include "walltime.h"
+#include "measurements.h"
 #include <iostream>
 #include <omp.h>
 
-int main() {
+/*
+void solver_scaling() {
     std::cout << "Running benchmark" << std::endl;
-    rng.seed(90178009);
-
+    Domain domain(-20, -20, 20, 20); // domain
     Ensemble ensemble("ensemble/default.off"); // read the input file
-    
+    ensemble.rng.seed(90178009);
+
     size_t frames = 10;
     size_t timesteps = 1000;
 
@@ -24,10 +24,9 @@ int main() {
     for (int N = 2048; N <= 8192; N *= 2) {
 
         Grid<std::vector<double>> u0(N, N); // initial condition, just zeros
-        Reaction R = linearDegradation();
-        Solver solver(u0, dx, R); // init solver
+        Reaction R = Reactions::linearDegradation;
+        Solver solver(, dx, R); // init solver
         Interpolator interpolator(ensemble, solver);
-        Chemistry chemistry(ensemble);
         //chemistry.is_producing = [solver](const Polygon& p) { return p.midpoint().x < solver.x0 + 10; }; // heavyside
 
         for (std::size_t f = 1; f <= frames; ++f) {
@@ -44,5 +43,42 @@ int main() {
         }
     }
     file.close();
-    return 0;
+}*/
+
+void bench() {
+
+    std::ofstream file("benchmark.csv", std::ios::app);
+    file << "step,gridpoints,polygons,ensemble,solver,scatter,gather,all" << std::endl; 
+    
+    // TODO: measure with different gridpoint and polygon counts
+    
+    Domain domain(-30, -30, 30, 30); // ToDo: adjust to tissue size
+    Ensemble ensemble("ensemble/default.off", domain);
+    ensemble.rng.seed(90178009);
+    Solver solver(domain, dx, Reactions::linearDegradation);
+    solver.boundary.west = {BoundaryCondition::Type::Dirichlet, 1};
+    solver.boundary.east = {BoundaryCondition::Type::Dirichlet, 0};
+    Interpolator interpolator(ensemble, solver);
+
+    for (int i = 0; i < 1000; i++) {
+        double all = walltime();
+        double ens = walltime();
+        ensemble.step();
+        ens = walltime() - ens;
+        double sol = walltime();
+        solver.step(dt);
+        sol = walltime() - sol;
+        double scat = walltime();
+        interpolator.scatter();
+        scat = walltime() - scat;
+        double gath = walltime();
+        interpolator.gather();
+        gath = walltime() - gath;
+        all = walltime() - all;
+        file << i << "," << solver.Nx * solver.Ny << "," << ensemble.polygons.size() << "," << ens << "," << sol << "," << scat << "," << gath << "," << all << std::endl;
+    }
+}
+
+int main() {
+    
 }

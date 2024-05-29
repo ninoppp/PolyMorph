@@ -48,8 +48,9 @@ struct Ensemble
   
   std::mt19937 rng; // random number generator
 
-  Ensemble(const char* name, Domain& domain) : t(0), domain(domain)
+  Ensemble(const char* name, Domain& domain, int seed=RNG_SEED) : t(0), domain(domain)
   {
+    rng.seed(seed);
     // read OFF file header
     std::ifstream file(name);
     if (!file.is_open())
@@ -60,9 +61,6 @@ struct Ensemble
     file.ignore(3); // ignore "OFF"
     std::size_t Nv, Np, Ne; // number of vertices, polygons, edges
     file >> Nv >> Np >> Ne; // Ne unused
-    std::cout << "rigid polygons: " << Nr << ". total polygons: " << Np << std::endl; 
-    std::cout << NUM_SPECIES << " species and " << NUM_KIN << " kinetic coefficients" << std::endl;
-
 
     // read all vertices
     std::vector<Point> points(Nv);
