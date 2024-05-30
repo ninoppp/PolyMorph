@@ -13,16 +13,16 @@ constexpr double lmax = 0.2; // [L] maximum edge length
 constexpr double Q = 1; // [-] isoparametric ratio
 constexpr double alpha_mu = 1; // [L^2/T] mean area growth rate // default 1
 constexpr double alpha_CV = 0; // [-] coefficient of variation of area growth rate
-constexpr double beta = 0.9; // [-] minimum area fraction for growth
+constexpr double beta = 0.8; // [-] minimum area fraction for growth
 constexpr double Amin = 0; // [L^2] minimum area
-constexpr double Amax_mu = M_PI; //M_PI; // [L^2] mean maximum area
+constexpr double Amax_mu = M_PI; // [L^2] mean maximum area
 constexpr double Amax_CV = 0; // [-] coefficient of variation of maximum area
 constexpr double gam = 1e4; // [L/T^2] line tension per vertex mass
 constexpr double ka = 1e5; // [1/(L^2*T^2)] area stiffness per vertex mass // default 1e5
 constexpr double kl = 1e5; // [L/T^2] edge contractility stiffness per vertex mass
 constexpr double kb = 0; // [L^3/T^2] bending stiffness per vertex mass
 constexpr double kr = 1e7; // [1/T^2] repulsion stiffness per vertex mass // default 1e7
-constexpr double kh = 1e3; // [1/T^2] adhesion stiffness per vertex mass // default 1e6
+constexpr double kh = 0; // [1/T^2] adhesion stiffness per vertex mass // default 1e6
 constexpr double sh = 0; //0.01; // [L] adhesion hardening zone size
 constexpr double ss = 0; //0.01; // [L] adhesion softening zone size
 constexpr double theta = 0; // [-] fusion threshold
@@ -37,7 +37,7 @@ constexpr double dt = 1e-4; // [T] time step // default 1e-4
 
 constexpr std::size_t Nf = 100; // number of output frames
 constexpr std::size_t Ns = 1000; // number of time steps between frames // default 1000
-constexpr int Nr = 0; // number of rigid polygons
+constexpr int Nr = 0; // number of rigid polygons (keep as int or things will break)
 
 constexpr double drmax = h + sh + ss; // maximum interaction distance
 

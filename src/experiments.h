@@ -89,17 +89,37 @@ void turing_patterns_experiment() {
 }
 
 // generate tissue filling out the given domain
-void grow_tissue(Domain& domain, const char* filename) {
-  Ensemble ensemble("ensemble/default.off", domain); // read the input file
-  assert(Nr == 0 && "Nr must be 0");
-  double eps = 0.1;
-  for (int f = 0; f < Nf; f++) {
-    for (int s = 0; s < Ns; s++) {
+// domain should center at (0,0) to produce an uniform tissue
+Ensemble grow_tissue(Domain& domain) {
+  if (beta != 0.8) {
+    std::cout << "Warning: beta=" << beta << ". It's recommended to grow with beta=0.8" << std::endl;
+  }
+  if (kh != 0) {
+    std::cout << "Warning: kh=" << kh << ". It's recommended to grow without adhesion" << std::endl;
+  }
+  Ensemble ensemble("ensemble/default.off", domain);
+  Solver solver(domain, dx, Reactions::linearDegradation);
+  Interpolator interpolator(ensemble, solver);
+  int max = INT32_MAX;
+  int f = 1;
+  while (f < max) {
+    for (int i = 0; i < Ns; i++) {
       ensemble.step();
     }
-    std::cout << "Frame " << f << " num_polygons " << ensemble.polygons.size() << std::endl;
+    interpolator.scatter();
+    //ensemble.output(f);
+    // check if all 4 corners are occupied by a polygon
+    if (max == INT32_MAX &&
+        solver.parent_idx(1, 1) >= Nr &&
+        solver.parent_idx(solver.Nx - 2, solver.Ny - 2) >= Nr &&
+        solver.parent_idx(1, solver.Ny - 2) >= Nr &&
+        solver.parent_idx(solver.Nx - 2, 1) >= Nr) {
+      std::cout << "All corners filled. Relaxing now" << std::endl;
+      max = f + f/3; // run again for 1/4 of the time to relax the tissue
+    }
+    f++;
   }
-  ensemble.writeOFF(filename);
+  return ensemble;
 }
 
 
