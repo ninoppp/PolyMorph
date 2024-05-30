@@ -44,14 +44,12 @@ void default_testrun() {
 
 void chemotaxis_experiment() {
     assert(NUM_SPECIES == 1 && "Chemotaxis assumes one species");
-    double L = 40;
-    Domain domain(-L/2, -L/2, L/2, L/2);
-    Ensemble ensemble("ensemble/tissue_127.off", domain);
-    unsigned N = L/dx; 
+    Domain domain(-30, -15, 30, 15);
+    Ensemble ensemble("ensemble/rect_60x30_nobox.off", domain);
     Solver solver(domain, dx, Reactions::linearDegradation); 
     Interpolator interpolator(ensemble, solver);
-    is_producing = [](const Polygon& p) { return std::vector<bool> {p.vertices[0].p == Nr}; };
-    set_flag = [](const Polygon& p) { return p.vertices[0].p % 2 == 1; }; // flag every 2nd cell
+    is_producing = [](const Polygon& p) { return std::vector<bool> {p.vertices[0].p % 3 == 0}; };
+    set_flag = [](const Polygon& p) { return p.vertices[0].p % 3 == 0; }; // flag every 2nd cell
     ensemble.output(0); // print the initial state
     solver.output(0); // print the initial state
     for (std::size_t f = 1; f <= Nf; ++f) {
@@ -112,7 +110,7 @@ void positional_error_experiment() {
   };
 
   std::ofstream file("positional_error.csv");
-  file << "thresh_cv,grad_cv,seed,readout_pos,time,num_threads" << std::endl;
+  file << "thresh_cv,grad_cv,seed,readout_pos,prec_zone_width,time,num_threads" << std::endl;
 
   double cv[] = {0.01, 0.05, 0.1, 0.3, 0.7, 1.0};
   double cv_small[] = {0.01, 0.1, 0.3, 1.0};
@@ -152,8 +150,9 @@ void positional_error_experiment() {
 
         Measurements::apply_flag(ensemble);
         double readout_pos = Measurements::mean_readout_position(ensemble, solver);
+        double prec_zone_width = Measurements::get_precision_zone_width(ensemble);
         #pragma omp critical
-        file << thresh_cv << "," << grad_cv << "," << seed << "," << readout_pos << "," << end - start << "," << omp_get_num_threads() << std::endl;
+        file << thresh_cv << "," << grad_cv << "," << seed << "," << readout_pos << "," << prec_zone_width << "," << end - start << "," << omp_get_num_threads() << std::endl;
       }
     }
   }

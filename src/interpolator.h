@@ -199,8 +199,6 @@ struct Interpolator {
         for (int i = 0; i < NUM_SPECIES; i++) {
           cell.u[i] /= cell.children.size();
         }
-        // TURING: adjust proliferation TODO: move to better place
-        //cell.alpha = cell.alpha0 * (cell.u[0] * cell.u[0] * cell.u[1]) / 2; // alpha = alpha0 * R^2 * L
       } 
       // store gradient at vertices
       for (auto& vertex : cell.vertices) {

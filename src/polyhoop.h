@@ -35,7 +35,7 @@ std::vector<std::lognormal_distribution<>> threshold_dist = create_lognormal(thr
 
 // lambda functions
 std::function<std::vector<bool>(Polygon&)> is_producing = [](Polygon& p) { return std::vector(NUM_SPECIES, false); };
-std::function<bool(Polygon&)> set_flag = [](Polygon& p) { return p.u[0] < p.threshold[0]; };
+std::function<int(Polygon&)> set_flag = [](Polygon& p) { return p.u[0] < p.threshold[0]; };
 
 struct Ensemble
 {
@@ -460,7 +460,7 @@ struct Ensemble
 
         // chemotaxis
         for (int sp = 0; sp < NUM_SPECIES; sp++) {
-          if (!CHEM_ONLY_FLAGGED || polygons[p].flag) {
+          if (chem_affect_flag[sp] == polygons[p].flag) {
             v[i].a.add(chemotaxis_strength[sp], v[i].grad_u[sp]);
           }
         }

@@ -7,8 +7,8 @@ int main() {
   validate_parameters();
   write_config();
   //default_testrun();
-  positional_error_experiment();
-  //chemotaxis_experiment();
+  //positional_error_experiment();
+  chemotaxis_experiment();
   //turing_patterns_experiment();
   //relax_tissue();
 }
