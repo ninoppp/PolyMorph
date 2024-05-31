@@ -1,8 +1,8 @@
 #include "const.h"
 #include "ensemble.h"
+#include "ensembleController.h"
 #include "solver.h"
 #include "interpolator.h"
-#include "measurements.h"
 #include "utils.h"
 #include "domain.h"
 #include <omp.h>
@@ -88,53 +88,6 @@ void turing_patterns_experiment() {
   }
 }
 
-// generate tissue filling out the given domain
-// domain should center at (0,0) to produce an uniform tissue
-Ensemble grow_tissue(Domain& domain) {
-  if (beta != 0.8) {
-    std::cout << "Warning: beta=" << beta << ". It's recommended to grow with beta=0.8" << std::endl;
-  }
-  if (kh != 0) {
-    std::cout << "Warning: kh=" << kh << ". It's recommended to grow without adhesion" << std::endl;
-  }
-  Ensemble ensemble("ensemble/default.off", domain);
-  Solver solver(domain, dx, Reactions::linearDegradation);
-  Interpolator interpolator(ensemble, solver);
-  int max = INT32_MAX;
-  int f = 1;
-  while (f < max) {
-    for (int i = 0; i < Ns; i++) {
-      ensemble.step();
-    }
-    interpolator.scatter();
-    //ensemble.output(f);
-    // check if all 4 corners are occupied by a polygon
-    if (max == INT32_MAX &&
-        solver.parent_idx(1, 1) >= Nr &&
-        solver.parent_idx(solver.Nx - 2, solver.Ny - 2) >= Nr &&
-        solver.parent_idx(1, solver.Ny - 2) >= Nr &&
-        solver.parent_idx(solver.Nx - 2, 1) >= Nr) {
-      std::cout << "All corners filled. Relaxing now" << std::endl;
-      max = f + f/3; // run again for 1/4 of the time to relax the tissue
-    }
-    f++;
-  }
-  return ensemble;
-}
-
-// generate tissue with a given number of polygons
-Ensemble grow_tissue(int num_polygons) {
-  double polygon_diameter = 2 * std::sqrt(Amax_mu / M_PI);
-  double L = 2 * std::sqrt(num_polygons) * polygon_diameter;
-  Domain domain(-L/2, -L/2, L/2, L/2);
-  Ensemble ensemble("ensemble/default.off", domain);
-  while (ensemble.polygons.size() < num_polygons) {
-    ensemble.step();
-  }
-  ensemble.output(0);
-  return ensemble;
-}
-
 void positional_error_experiment() {
   Domain domain(-30, -15, 30, 15);
   is_producing = [domain](const Polygon& p) { 
@@ -180,9 +133,9 @@ void positional_error_experiment() {
         interpolator.gather();
         double end = walltime();
 
-        Measurements::apply_flag(ensemble);
-        double readout_pos = Measurements::mean_readout_position(ensemble, solver);
-        double prec_zone_width = Measurements::get_precision_zone_width(ensemble);
+        EnsembleController::apply_flag(ensemble);
+        double readout_pos = EnsembleController::mean_readout_position(ensemble, solver);
+        double prec_zone_width = EnsembleController::get_precision_zone_width(ensemble);
         #pragma omp critical
         file << thresh_cv << "," << grad_cv << "," << seed << "," << readout_pos << "," << prec_zone_width << "," << end - start << "," << omp_get_num_threads() << std::endl;
       }

@@ -7,13 +7,13 @@ int main() {
   welcome();
   validate_parameters();
   write_config();
-  default_testrun();
+  //default_testrun();
   //positional_error_experiment();
   //chemotaxis_experiment();
   //turing_patterns_experiment();
   //relax_tissue();
   Domain domain(-5, -5, 30, 20);
-  Ensemble ensemble = grow_tissue(42);
+  Ensemble ensemble = EnsembleController::grow_tissue(42);
   ensemble.writeOFF("new.off");
 }
 

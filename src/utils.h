@@ -102,6 +102,7 @@ void welcome() {
             << "--------------------------" << std::endl;
 }
 
+// saving simluations parameters
 void write_config() {
     std::ofstream config("simulation.cfg");
     config

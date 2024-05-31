@@ -21,7 +21,7 @@
 #include "geometry.h"
 #include "domain.h"
 
-// distributions TODO move to better place
+// distributions TODO move to better place. Mby make static Ensemble members
 const double Amax_lnCV = std::log(1 + Amax_CV*Amax_CV);
 const double alpha_lnCV = std::log(1 + alpha_CV*alpha_CV);
 std::lognormal_distribution<> Amax_dist(std::log(Amax_mu) - Amax_lnCV/2, std::sqrt(Amax_lnCV)); // division area distribution
