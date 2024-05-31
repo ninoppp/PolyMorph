@@ -122,6 +122,18 @@ Ensemble grow_tissue(Domain& domain) {
   return ensemble;
 }
 
+// generate tissue with a given number of polygons
+Ensemble grow_tissue(int num_polygons) {
+  double polygon_diameter = 2 * std::sqrt(Amax_mu / M_PI);
+  double L = 2 * std::sqrt(num_polygons) * polygon_diameter;
+  Domain domain(-L/2, -L/2, L/2, L/2);
+  Ensemble ensemble("ensemble/default.off", domain);
+  while (ensemble.polygons.size() < num_polygons) {
+    ensemble.step();
+  }
+  ensemble.output(0);
+  return ensemble;
+}
 
 void positional_error_experiment() {
   Domain domain(-30, -15, 30, 15);
