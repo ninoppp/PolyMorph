@@ -1,5 +1,5 @@
 #include "const.h"
-#include "polyhoop.h"
+#include "ensemble.h"
 #include "solver.h"
 #include "interpolator.h"
 #include "measurements.h"

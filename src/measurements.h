@@ -3,7 +3,7 @@
 
 #include <numeric>
 
-#include "polyhoop.h"
+#include "ensemble.h"
 #include "utils.h"
 
 namespace Measurements {

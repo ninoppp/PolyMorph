@@ -2,7 +2,7 @@
 #define INTERPOLATOR_H
 
 #include "solver.h"
-#include "polyhoop.h"
+#include "ensemble.h"
 #include "grid.h"
 #include "utils.h"
 
