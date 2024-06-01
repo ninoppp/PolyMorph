@@ -1,9 +1,10 @@
 #ifndef INTERPOLATOR_H
 #define INTERPOLATOR_H
 
+#include <unordered_set>
+
 #include "solver.h"
 #include "ensemble.h"
-#include "grid.h"
 #include "utils.h"
 
 // takes care of the data scattering and gathering between ensemble and solver

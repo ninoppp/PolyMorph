@@ -4,7 +4,6 @@
 #include <cassert>
 #include <fstream>
 #include <iostream>
-#include <sstream>
 #include <vector>
 #include <random>
 #include <sys/time.h>

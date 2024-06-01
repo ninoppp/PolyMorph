@@ -1,8 +1,3 @@
-// PolyHoop
-// Copyright (c) 2023 Roman Vetter
-// vetterro@ethz.ch
-// ETH Zurich
-
 #ifndef POLYHOOP_H
 #define POLYHOOP_H
 
@@ -11,14 +6,10 @@
 #include <vector>
 #include <set>
 #include <random>
-#include <algorithm>
-#include <unordered_set>
 #include <map>
 #include <cmath>
 
 #include "const.h"
-#include "grid.h"
-#include "utils.h"
 #include "geometry.h"
 #include "domain.h"
 

@@ -1,11 +1,11 @@
-#ifndef MEASUREMENTS_H
-#define MEASUREMENTS_H
+#ifndef ENSEMBLE_CONTROLLER_H
+#define ENSEMBLE_CONTROLLER_H
 
 #include <numeric>
-#include "ensemble.h"
-#include "utils.h"
-#include "solver.h"
+
 #include "interpolator.h"
+#include "ensemble.h"
+#include "solver.h"
 
 /*! \file ensembleController.h
  *  \brief Facade-like routines to interact with ensemble during experiments

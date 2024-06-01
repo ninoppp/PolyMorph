@@ -4,15 +4,12 @@
 #include <vector>
 #include <functional>
 #include <fstream>
-#include <cmath>
-#include <sstream>
 #include <iostream>
 
 #include "reaction.h"
 #include "grid.h"
 #include "geometry.h"
 #include "domain.h"
-
 
 struct BoundaryCondition {
     enum class Type {

@@ -8,7 +8,6 @@
 #include <iostream>
 
 #include "geometry.h"
-#include "utils.h"
 
 template<typename T> // make sure to use double and not float, might break things otherwise
 struct Grid {

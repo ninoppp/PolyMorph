@@ -1,13 +1,13 @@
-#include "const.h"
-#include "ensemble.h"
-#include "ensembleController.h"
-#include "solver.h"
-#include "interpolator.h"
-#include "utils.h"
-#include "domain.h"
-#include <omp.h>
 #include <iostream>
 #include <cmath>
+#include <omp.h>
+
+#include "ensembleController.h"
+#include "domain.h"
+#include "ensemble.h"
+#include "solver.h"
+#include "interpolator.h"
+#include "reaction.h"
 
 /*! \brief This file contains multiple "main" functions for different experiments
  *
