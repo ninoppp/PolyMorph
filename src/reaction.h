@@ -1,3 +1,6 @@
+#ifndef REACTION_H
+#define REACTION_H
+
 #include <vector>
 #include "const.h"
 
@@ -34,3 +37,5 @@ namespace Reactions {
         return r;
     };
 }
+
+#endif
