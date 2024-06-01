@@ -14,28 +14,13 @@
 #include <algorithm>
 #include <unordered_set>
 #include <map>
+#include <cmath>
 
 #include "const.h"
 #include "grid.h"
 #include "utils.h"
 #include "geometry.h"
 #include "domain.h"
-
-// distributions TODO move to better place. Mby make static Ensemble members
-const double Amax_lnCV = std::log(1 + Amax_CV*Amax_CV);
-const double alpha_lnCV = std::log(1 + alpha_CV*alpha_CV);
-std::lognormal_distribution<> Amax_dist(std::log(Amax_mu) - Amax_lnCV/2, std::sqrt(Amax_lnCV)); // division area distribution
-std::lognormal_distribution<> alpha_dist(std::log(alpha_mu) - alpha_lnCV/2, std::sqrt(alpha_lnCV)); // area growth rate distribution
-std::uniform_real_distribution<> uni_dist;
-
-std::vector<std::lognormal_distribution<>> D_dist = create_lognormal(D_mu, D_CV);
-std::vector<std::lognormal_distribution<>> k_dist = create_lognormal(k_mu, k_CV);
-std::vector<std::lognormal_distribution<>> p_dist = create_lognormal(p_mu, p_CV);
-std::vector<std::lognormal_distribution<>> threshold_dist = create_lognormal(threshold_mu, threshold_CV);
-
-// lambda functions
-std::function<std::vector<bool>(Polygon&)> is_producing = [](Polygon& p) { return std::vector(NUM_SPECIES, false); };
-std::function<int(Polygon&)> set_flag = [](Polygon& p) { return p.u[0] < p.threshold[0]; };
 
 struct Ensemble
 {
@@ -47,6 +32,21 @@ struct Ensemble
   double t; // time
   
   std::mt19937 rng; // random number generator
+
+  const double Amax_lnCV = std::log(1 + Amax_CV*Amax_CV);
+  const double alpha_lnCV = std::log(1 + alpha_CV*alpha_CV);
+  std::lognormal_distribution<> Amax_dist = std::lognormal_distribution<>(std::log(Amax_mu) - Amax_lnCV/2, std::sqrt(Amax_lnCV)); // division area distribution
+  std::lognormal_distribution<> alpha_dist = std::lognormal_distribution<>(std::log(alpha_mu) - alpha_lnCV/2, std::sqrt(alpha_lnCV)); // area growth rate distribution
+  std::uniform_real_distribution<> uni_dist;
+
+  std::vector<std::lognormal_distribution<>> D_dist = create_lognormal(D_mu, D_CV);
+  std::vector<std::lognormal_distribution<>> k_dist = create_lognormal(k_mu, k_CV);
+  std::vector<std::lognormal_distribution<>> p_dist = create_lognormal(p_mu, p_CV);
+  std::vector<std::lognormal_distribution<>> threshold_dist = create_lognormal(threshold_mu, threshold_CV);
+
+  // lambda functions
+  std::function<std::vector<bool>(Polygon&)> is_producing = [](Polygon& p) { return std::vector(NUM_SPECIES, false); };
+  std::function<int(Polygon&)> set_flag = [](Polygon& p) { return p.u[0] < p.threshold[0]; };
 
   Ensemble(const char* name, Domain& domain, int seed=RNG_SEED) : t(0), domain(domain)
   {

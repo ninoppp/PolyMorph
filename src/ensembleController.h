@@ -50,7 +50,7 @@ namespace EnsembleController {
   void apply_flag(Ensemble& ensemble) {
     for (int p = Nr; p < ensemble.polygons.size(); p++) {
       auto& cell = ensemble.polygons[p];
-      cell.flag = set_flag(cell);
+      cell.flag = ensemble.set_flag(cell);
     }
   }
 

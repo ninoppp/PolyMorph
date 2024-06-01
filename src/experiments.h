@@ -25,7 +25,7 @@ void default_testrun() {
     //solver.boundary.west = {BoundaryCondition::Type::Dirichlet, 0};
 
     Interpolator interpolator(ensemble, solver);
-    is_producing = [](const Polygon& p) { return std::vector<bool> {p.vertices[0].p == Nr}; };
+    ensemble.is_producing = [](const Polygon& p) { return std::vector<bool> {p.vertices[0].p == Nr}; };
 
     ensemble.output(0); // print the initial state
     solver.output(0); // print the initial state
@@ -48,8 +48,8 @@ void chemotaxis_experiment() {
     Ensemble ensemble("ensemble/rect_60x30_nobox.off", domain);
     Solver solver(domain, dx, Reactions::linearDegradation); 
     Interpolator interpolator(ensemble, solver);
-    is_producing = [](const Polygon& p) { return std::vector<bool> {p.vertices[0].p % 3 == 0}; };
-    set_flag = [](const Polygon& p) { return p.vertices[0].p % 3 == 0; }; // flag every 2nd cell
+    ensemble.is_producing = [](const Polygon& p) { return std::vector<bool> {p.vertices[0].p % 3 == 0}; };
+    ensemble.set_flag = [](const Polygon& p) { return p.vertices[0].p % 3 == 0; }; // flag every 2nd cell
     ensemble.output(0); // print the initial state
     solver.output(0); // print the initial state
     for (std::size_t f = 1; f <= Nf; ++f) {
@@ -90,9 +90,6 @@ void turing_patterns_experiment() {
 
 void positional_error_experiment() {
   Domain domain(-30, -15, 30, 15);
-  is_producing = [domain](const Polygon& p) { 
-    return std::vector<bool> {p.midpoint().x < domain.x0 + 10}; 
-  };
 
   std::ofstream file("positional_error.csv");
   file << "thresh_cv,grad_cv,seed,readout_pos,prec_zone_width,time,num_threads" << std::endl;
@@ -108,10 +105,6 @@ void positional_error_experiment() {
       
       double lnCV = std::log(1 + grad_cv*grad_cv);
       double tlnCV = std::log(1 + thresh_cv*thresh_cv);
-      D_dist = create_lognormal(D_mu, {lnCV});
-      k_dist = create_lognormal(k_mu, {lnCV});
-      p_dist = create_lognormal(p_mu, {lnCV});
-      threshold_dist = create_lognormal(threshold_mu, {tlnCV});
 
       #pragma omp parallel for num_threads(32)
       for (int seed = 0; seed < 32; seed++) {
@@ -120,6 +113,14 @@ void positional_error_experiment() {
 
         double start = walltime();
         Ensemble ensemble("ensemble/rect_60x30_nobox.off", domain, seed);
+        ensemble.D_dist = create_lognormal(D_mu, {lnCV});
+        ensemble.k_dist = create_lognormal(k_mu, {lnCV});
+        ensemble.p_dist = create_lognormal(p_mu, {lnCV});
+        ensemble.threshold_dist = create_lognormal(threshold_mu, {tlnCV});
+        ensemble.is_producing = [domain](const Polygon& p) { 
+          return std::vector<bool> {p.midpoint().x < domain.x0 + 10}; 
+        };
+
         Solver solver(domain, dx, Reactions::linearDegradation);
         Interpolator interpolator(ensemble, solver);
         solver.boundary.east = {BoundaryCondition::Type::Dirichlet, 0};
