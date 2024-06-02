@@ -6,10 +6,10 @@
 
 struct Domain {
     double x0, y0, x1, y1;
-    // Growth normal to the domain boundary.
+    // Growth normal to the domain.
     // E, N, W, S. Positive values mean growth, negative mean shrinkage. 
     double growth_rate[4]; // [L/T]
-    double stiffness = kr; // [1/T^2] repulsion stiffness per vertex mass
+    double stiffness = kr; // [1/T^2] repulsion stiffness per vertex mass. By default same as polygons. 
 
     Domain() : x0(0), y0(0), x1(1), y1(1) {}
     Domain(double x0, double y0, double x1, double y1) : 

@@ -14,7 +14,7 @@ struct Grid {
     std::vector<std::vector<T>> data;
     Grid (size_t Nx, size_t Ny) : data(Nx, std::vector<T>(Ny)) {}
     Grid (size_t Nx, size_t Ny, T value) : data(Nx, std::vector<T>(Ny, value)) {}
-    Grid () { Grid(100, 100); } // ToDo: get rid of magic numbers
+    Grid () {}
     T& operator()(int i, int j) { return data[i][j]; }
     T& operator()(Index idx) { return data[idx.i][idx.j]; }
     T operator()(int i, int j) const { return data[i][j]; }

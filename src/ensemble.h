@@ -461,7 +461,8 @@ struct Ensemble
     // polygon-polygon interaction
     boxes(); // place all vertices into boxes
     #pragma omp parallel for
-    for (std::size_t p = Nr; p < polygons.size(); ++p)
+    for (std::size_t p = Nr; p < polygons.size(); ++p) 
+    {
       for (std::size_t i = polygons[p].vertices.size() - 1, k = i - 1, j = 0; j < polygons[p].vertices.size(); k = i, i = j++)
       {
         const std::size_t bxi = (polygons[p].vertices[i].r.x - x0) / bs + 1; // box index in x direction // NM: is the +1 because of extra boxes?
@@ -472,6 +473,7 @@ struct Ensemble
               if (v != &polygons[p].vertices[k] && v != &polygons[p].vertices[i] && v != &polygons[p].vertices[j])
                 interaction(v, &polygons[p].vertices[i], &polygons[p].vertices[k], &polygons[p].vertices[j]);
       }
+    }
     
     // time integration (semi-implicit Euler method)
     #pragma omp parallel for
@@ -718,7 +720,6 @@ struct Ensemble
     file << "</VTKFile>\n";
   }
 
-  // Polymorph extension
   void writeOFF(const char* filename) const {
         std::ofstream file(filename);
         // Count total vertices

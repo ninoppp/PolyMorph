@@ -13,8 +13,6 @@
  *
  *  The main routines are called from the main() function in main.cpp
  *  and contain the logic for different simulation runs.
- * 
- * ToDo: split into separate cpp files in an experiments folder
  */
 
 void default_testrun() {

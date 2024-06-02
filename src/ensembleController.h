@@ -55,7 +55,7 @@ namespace EnsembleController {
   }
 
   // generate tissue filling out the given domain
-  // domain should center at (0,0) to produce an uniform tissue
+  // domain should center at (0,0) to produce a uniform tissue
   Ensemble grow_tissue(Domain& domain) {
     if (beta != 0.8) {
       std::cout << "Warning: beta=" << beta << ". It's recommended to grow with beta=0.8" << std::endl;

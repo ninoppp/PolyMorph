@@ -10,8 +10,8 @@ int main() {
   //chemotaxis_experiment();
   //turing_patterns_experiment();
   //relax_tissue();
-  Domain domain(-5, -5, 30, 20);
+  /*Domain domain(-5, -5, 30, 20);
   Ensemble ensemble = EnsembleController::grow_tissue(42);
-  ensemble.writeOFF("new.off");
+  ensemble.writeOFF("new.off");*/
 }
 
