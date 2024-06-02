@@ -54,17 +54,22 @@ namespace EnsembleController {
     }
   }
 
+  void stop_growth(Ensemble& ensemble) {
+    for (int p = Nr; p < ensemble.polygons.size(); p++) {
+      ensemble.polygons[p].alpha = 0;
+    }
+  }
+
   // generate tissue filling out the given domain
   // domain should center at (0,0) to produce a uniform tissue
-  Ensemble grow_tissue(Domain& domain) {
+  Ensemble grow_tissue(Ensemble& ensemble) {
     if (beta != 0.8) {
       std::cout << "Warning: beta=" << beta << ". It's recommended to grow with beta=0.8" << std::endl;
     }
     if (kh != 0) {
       std::cout << "Warning: kh=" << kh << ". It's recommended to grow without adhesion" << std::endl;
     }
-    Ensemble ensemble("ensemble/default.off", domain);
-    Solver solver(domain, dx, Reactions::linearDegradation);
+    Solver solver(ensemble.domain, dx, Reactions::linearDegradation);
     Interpolator interpolator(ensemble, solver);
     int max = INT32_MAX;
     int f = 1;
@@ -81,11 +86,10 @@ namespace EnsembleController {
           solver.parent_idx(1, solver.Ny - 2) >= Nr &&
           solver.parent_idx(solver.Nx - 2, 1) >= Nr) {
         std::cout << "All corners filled. Relaxing now" << std::endl;
-        max = f + f/3; // run again for 1/4 of the time to relax the tissue
+        max = f + f/3; // run again for 1/3 of the time to relax the tissue
       }
       f++;
     }
-    return ensemble;
   }
 
   // generate tissue with a given number of polygons
@@ -94,12 +98,19 @@ namespace EnsembleController {
     double L = 2 * std::sqrt(num_polygons) * polygon_diameter;
     Domain domain(-L/2, -L/2, L/2, L/2);
     Ensemble ensemble("ensemble/default.off", domain);
+    size_t steps = 0;
     while (ensemble.polygons.size() < num_polygons) {
+      ensemble.step();
+      steps++;
+    }
+    // relaxing: run again for 1/3 of the time to relax the tissue
+    stop_growth(ensemble);
+    for (int i = 0; i < steps/3; i++) {
       ensemble.step();
     }
     ensemble.output(0);
     return ensemble;
-  }
+  }  
 };
 
 #endif

@@ -15,6 +15,7 @@ for tcv in thresh_cv:
     subset = grouped[grouped['thresh_cv'] == tcv]
     plt.plot(subset['grad_cv'], subset['readout_pos'], marker='o', label=f'Threshold CV = {tcv}')
 plt.title('Positional Error vs Gradient Coefficient-Variation')
+plt.xscale('log')
 plt.xlabel('Gradient CV (D,k,p)')
 plt.ylabel('Positional Error')
 plt.grid(True)
@@ -27,6 +28,7 @@ for gcv in grad_cv:
     subset = grouped[grouped['grad_cv'] == gcv]
     plt.plot(subset['thresh_cv'], subset['readout_pos'], marker='o', label=f'Gradient CV = {gcv}')
 plt.title('Positional Error vs Threshold Coefficient-Variation')
+plt.xscale('log')
 plt.xlabel('Threshold CV')
 plt.ylabel('Positional Error')
 plt.grid(True)
@@ -43,6 +45,7 @@ for tcv in [0.01, 0.3]:
     plt.plot(grad_cv, readout_pos, marker='o', label=f'Threshold CV = {tcv}')
     plt.fill_between(grad_cv, min, max, alpha=0.2)
 plt.title('Readout Position vs Gradient Coefficient-Variation')
+plt.xscale('log')
 plt.xlabel('Gradient CV (D,k,p)')
 plt.ylabel('Readout Position')
 plt.grid(True)
