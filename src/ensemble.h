@@ -1,5 +1,5 @@
-#ifndef POLYHOOP_H
-#define POLYHOOP_H
+#ifndef ENSEMBLE_H
+#define ENSEMBLE_H
 
 #include <fstream>
 #include <iostream>
@@ -444,10 +444,10 @@ struct Ensemble
                           + (a2 / ((l2 + l3) * b2)) * (e3.cross() + a2 * e3));
 
         // domain boundaries
-        v[i].a.add((polygons[p].vertices[i].r.x < domain.x0) * kr, {(domain.x0 - polygons[p].vertices[i].r.x), 0});
-        v[i].a.add((polygons[p].vertices[i].r.x > domain.x1) * kr, {(domain.x1 - polygons[p].vertices[i].r.x), 0});
-        v[i].a.add((polygons[p].vertices[i].r.y < domain.y0) * kr, {0, (domain.y0 - polygons[p].vertices[i].r.y)});
-        v[i].a.add((polygons[p].vertices[i].r.y > domain.y1) * kr, {0, (domain.y1 - polygons[p].vertices[i].r.y)});
+        v[i].a.add((polygons[p].vertices[i].r.x < domain.x0) * domain.stiffness, {(domain.x0 - polygons[p].vertices[i].r.x), 0});
+        v[i].a.add((polygons[p].vertices[i].r.x > domain.x1) * domain.stiffness, {(domain.x1 - polygons[p].vertices[i].r.x), 0});
+        v[i].a.add((polygons[p].vertices[i].r.y < domain.y0) * domain.stiffness, {0, (domain.y0 - polygons[p].vertices[i].r.y)});
+        v[i].a.add((polygons[p].vertices[i].r.y > domain.y1) * domain.stiffness, {0, (domain.y1 - polygons[p].vertices[i].r.y)});
 
         // chemotaxis
         for (int sp = 0; sp < NUM_SPECIES; sp++) {

@@ -2,14 +2,14 @@
 #define DOMAIN_H
 
 #include "geometry.h"
+#include "const.h"
 
 struct Domain {
     double x0, y0, x1, y1;
     // Growth normal to the domain boundary.
     // E, N, W, S. Positive values mean growth, negative mean shrinkage. 
     double growth_rate[4]; // [L/T]
-    
-    // ToDo: add boundary stiffness or smth similar
+    double stiffness = kr; // [1/T^2] repulsion stiffness per vertex mass
 
     Domain() : x0(0), y0(0), x1(1), y1(1) {}
     Domain(double x0, double y0, double x1, double y1) : 
