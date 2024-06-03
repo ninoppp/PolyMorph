@@ -44,8 +44,8 @@ void default_testrun() {
 
 void chemotaxis_experiment() {
     assert(NUM_SPECIES == 1 && "Chemotaxis assumes one species");
-    Domain domain(-30, -15, 30, 15);
-    Ensemble ensemble("ensemble/rect_60x30_nobox.off", domain);
+    Domain domain(-10, -10, 10, 10);
+    Ensemble ensemble("ensemble/tissue_127.off", domain);
     Solver solver(domain, dx, Reactions::linearDegradation); 
     Interpolator interpolator(ensemble, solver);
     is_producing = [](const Polygon& p) { return std::vector<bool> {p.vertices[0].p % 3 == 0}; };

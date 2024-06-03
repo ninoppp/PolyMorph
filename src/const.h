@@ -22,7 +22,7 @@ constexpr double ka = 1e5; // [1/(L^2*T^2)] area stiffness per vertex mass // de
 constexpr double kl = 1e5; // [L/T^2] edge contractility stiffness per vertex mass
 constexpr double kb = 0; // [L^3/T^2] bending stiffness per vertex mass
 constexpr double kr = 1e7; // [1/T^2] repulsion stiffness per vertex mass // default 1e7
-constexpr double kh = 1e3; // [1/T^2] adhesion stiffness per vertex mass // default 1e6
+constexpr double kh = 1e4; // [1/T^2] adhesion stiffness per vertex mass // default 1e6
 constexpr double sh = 0; //0.01; // [L] adhesion hardening zone size
 constexpr double ss = 0; //0.01; // [L] adhesion softening zone size
 constexpr double theta = 0; // [-] fusion threshold
@@ -60,7 +60,7 @@ const std::vector<double> threshold_mu = {0.01}; // [1/L^2] concentration thresh
 const std::vector<double> threshold_CV = {0.3}; // [-] coefficient of variation of threshold
 constexpr double cutoff_factor = 2.0; // [-] lognormal dists are cutoff at mu*factor to maintain stability
 
-const std::vector<double> chemotaxis_strength = {1e5}; // force per concentration difference TODO: find better name
+const std::vector<double> chemotaxis_strength = {1e4}; // force per concentration difference TODO: find better name
 const std::vector<int> chem_affect_flag = {1}; // which cell types to affect with each chem species
 //constexpr bool CHEM_ONLY_FLAGGED = true; // only chemotaxis in flagged cells
 
