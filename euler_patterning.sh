@@ -18,6 +18,6 @@ g++ -fopenmp -O3 -o a.out src/patterning_precision.cpp
 OMP_NUM_THREADS=100
 export OMP_NUM_THREADS
 echo "running patterning precision in parallel with $OMP_NUM_THREADS threads... "
-srun --exclusive ./a.out $SLURM_NODEID
+srun ./a.out $SLURM_NODEID
 
 echo "all done."

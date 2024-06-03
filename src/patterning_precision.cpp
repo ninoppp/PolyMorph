@@ -12,9 +12,14 @@ void generate_OFF(int nodeID) { // 100 60x30 tissues per node
   for (int seed = nodeID*100; seed < (nodeID+1)*100; seed++) {
     #pragma omp critical
     std::cout << "Core " << omp_get_thread_num() << " generating OFF with seed=" << seed << std::endl;
+
+    double start = walltime();
     Ensemble ensemble("ensemble/default.off", domain, seed);
     EnsembleController::grow_tissue(ensemble);
-    std::cout << "Core " << omp_get_thread_num() << " finished generating" << std::endl;
+    double end = walltime();
+
+    #pragma omp critical
+    std::cout << "Core " << omp_get_thread_num() << " finished generating in " << end - start << " seconds" << std::endl;
 
     ensemble.output(seed);
     ensemble.writeOFF("ensemble/tissues_60x30/" + std::to_string(seed) + ".off");
