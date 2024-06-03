@@ -720,8 +720,12 @@ struct Ensemble
     file << "</VTKFile>\n";
   }
 
-  void writeOFF(const char* filename) const {
+  void writeOFF(std::string filename) const {
         std::ofstream file(filename);
+        if (!file.is_open()) {
+            std::cerr << "Error: Could not open file " << filename << std::endl;
+            return;
+        }
         // Count total vertices
         std::size_t totalVertices = 0;
         for (const auto& p : polygons) {

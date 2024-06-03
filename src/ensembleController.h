@@ -46,6 +46,26 @@ namespace EnsembleController {
     return mean_border_x;
   }
 
+  std::vector<double> mean_readout_positions(Ensemble& ensemble, Solver& solver) {
+    int num_readouts = threshold_mu.size();
+    std::vector<double> mean_border_x(num_readouts);
+    for (int flag = 1; flag <= num_readouts; flag++) {
+      std::vector<double> border_x;
+      // find first flagged grid point
+      for (int j = 0; j < solver.Ny; j++) {
+        for (int i = 0; i < solver.Nx; i++) {
+          if (solver.parent_idx(i, j) >= Nr && ensemble.polygons[solver.parent_idx(i, j)].flag == flag) {
+            border_x.push_back(solver.domain.x0 + i * solver.dx);
+            break;
+          }
+        }
+      }
+      const double mean = std::accumulate(border_x.begin(), border_x.end(), 0.0) / border_x.size();
+      mean_border_x[flag - 1] = mean;
+    }
+    return mean_border_x;
+  }
+
   // assign all flags without need for solver step
   void apply_flag(Ensemble& ensemble) {
     for (int p = Nr; p < ensemble.polygons.size(); p++) {
@@ -62,7 +82,7 @@ namespace EnsembleController {
 
   // generate tissue filling out the given domain
   // domain should center at (0,0) to produce a uniform tissue
-  Ensemble grow_tissue(Ensemble& ensemble) {
+  void grow_tissue(Ensemble& ensemble) {
     if (beta != 0.8) {
       std::cout << "Warning: beta=" << beta << ". It's recommended to grow with beta=0.8" << std::endl;
     }
@@ -93,7 +113,7 @@ namespace EnsembleController {
   }
 
   // generate tissue with a given number of polygons
-  Ensemble grow_tissue(int num_polygons) {
+  Ensemble grow_tissue_by_num(int num_polygons) {
     double polygon_diameter = 2 * std::sqrt(Amax_mu / M_PI);
     double L = 2 * std::sqrt(num_polygons) * polygon_diameter;
     Domain domain(-L/2, -L/2, L/2, L/2);
