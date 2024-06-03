@@ -85,7 +85,7 @@ struct Solver {
     }
 
     void step(double dt) {
-        // resize grids if necessary
+        // resize grids if necessary TODO reenable
         /*if (domain.width() >= (Nx + 1) * dx || domain.height() >= (Ny + 1) * dx
             || domain.width() <= (Nx - 1) * dx || domain.height() <= (Ny - 1) * dx) {
             int Nx_new = floor(domain.width() / dx);

@@ -56,7 +56,7 @@ const std::vector<double> D_CV = {0.3}; // [-] coefficient of variation of diffu
 const std::vector<double> p0 =   {0}; // [1/(L^2*T)] production rate background (usually zero)
 const std::vector<double> p_mu = {1}; // [1/(L^2*T)] production rate mean
 const std::vector<double> p_CV = {0.3}; // [-] coefficient of variation of production rate
-const std::vector<double> threshold_mu = {0.01}; // [1/L^2] concentration threshold mean
+const std::vector<double> threshold_mu = {0.01}; // [1/L^2] concentration threshold mean. If using multiple readouts, use declining order 
 const std::vector<double> threshold_CV = {0.0}; // [-] coefficient of variation of threshold
 constexpr double cutoff_factor = 2.0; // [-] lognormal dists are cutoff at mu*factor to maintain stability
 
