@@ -46,6 +46,8 @@ namespace EnsembleController {
     return mean_border_x;
   }
 
+  // NOT TESTED YET. 
+  // readout positions for each flag
   std::vector<double> mean_readout_positions(Ensemble& ensemble, Solver& solver) {
     int num_readouts = threshold_mu.size();
     std::vector<double> mean_border_x(num_readouts);
