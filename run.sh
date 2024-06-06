@@ -14,6 +14,7 @@ move_files() {
 cleanup_files() {
     echo "cleaning up leftover output files ..."
     rm *.vtp *.vts *.cfg
+    make clean
 }
 
 run() {

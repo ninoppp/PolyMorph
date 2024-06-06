@@ -29,7 +29,7 @@ Remember to set the correct number of threads (default: 8) and desired output fo
 ## Features
 - Most PolyHoop capabilities (see limitations)
 - Coupled FDM-solver for reaction-diffusion equations
-- Optional advection-dilution terms (computationally more expensive due to velocity field interpolation)
+- Advection-dilution terms (Can be switched on and off. Computationally more expensive due to velocity field interpolation)
 - Supports any number of diffusable species
 - Supports general, customizable reaction terms (involving any number of interacting species and any number of kinetic coefficients)
 - Dirichlet and Neumann boundary conditions
@@ -50,10 +50,10 @@ Additionally, depending on the experiment:
 `root`: makefile, run.sh, euler job scripts, binary executable  
 `/include`: Contains all header files which make up the core of this software  
 `/src`: Contains cpp files with main() functions; a default testrun (main.cpp) plus a few example experiments.  
-`/out`: Default output folder for output files 
+`/out`: Default output folder for files 
 
 ## Source Code Documentation
-In the following the most important components of the code are briefly explained. For a more detailed explanation see the /documentation (doxygen) and the report (ToDo: link or pdf). 
+In the following the most important components of the code are briefly explained. For a more detailed explanation see the /documentation (ToDo: doxygen) and the report (ToDo: link or pdf). 
 
 - ``const.h``: Contains all parameters and some settings (like enabling advection-dilution or chemotaxis). Treat this like a configuration-file. 
 
@@ -83,5 +83,5 @@ ToDo
 
 ## Limitations
 - Does not support polygon fusion.
-- Nested polygons (one inside the other) should work but might hold unwanted behavior or even crash. Not tested thoroughly. 
+- Nested polygons (one inside the other) should technically work fine but might hold unwanted behavior or even crash. Not tested thoroughly. 
 - Use of rigid polygons was also not tested thoroughly enough. 

@@ -32,7 +32,7 @@ int main(int argc, char* argv[]) {
       std::cout << "Core " << omp_get_thread_num() << " finished generating in " << end - start << " seconds" << std::endl;
 
       ensemble.output(w * 1000 + seed);
-      ensemble.writeOFF("ensemble/tissues_varwidth/" + std::to_string(w) + "_" + std::to_string(seed));
+      ensemble.writeOFF("ensemble/tissues_varwidth/" + std::to_string(w) + "_" + std::to_string(seed) + ".off");
     }
   }
   return 0;
