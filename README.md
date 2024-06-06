@@ -20,7 +20,7 @@ The script contains a few additional functionalities:
 
 ```shell
 sh run.sh c # cleanup leftover files (e.g. after aborting)
-sh run.sh m # move output files
+sh run.sh m # move output files (change the script to your desired folder)
 sh run.sh {filename} # compiles {filename}.cpp from the src folder. If omitted main.cpp is used
 ```
 
@@ -29,7 +29,7 @@ A standard usage produces 3 output types:
 - A series of .vtp files containing the polygons to be visualized in paraview.
 - A series of .vts files containing the grid of the finite difference solver. Can be loaded into the same paraview session. 
 - simulation.cfg contains all parameters (from const.h) used for this simulation to allow reproducibility. 
-- Optionally .off for saving the polygon ensemble at a certain time point (usually at the end) to later load as the input/starting point of another simulation. 
+- Optionally a .off file for saving the polygon ensemble at a certain time point (usually at the end) to later load as the input/starting point of another simulation. 
 
 ## Structure
 - include: Contains all header files and the core of this software
@@ -40,14 +40,11 @@ A standard usage produces 3 output types:
 ## Documentation
 In the following the most important components of the code are briefly explained
 
-### const.h
-Contains all parameters and some settings (like enabling advection-dilution or chemotaxis). Treat this like a configuration-file. 
+- const.h: Contains all parameters and some settings (like enabling advection-dilution or chemotaxis). Treat this like a configuration-file. 
 
-### domain.h
-Defines a very simple rectangular domain within which all calculations will happen. The boundary conditions of the solver will be applied at the boundaries of this domain. The size of the domain can be changed by setting a growth factor for each direction or  (not advised) by directly changing its size and/or coordinates.  
+- domain.h: Defines a very simple rectangular domain within which all calculations will happen. The boundary conditions of the solver will be applied at the boundaries of this domain. The size of the domain can be changed by setting a growth factor for each direction or  (not advised) by directly changing its size and/or coordinates.  
 
-### ensemble.h
-The ensemble struct contains the core of the original PolyHoop software. It is responsible for the mechanical part of the simulation. 
+- ensemble.h: The ensemble struct contains the core of the original PolyHoop software. It is responsible for the mechanical part of the simulation. 
 
 ### geometry.h
 Contains the geometric structs used in the ensemble: Point, Vertex, Polygon. 
