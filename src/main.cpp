@@ -6,7 +6,7 @@ int main() {
   welcome();
   validate_parameters();
   write_config();
-  //default_testrun();
+  default_testrun();
   //positional_error_experiment();
   //chemotaxis_experiment();
   //turing_patterns_experiment();

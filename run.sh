@@ -18,8 +18,8 @@ cleanup_files() {
 
 run() {
     echo "compiling src/$1.cpp ..."
-    rm -f polymorph
-    g++ -fopenmp -O3 -o polymorph "src/$1.cpp"
+    make clean
+    make $1
     export OMP_NUM_THREADS
     echo "running $1 with $OMP_NUM_THREADS threads... "
     ./polymorph

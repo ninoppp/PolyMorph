@@ -1,8 +1,8 @@
 #include "const.h"
-#include "polyhoop.h"
+#include "ensemble.h"
 #include "solver.h"
 #include "interpolator.h"
-#include "measurements.h"
+#include "ensembleController.h"
 #include <iostream>
 #include <omp.h>
 
@@ -80,5 +80,5 @@ void bench() {
 }
 
 int main() {
-    
+    std::cout << "Running benchmark. Nothing here yet" << std::endl;
 }

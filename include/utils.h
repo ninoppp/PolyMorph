@@ -7,6 +7,7 @@
 #include <vector>
 #include <random>
 #include <sys/time.h>
+#include <omp.h>
 
 #include "const.h"
 
@@ -100,6 +101,8 @@ void welcome() {
     std::cout << "--------------------------" << std::endl
             << "|  Welcome to PolyMorph  |" << std::endl
             << "--------------------------" << std::endl;
+    std::cout << "simulation started at " << __DATE__ << ", " << __TIME__ << std::endl;
+    std::cout << "max threads = " << omp_get_max_threads() << std::endl;
 }
 
 // saving simluations parameters
