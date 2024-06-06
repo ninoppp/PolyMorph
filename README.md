@@ -1,8 +1,43 @@
 # PolyMorph
 Coupling PolyHoop with an FDM-solver for morphogenetic problems. 
 
-## Documentation
+## Usage instructions
+Quick start: 
+```shell
+cd PolyMorph
+sh run.sh
+```
 
+Alternatively a standard makefile is provided:
+
+```shell
+cd PolyMorph
+make
+OMP_NUM_THREADS=8 ./polymorph
+```
+
+The script contains a few additional functionalities:
+
+```shell
+sh run.sh c # cleanup leftover files (e.g. after aborting)
+sh run.sh m # move output files
+sh run.sh {filename} # compiles {filename}.cpp from the src folder. If omitted main.cpp is used
+```
+
+## Output
+A standard usage produces 3 output types:
+- A series of .vtp files containing the polygons to be visualized in paraview.
+- A series of .vts files containing the grid of the finite difference solver. Can be loaded into the same paraview session. 
+- simulation.cfg contains all parameters (from const.h) used for this simulation to allow reproducibility. 
+- Optionally .off for saving the polygon ensemble at a certain time point (usually at the end) to later load as the input/starting point of another simulation. 
+
+## Structure
+- include: Contains all header files and the core of this software
+- src: Contains cpp files with main() functions. A default testrun (main.cpp) plus a few example experiments. 
+- out: Default output folder for output files (.csv, .vtp, .vts, .off, .cfg)
+- makefile, run.sh, euler job scripts
+
+## Documentation
 In the following the most important components of the code are briefly explained
 
 ### const.h
