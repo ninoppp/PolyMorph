@@ -13,7 +13,7 @@ module load gcc
 module list
 
 make clean
-make generate_varwidth
+make generate_60x30
 
 export OMP_NUM_THREADS=128
 

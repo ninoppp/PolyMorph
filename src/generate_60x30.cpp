@@ -12,7 +12,6 @@ int main(int argc, char* argv[]) {
   int nodeID = std::stoi(argv[1]);
 
   write_config();
-  Domain domain(-30, -15, 30, 15);
 
   #pragma omp parallel for num_threads(128)
   for (int seed = nodeID*128; seed < (nodeID+1)*128; seed++) {
@@ -21,6 +20,7 @@ int main(int argc, char* argv[]) {
     std::cout << "Core " << omp_get_thread_num() << " generating OFF with seed=" << seed << std::endl;
 
     double start = walltime();
+    Domain domain(-30, -15, 30, 15);
     Ensemble ensemble("ensemble/default.off", domain, seed);
     EnsembleController::grow_tissue(ensemble);
     double end = walltime();
