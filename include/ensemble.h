@@ -444,6 +444,7 @@ struct Ensemble
                           + (a2 / ((l2 + l3) * b2)) * (e3.cross() + a2 * e3));
 
         // domain boundaries
+        //std::cout << "got here 2" << std::endl;
         v[i].a.add((polygons[p].vertices[i].r.x < domain.x0) * domain.stiffness, {(domain.x0 - polygons[p].vertices[i].r.x), 0});
         v[i].a.add((polygons[p].vertices[i].r.x > domain.x1) * domain.stiffness, {(domain.x1 - polygons[p].vertices[i].r.x), 0});
         v[i].a.add((polygons[p].vertices[i].r.y < domain.y0) * domain.stiffness, {0, (domain.y0 - polygons[p].vertices[i].r.y)});

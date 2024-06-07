@@ -1,7 +1,7 @@
 # Compiler
 CXX = g++
 # Compiler flags
-CXXFLAGS = -Isrc -Iinclude -O3 -fopenmp
+CXXFLAGS = -Isrc -Iinclude -O3 -fopenmp -g
 
 # Source files directory
 SRC_DIR = src

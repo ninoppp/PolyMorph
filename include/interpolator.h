@@ -42,10 +42,10 @@ void Interpolator::scatter() {
   jend = std::min(int((ensemble.y1 - solver.domain.y0) / solver.dx), solver.Ny); // there could be a fencepost error here
   
   #if DEBUG 
-  assert(solver.x0 + istart * solver.dx >= ensemble.x0);
-  assert(solver.y0 + jstart * solver.dx >= ensemble.y0);
-  assert(solver.x0 + iend * solver.dx <= ensemble.x1);
-  assert(solver.y0 + jend * solver.dx <= ensemble.y1);
+  assert(solver.domain.x0 + istart * solver.dx >= ensemble.x0);
+  assert(solver.domain.y0 + jstart * solver.dx >= ensemble.y0);
+  assert(solver.domain.x0 + iend * solver.dx <= ensemble.x1);
+  assert(solver.domain.y0 + jend * solver.dx <= ensemble.y1);
   #endif
 
   #pragma omp parallel for

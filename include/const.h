@@ -4,7 +4,7 @@
 #include <cmath>
 #include <vector>
 
-#define DEBUG false
+#define DEBUG true
 
 // Original Polyhoop parameters
 constexpr double h = 0.01; // [L] edge thickness
@@ -22,9 +22,9 @@ constexpr double ka = 1e5; // [1/(L^2*T^2)] area stiffness per vertex mass // de
 constexpr double kl = 1e5; // [L/T^2] edge contractility stiffness per vertex mass
 constexpr double kb = 0; // [L^3/T^2] bending stiffness per vertex mass
 constexpr double kr = 1e7; // [1/T^2] repulsion stiffness per vertex mass // default 1e7
-constexpr double kh = 0; //1e6; // [1/T^2] adhesion stiffness per vertex mass // default 1e6
-constexpr double sh = 0; //0.01; // [L] adhesion hardening zone size
-constexpr double ss = 0; //0.01; // [L] adhesion softening zone size
+constexpr double kh = 0;//1e6; // [1/T^2] adhesion stiffness per vertex mass // default 1e6
+constexpr double sh = 0;//0.01; // [L] adhesion hardening zone size
+constexpr double ss = 0;//0.01; // [L] adhesion softening zone size
 constexpr double theta = 0; // [-] fusion threshold
 constexpr double mu = 0; // [-] dynamic friction coefficient
 constexpr double rho = 0; // [1/L^2] fluid mass density per vertex mass
