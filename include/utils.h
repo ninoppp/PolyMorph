@@ -53,6 +53,27 @@ std::string to_string(const std::vector<T>& v) {
     return s;
 }
 
+double mean(const std::vector<double>& v) {
+    double sum = 0;
+    for (const double& x : v) {
+        sum += x;
+    }
+    return sum / v.size();
+}
+
+double variance(const std::vector<double>& v) {
+    double m = mean(v);
+    double sum = 0;
+    for (const double& x : v) {
+        sum += (x - m) * (x - m);
+    }
+    return sum / v.size();
+}
+
+double stddev(const std::vector<double>& v) {
+    return std::sqrt(variance(v));
+}
+
 // returns the means for a vector of lognormal distributions
 std::vector<double> get_means(const std::vector<std::lognormal_distribution<>>& dists) {
     std::vector<double> means;

@@ -24,8 +24,7 @@ int main(int argc, char* argv[]) {
     omp_set_dynamic(0);
 
     for (double grad_cv : cv) { // 12 iterations
-        double lnCV = std::log(1 + grad_cv*grad_cv);
-
+    
         #pragma omp parallel for num_threads(128) // 128 seeds parallel for this specific cv. Same seed was also used for tissue generation
         for (int seed = nodeID*128; seed < (nodeID+1)*128; seed++) { // ToDo: maybe add more nodes to seeds
 
@@ -36,9 +35,9 @@ int main(int argc, char* argv[]) {
             Ensemble ensemble(off_file.c_str(), domain, seed);
             
             // create distributions
-            ensemble.D_dist = create_lognormal(D_mu, {lnCV});
-            ensemble.k_dist = create_lognormal(k_mu, {lnCV});
-            ensemble.p_dist = create_lognormal(p_mu, {lnCV});
+            ensemble.D_dist = create_lognormal(D_mu, {grad_cv}); // FIX! has to be done before constructing
+            ensemble.k_dist = create_lognormal(k_mu, {grad_cv});
+            ensemble.p_dist = create_lognormal(p_mu, {grad_cv});
             ensemble.is_producing = [domain](const Polygon& p) { // left side is producing
                 return std::vector<bool> {p.midpoint().x < domain.x0 + 10}; 
             };

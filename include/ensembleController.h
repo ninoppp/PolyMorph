@@ -133,6 +133,22 @@ namespace EnsembleController {
     ensemble.output(0);
     return ensemble;
   }  
+
+  // regenerate all distribution-drawn parameters
+  // needed when manipulating dists after ensemble initialization
+  void redraw_params_from_dists(Ensemble& ensemble) {
+    for (int p = 0; p < ensemble.polygons.size(); p++) {
+      auto& cell = ensemble.polygons[p];
+      // vectors
+      cell.D = sample(ensemble.D_dist, ensemble.rng);
+      cell.p = sample(ensemble.p_dist, ensemble.rng);
+      cell.k = sample(ensemble.k_dist, ensemble.rng);
+      cell.threshold = sample(ensemble.threshold_dist, ensemble.rng);
+      // scalars
+      cell.Amax = ensemble.Amax_dist(ensemble.rng);
+      cell.alpha0 = ensemble.alpha_dist(ensemble.rng);
+    }
+  }
 };
 
 #endif
