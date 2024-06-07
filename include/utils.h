@@ -74,14 +74,18 @@ double stddev(const std::vector<double>& v) {
     return std::sqrt(variance(v));
 }
 
-// returns the means for a vector of lognormal distributions
+// get the mean of a lognormal distribution
+double get_mean(const std::lognormal_distribution<>& dist) {
+    double mu_prime = dist.m(); // Log-mean of the underlying normal distribution
+    double sigma = dist.s(); // Standard deviation of the underlying normal distribution
+    return std::exp(mu_prime + 0.5 * sigma * sigma);
+}
+
+// get the means of a vector of lognormal distributions
 std::vector<double> get_means(const std::vector<std::lognormal_distribution<>>& dists) {
     std::vector<double> means;
     for (const auto& dist : dists) {
-        double mu_prime = dist.m(); // Log-mean of the underlying normal distribution
-        double sigma = dist.s(); // Standard deviation of the underlying normal distribution
-        double mean = std::exp(mu_prime + 0.5 * sigma * sigma);
-        means.push_back(mean);
+        means.push_back(get_mean(dist));
     }
     return means;
 }
@@ -98,20 +102,27 @@ std::vector<std::lognormal_distribution<>> create_lognormal(const std::vector<do
     return dists;
 }
 
+// sample from a lognormal distribution, with a cutoff factor
+double sample(std::lognormal_distribution<>& dist, std::mt19937& rng) {
+    double mean = get_mean(dist);
+    double x = dist(rng);   
+    int max_tries = 50;
+    while (x > cutoff_factor*mean) {
+        x = dist(rng);
+        if (max_tries-- == 0) {
+            x = mean;
+            break;
+        } 
+    }
+    return x;
+}
+
 // returns a vector of samples from a vector of lognormal distributions
 std::vector<double> sample(std::vector<std::lognormal_distribution<>>& dists, std::mt19937& rng) {
     std::vector<double> samples;
     auto mean = get_means(dists);
     for (int i = 0; i < dists.size(); i++) {
-        double x = dists[i](rng);
-        int max_tries = 50;
-        while (x > cutoff_factor*mean[i]) {
-            x = dists[i](rng);
-            if (max_tries-- == 0) {
-                x = mean[i];
-                break;
-            } 
-        }
+        double x = sample(dists[i], rng);
         samples.push_back(x);
     }
     return samples;
