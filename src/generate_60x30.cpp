@@ -5,11 +5,15 @@
 #include <omp.h>
 
 int main(int argc, char* argv[]) {
+  assert(kh == 0); // adhesion stiffness should zero
+  assert(Amax_CV != 0 && alpha_CV != 0);
+
+  int nodeID = 0;
   if (argc < 2) {
-      std::cerr << "Node ID not provided." << std::endl;
-      return 1;
+      std::cerr << "Node ID not provided. Assuming 0" << std::endl;
+  } else {
+    nodeID = std::stoi(argv[1]);
   }
-  int nodeID = std::stoi(argv[1]);
 
   write_config();
 

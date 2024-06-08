@@ -117,7 +117,7 @@ namespace EnsembleController {
   // generate tissue with a given number of polygons
   Ensemble grow_tissue_by_num(int num_polygons) {
     double polygon_diameter = 2 * std::sqrt(Amax_mu / M_PI);
-    double L = 2 * std::sqrt(num_polygons) * polygon_diameter;
+    double L = 4 * std::sqrt(num_polygons) * polygon_diameter;
     Domain domain(-L/2, -L/2, L/2, L/2);
     Ensemble ensemble("ensemble/default.off", domain);
     size_t steps = 0;

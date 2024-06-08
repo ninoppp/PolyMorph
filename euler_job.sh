@@ -1,22 +1,23 @@
 #!/bin/bash
-#SBATCH --job-name=Polymorph      # Job name    (default: sbatch)
-#SBATCH --output=Polymorph-%j.out # Output file (default: slurm-%j.out)
-#SBATCH --error=Polymorph-%j.err  # Error file  (default: slurm-%j.out)
-#SBATCH --ntasks=1                # Number of tasks
-#SBATCH --cpus-per-task=16        # Number of CPUs per task
-#SBATCH --mem-per-cpu=1024        # Memory per CPU
-#SBATCH --time=00:05:00           # Wall clock time limit
+#SBATCH --job-name=gen4nodes      # Job name    (default: sbatch)
+#SBATCH --output=gen4nodes-%j.out # Output file (default: slurm-%j.out)
+#SBATCH --error=gen4nodes-%j.err  # Error file  (default: slurm-%j.out)
+#SBATCH --ntasks=1
+#SBATCH --nodes=1               
+#SBATCH --ntasks-per-node=1        
+#SBATCH --cpus-per-task=128       
+#SBATCH --mem-per-cpu=1024        
+#SBATCH --time=03:00:00         
 
 module load gcc
 module list
 
-echo "compiling polymorph ... "
 make clean
-make
+make generate_varwidth
 
-export OMP_NUM_THREADS=16
+export OMP_NUM_THREADS=128
 
-echo "running polymorph in parallel with $OMP_NUM_THREADS threads... "
-./polymorph
+echo "running job in parallel with $OMP_NUM_THREADS threads... "
+srun ./polymorph $((SLURM_NODEID + 6)) # NodeID is used to determine individual seeds
 
 echo "all done."

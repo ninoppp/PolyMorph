@@ -51,6 +51,7 @@ Additionally, depending on the experiment:
 `/include`: Contains all header files which make up the core of this software  
 `/src`: Contains cpp files with main() functions; a default testrun (main.cpp) plus a few example experiments.  
 `/out`: Default output folder for files 
+`/ensemble`: Input files with pre-grown tissues for various tasks
 
 ## Source Code Documentation
 In the following the most important components of the code are briefly explained. For a more detailed explanation see the /documentation (ToDo: doxygen) and the report (ToDo: link or pdf). 

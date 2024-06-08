@@ -86,14 +86,17 @@ struct Solver {
 
     void step(double dt) {
         // resize grids if necessary TODO reenable
-        /*if (domain.width() >= (Nx + 1) * dx || domain.height() >= (Ny + 1) * dx
-            || domain.width() <= (Nx - 1) * dx || domain.height() <= (Ny - 1) * dx) {
-            int Nx_new = floor(domain.width() / dx);
-            int Ny_new = floor(domain.height() / dx);
-            rescale(Nx_new, Ny_new, 0, 0);
-        }*/
+        if (RESIZE_GRID) {
+            if (domain.width() >= (Nx + 1) * dx || domain.height() >= (Ny + 1) * dx
+                || domain.width() <= (Nx - 1) * dx || domain.height() <= (Ny - 1) * dx) {
+                int Nx_new = floor(domain.width() / dx);
+                int Ny_new = floor(domain.height() / dx);
+                rescale(Nx_new, Ny_new, 0, 0);
+            }
+        }
 
         Grid<std::vector<double>> unew(Nx, Ny, std::vector<double>(NUM_SPECIES, 0.0));
+
         // Forward Euler with central differences
         #pragma omp parallel for
         for (int i = 0; i < Nx; i++) {

@@ -4,7 +4,7 @@
 #include <cmath>
 #include <vector>
 
-#define DEBUG true
+#define DEBUG false
 
 // Original Polyhoop parameters
 constexpr double h = 0.01; // [L] edge thickness
@@ -45,6 +45,7 @@ constexpr double drmax = h + sh + ss; // maximum interaction distance
 constexpr double dx = 0.5; // [L] grid spacing for solver
 constexpr double anisotropy = 1.0; // [-] diffusion anisotropy (default 1)
 constexpr bool ADVECTION_DILUTION = false; // calculate velocity field for advection-dilution terms
+constexpr bool RESIZE_GRID = false; // resize grid if domain changes/grows
 constexpr int NUM_SPECIES = 1; // [-] number of diffusable species (size of D, k, p)
 constexpr int NUM_KIN = 1; // [-] number of kinetic coefficients (size of k)
 const std::vector<double> k0 =   {0}; // [?] reaction coefficients background

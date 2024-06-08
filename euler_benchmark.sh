@@ -11,16 +11,15 @@
 module load gcc
 module list
 
-echo "Running benchmark job... "
-rm -f benchmark.out
-g++ -fopenmp -O3 -o benchmark.out benchmark.cpp
+make clean
+make benchmark
 
 # Run the program for OMP_NUM_THREADS equal to 1, 2, 4, 8, ..., 64, 128
 for ((i=0; i<=7; i++))
 do
   OMP_NUM_THREADS=$((2**i))
-  echo "Running with OMP_NUM_THREADS=$OMP_NUM_THREADS"
+  echo "Running benchmark with OMP_NUM_THREADS=$OMP_NUM_THREADS"
   export OMP_NUM_THREADS
-  ./benchmark.out
+  ./polyhoop
 done
 echo "all done."
