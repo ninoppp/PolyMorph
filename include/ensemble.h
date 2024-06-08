@@ -158,6 +158,7 @@ struct Ensemble
                       if (!fuse)
                       {
                         fuse = true;
+                        std::cerr << "WARNING: Fusing polygons not supported" << std::endl;
                         prem = p2; // polygon 2 will be removed
                         
                         // merge the vertex lists, inverting the vertex order for polygons enclosed by others
@@ -233,6 +234,7 @@ struct Ensemble
                       if (!fuse)
                       {
                         fuse = true;
+                        std::cerr << "WARNING: Fusing polygons not supported" << std::endl;
                         pnew[0] = pn[0];
                         pnew[1] = pn[1];
                         
@@ -261,6 +263,8 @@ struct Ensemble
       }
       if (!fuse) break; // break out of the while(true) loop if no fusion was prepared
       
+      // TODO: init PolyMorph members for pnew 1 & 2 here
+
       // add/remove the affected polygon(s), then repeat from the beginning, recomputing the boxes
       polygons[pnew[0].vertices[0].p] = pnew[0];
       if (pnew[1].vertices.size() == 0) // fusion type I: remove the second old polygon
@@ -444,7 +448,6 @@ struct Ensemble
                           + (a2 / ((l2 + l3) * b2)) * (e3.cross() + a2 * e3));
 
         // domain boundaries
-        //std::cout << "got here 2" << std::endl;
         v[i].a.add((polygons[p].vertices[i].r.x < domain.x0) * domain.stiffness, {(domain.x0 - polygons[p].vertices[i].r.x), 0});
         v[i].a.add((polygons[p].vertices[i].r.x > domain.x1) * domain.stiffness, {(domain.x1 - polygons[p].vertices[i].r.x), 0});
         v[i].a.add((polygons[p].vertices[i].r.y < domain.y0) * domain.stiffness, {0, (domain.y0 - polygons[p].vertices[i].r.y)});
