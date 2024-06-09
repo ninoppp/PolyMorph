@@ -6,11 +6,12 @@
 #include "ensembleController.h"
 
 int main(int argc, char* argv[]) {
-    if (argc < 2) {
-        std::cerr << "Node ID not provided." << std::endl;
+    const char* nodeID_str = getenv("SLURM_NODEID");
+    if (!nodeID_str) {
+        std::cerr << "SLURM_NODEID is not set." << std::endl;
         return 1;
     }
-    int nodeID = std::stoi(argv[1]);
+    int nodeID = std::atoi(nodeID_str);
 
     int length = 60;
     const int widths[] = {2, 4, 6, 8, 10, 13, 17, 20, 25, 30, 35, 40}; // 12 widths

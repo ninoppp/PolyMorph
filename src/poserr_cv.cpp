@@ -4,11 +4,13 @@
 #include <omp.h>
 
 int main(int argc, char* argv[]) {
-    if (argc < 2) {
-        std::cerr << "Node ID not provided." << std::endl;
+    const char* nodeID_str = getenv("SLURM_NODEID");
+    if (!nodeID_str) {
+        std::cerr << "SLURM_NODEID is not set." << std::endl;
         return 1;
     }
-    int nodeID = std::stoi(argv[1]);
+    int nodeID = std::atoi(nodeID_str);
+    std::cout << "Node ID: " << nodeID << std::endl;
 
     std::string csv_filename = "positional_error_cv_" + std::to_string(nodeID) + ".csv";
     std::ofstream file(csv_filename, std::ios::app);
@@ -16,23 +18,23 @@ int main(int argc, char* argv[]) {
     
     Domain domain(-30, -15, 30, 15);
     double cv[] = {0.01, 0.03, 0.07,
-                    0.1, 0.3, 0.7, 
-                    1.0, 3.0, 7.0, 
+                    0.1, 0.3, 0.5, 0.7, 
+                    1.0, 3.0, 5.0, 7.0, 
                     10};
 
     //omp_set_nested(1);
     omp_set_dynamic(0);
 
-    for (double grad_cv : cv) { // 12 iterations
-    
-        #pragma omp parallel for num_threads(128) // 128 seeds parallel for this specific cv. Same seed was also used for tissue generation
-        for (int seed = nodeID*128; seed < (nodeID+1)*128; seed++) { // ToDo: maybe add more nodes to seeds
+    #pragma omp parallel for collapse(2) num_threads(120) // 100 calculations per node. 1200 total
+    for (int i = 0; i < 12; i++) { // 10 iterations
+        double grad_cv = cv[i];
+        for (int seed = nodeID*10; seed < (nodeID+1)*10; seed++) { // 10 seeds
+
+            std::string off_file = "ensemble/tissues_varwidth/30_" + std::to_string(seed) + ".off";
+            Ensemble ensemble(off_file.c_str(), domain, seed);
 
             #pragma omp critical
-            std::cout << "Core " << omp_get_thread_num() << " calculating with gcv=" << grad_cv << " seed=" << seed << std::endl;
-
-            std::string off_file = "ensemble/tissues_60x30/" + std::to_string(seed) + ".off";
-            Ensemble ensemble(off_file.c_str(), domain, seed);
+            std::cout << "Core " << omp_get_thread_num() << " calculating with gcv=" << grad_cv << " seed=" << seed << " and off file " << off_file << std::endl;
             
             // create distributions
             ensemble.D_dist = create_lognormal(D_mu, {grad_cv}); // FIX! has to be done before constructing
@@ -41,6 +43,7 @@ int main(int argc, char* argv[]) {
             ensemble.is_producing = [domain](const Polygon& p) { // left side is producing
                 return std::vector<bool> {p.midpoint().x < domain.x0 + 10}; 
             };
+            EnsembleController::redraw_params_from_dists(ensemble); // apply the new distributions
 
             Solver solver(domain, dx, Reactions::linearDegradation);
             Interpolator interpolator(ensemble, solver);
@@ -49,20 +52,25 @@ int main(int argc, char* argv[]) {
             double start = walltime();
             ensemble.step(); // update boxes
             interpolator.scatter();
-            int num_steps = 100000; // TODO verify
+            int num_steps = 200000;
             for (int step = 0; step < num_steps; step++) {
                 solver.step(dt);
             } 
-            interpolator.gather();
             double end = walltime();
 
+            interpolator.gather();
             EnsembleController::apply_flag(ensemble);
             double readout_pos = EnsembleController::mean_readout_position(ensemble, solver);
             double prec_zone_width = EnsembleController::get_precision_zone_width(ensemble);
 
             #pragma omp critical
-            file << threshold_mu[0] << "," << grad_cv << "," << seed << "," << readout_pos << "," << prec_zone_width << "," << end - start << "," << omp_get_num_threads() << std::endl;
+            {
+                std::cout << "Core " << omp_get_thread_num() << " finished calculating with gcv=" << grad_cv << " seed=" << seed << " in " << end - start << " seconds" << std::endl;
+                file << threshold_mu[0] << "," << grad_cv << "," << seed << "," << readout_pos << "," << prec_zone_width << "," << end - start << "," << omp_get_num_threads() << std::endl;
+                ensemble.output(grad_cv * 100 + seed); // to inspect the final state (1k frames)
+            }
         }
     }
     file.close();
+    return 0;
 }

@@ -1,23 +1,23 @@
 #!/bin/bash
-#SBATCH --job-name=gen4nodes      # Job name    (default: sbatch)
-#SBATCH --output=gen4nodes-%j.out # Output file (default: slurm-%j.out)
-#SBATCH --error=gen4nodes-%j.err  # Error file  (default: slurm-%j.out)
-#SBATCH --ntasks=1
-#SBATCH --nodes=1               
+#SBATCH --job-name=poserr_cv      # Job name    (default: sbatch)
+#SBATCH --output=poserr_cv-%j.out # Output file (default: slurm-%j.out)
+#SBATCH --error=poserr_cv-%j.err  # Error file  (default: slurm-%j.out)
+#SBATCH --ntasks=10
+#SBATCH --nodes=10               
 #SBATCH --ntasks-per-node=1        
-#SBATCH --cpus-per-task=128       
+#SBATCH --cpus-per-task=120       
 #SBATCH --mem-per-cpu=1024        
-#SBATCH --time=03:00:00         
+#SBATCH --time=12:00:00         
 
 module load gcc
 module list
 
 make clean
-make generate_varwidth
+make poserr_cv
 
-export OMP_NUM_THREADS=128
+export OMP_NUM_THREADS=120
 
 echo "running job in parallel with $OMP_NUM_THREADS threads... "
-srun ./polymorph $((SLURM_NODEID + 6)) # NodeID is used to determine individual seeds
+srun ./polymorph
 
 echo "all done."

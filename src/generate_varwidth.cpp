@@ -5,16 +5,15 @@
 #include <omp.h>
 
 int main(int argc, char* argv[]) {
+  const char* nodeID_str = getenv("SLURM_NODEID");
+  if (!nodeID_str) {
+      std::cerr << "SLURM_NODEID is not set." << std::endl;
+      return 1;
+  }
+  int nodeID = std::atoi(nodeID_str);
+
   assert(Amax_CV != 0 && alpha_CV != 0);
   assert(kh == 0); // adhesion stiffness should zero
-
-  int nodeID = 3;
-  if (argc < 2) {
-    std::cerr << "Node ID not provided. Assuming 3" << std::endl;
-  } else {
-    nodeID = std::stoi(argv[1]);
-    std::cout << "Node ID: " << nodeID << std::endl;
-  }
 
   write_config();
   int length = 60;

@@ -145,7 +145,7 @@ namespace EnsembleController {
       cell.k = sample(ensemble.k_dist, ensemble.rng);
       cell.threshold = sample(ensemble.threshold_dist, ensemble.rng);
       // scalars
-      cell.Amax = ensemble.Amax_dist(ensemble.rng);
+      cell.Amax = ensemble.Amax_dist(ensemble.rng); // TODO: use sample function
       cell.alpha0 = ensemble.alpha_dist(ensemble.rng);
     }
   }

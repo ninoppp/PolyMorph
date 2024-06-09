@@ -25,7 +25,7 @@ constexpr double kr = 1e7; // [1/T^2] repulsion stiffness per vertex mass // def
 constexpr double kh = 0;//1e6; // [1/T^2] adhesion stiffness per vertex mass // default 1e6
 constexpr double sh = 0;//0.01; // [L] adhesion hardening zone size
 constexpr double ss = 0;//0.01; // [L] adhesion softening zone size
-constexpr double theta = 0; // [-] fusion threshold
+constexpr double theta = 0; // [-] fusion threshold. Not fully supported in PolyMorph
 constexpr double mu = 0; // [-] dynamic friction coefficient
 constexpr double rho = 0; // [1/L^2] fluid mass density per vertex mass
 constexpr double g = 0; // [L/T^2] gravitational acceleration
@@ -42,7 +42,7 @@ constexpr int Nr = 0; // number of rigid polygons (keep as int or things will br
 constexpr double drmax = h + sh + ss; // maximum interaction distance
 
 // Diffusion parameters
-constexpr double dx = 0.5; // [L] grid spacing for solver
+constexpr double dx = 0.3; // [L] grid spacing for solver
 constexpr double anisotropy = 1.0; // [-] diffusion anisotropy (default 1)
 constexpr bool ADVECTION_DILUTION = false; // calculate velocity field for advection-dilution terms
 constexpr bool RESIZE_GRID = false; // resize grid if domain changes/grows
