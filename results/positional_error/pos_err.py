@@ -2,54 +2,46 @@ import numpy as np
 import matplotlib.pyplot as plt
 import pandas as pd
 
-data = pd.read_csv('positional_error.csv')
-grad_cv = data['grad_cv'].unique()
-thresh_cv = data['thresh_cv'].unique()
+# --- cv ---
+pos_offset = 19
+data = pd.read_csv(f'data/positional_error_cv.csv')
+data['readout_pos'] = data['readout_pos'] + pos_offset
+grad_cv = data['cv'].unique()
+thresholds = data['threshold'].unique()
+pos_err = data.groupby(['threshold', 'cv'])['readout_pos'].std().reset_index()
+print(pos_err.head(10))
 
-grouped = data.groupby(['thresh_cv', 'grad_cv'])['readout_pos'].std().reset_index()
-print(grouped.head(10))
-
-# by tcv
 plt.figure(figsize=(10, 5))
-for tcv in thresh_cv: 
-    subset = grouped[grouped['thresh_cv'] == tcv]
-    plt.plot(subset['grad_cv'], subset['readout_pos'], marker='o', label=f'Threshold CV = {tcv}')
+for thresh in thresholds: 
+    subset = pos_err[pos_err['threshold'] == thresh]
+    plt.plot(subset['cv'], subset['readout_pos'], marker='o', label=f'Threshold = {thresh}') # TODO add error bars
+
 plt.title('Positional Error vs Gradient Coefficient-Variation')
 plt.xscale('log')
 plt.xlabel('Gradient CV (D,k,p)')
 plt.ylabel('Positional Error')
 plt.grid(True)
 plt.legend()
-plt.savefig("positional_error.pdf")
-
-# by gcv
-plt.figure(figsize=(10, 5))
-for gcv in grad_cv: 
-    subset = grouped[grouped['grad_cv'] == gcv]
-    plt.plot(subset['thresh_cv'], subset['readout_pos'], marker='o', label=f'Gradient CV = {gcv}')
-plt.title('Positional Error vs Threshold Coefficient-Variation')
-plt.xscale('log')
-plt.xlabel('Threshold CV')
-plt.ylabel('Positional Error')
-plt.grid(True)
-plt.legend()
-plt.savefig("positional_error_2.pdf")
+plt.savefig("positional_error_cv.pdf")
 
 # readout position with min and max values as error estimates
 plt.figure(figsize=(10, 5))
-for tcv in [0.01, 0.3]:
-    subset = data[data['thresh_cv'] == tcv]
-    readout_pos = subset.groupby('grad_cv')['readout_pos'].mean()
-    min = subset.groupby('grad_cv')['readout_pos'].min()
-    max = subset.groupby('grad_cv')['readout_pos'].max()
-    plt.plot(grad_cv, readout_pos, marker='o', label=f'Threshold CV = {tcv}')
+for thresh in [0.01]:
+    subset = data[data['threshold'] == thresh]
+    readout_pos = subset.groupby('cv')['readout_pos'].mean()
+    min = subset.groupby('cv')['readout_pos'].min()
+    max = subset.groupby('cv')['readout_pos'].max()
+    plt.plot(grad_cv, readout_pos, marker='o', label=f'Threshold = {thresh}')
     plt.fill_between(grad_cv, min, max, alpha=0.2)
+
 plt.title('Readout Position vs Gradient Coefficient-Variation')
 plt.xscale('log')
 plt.xlabel('Gradient CV (D,k,p)')
-plt.ylabel('Readout Position')
+plt.ylabel('Readout Position (distance to source)')
 plt.grid(True)
 plt.legend()
-plt.savefig("positional_error_3.pdf")
+plt.savefig("readout_position.pdf")
+
+# --- width ---
 
 
