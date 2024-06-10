@@ -12,6 +12,7 @@ int main(int argc, char* argv[]) {
         return 1;
     }
     int nodeID = std::atoi(nodeID_str);
+    write_config();
 
     int length = 60;
     const int widths[] = {2, 4, 6, 8, 10, 13, 17, 20, 25, 30, 35, 40}; // 12 widths
@@ -47,19 +48,23 @@ int main(int argc, char* argv[]) {
             double start = walltime();
             ensemble.step(); // update boxes
             interpolator.scatter();
-            int num_steps = 100000; // TODO verify
+            int num_steps = 200000;
             for (int step = 0; step < num_steps; step++) {
                 solver.step(dt);
             } 
-            interpolator.gather();
             double end = walltime();
 
+            interpolator.gather();
             EnsembleController::apply_flag(ensemble);
             double readout_pos = EnsembleController::mean_readout_position(ensemble, solver);
             double prec_zone_width = EnsembleController::get_precision_zone_width(ensemble);
 
             #pragma omp critical
-            file << threshold_mu[0] << "," << width << "," << seed << "," << readout_pos << "," << prec_zone_width << "," << end - start << "," << omp_get_num_threads() << std::endl;
+            {
+                std::cout << "Core " << omp_get_thread_num() << " finished calculating with width=" << width << " seed=" << seed << " in " << end - start << " seconds" << std::endl;
+                file << threshold_mu[0] << "," << width << "," << seed << "," << readout_pos << "," << prec_zone_width << "," << end - start << "," << omp_get_num_threads() << std::endl;
+                ensemble.output(i * 1000 + seed);
+            }
         }
     }
     file.close();

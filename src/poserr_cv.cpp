@@ -68,7 +68,7 @@ int main(int argc, char* argv[]) {
             {
                 std::cout << "Core " << omp_get_thread_num() << " finished calculating with gcv=" << grad_cv << " seed=" << seed << " in " << end - start << " seconds" << std::endl;
                 file << threshold_mu[0] << "," << grad_cv << "," << seed << "," << readout_pos << "," << prec_zone_width << "," << end - start << "," << omp_get_num_threads() << std::endl;
-                ensemble.output(i * 1000 + seed); // to inspect the final state (1k frames)
+                ensemble.output(i * 1000 + seed); // to inspect the final state (1.2k frames)
             }
         }
     }
