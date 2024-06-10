@@ -24,7 +24,7 @@ void bench() {
         Interpolator interpolator(ensemble, solver);
         EnsembleController::stop_growth(ensemble);
 
-        for (int i = 0; i < 200; i++) {
+        for (int i = 0; i < 10000; i++) {
             double all = walltime();
             double ens = walltime();
             ensemble.step();
