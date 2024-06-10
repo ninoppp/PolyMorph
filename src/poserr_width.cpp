@@ -24,9 +24,9 @@ int main(int argc, char* argv[]) {
     //omp_set_nested(1);
     omp_set_dynamic(0);
 
-    #pragma omp parallel for collapse(2) num_threads(120)
-    for (int seed = nodeID*10; seed < (nodeID+1)*10; seed++) {
-        for (int i = 0; i < 12; i++) {
+    #pragma omp parallel for collapse(2) num_threads(120) // 120 calculations, one per core. 10 nodes.
+    for (int seed = nodeID*10; seed < (nodeID+1)*10; seed++) { // 10 seeds
+        for (int i = 0; i < 12; i++) {  // 12 widths
             int width = widths[i];
             Domain domain(-length/2, -width/2, length/2, width/2);
 

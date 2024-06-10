@@ -25,11 +25,12 @@ int main(int argc, char* argv[]) {
     //omp_set_nested(1);
     omp_set_dynamic(0);
 
-    #pragma omp parallel for collapse(2) num_threads(120) // 100 calculations per node. 1200 total
-    for (int i = 0; i < 12; i++) { // 10 iterations
-        double grad_cv = cv[i];
+    #pragma omp parallel for collapse(2) num_threads(120) // 120 calculations per node. 1200 total
+    for (int i = 0; i < 12; i++) { // 12 cv values
         for (int seed = nodeID*10; seed < (nodeID+1)*10; seed++) { // 10 seeds
-
+            
+            double grad_cv = cv[i];
+            
             std::string off_file = "ensemble/tissues_varwidth/30_" + std::to_string(seed) + ".off";
             Ensemble ensemble(off_file.c_str(), domain, seed);
 
@@ -67,7 +68,7 @@ int main(int argc, char* argv[]) {
             {
                 std::cout << "Core " << omp_get_thread_num() << " finished calculating with gcv=" << grad_cv << " seed=" << seed << " in " << end - start << " seconds" << std::endl;
                 file << threshold_mu[0] << "," << grad_cv << "," << seed << "," << readout_pos << "," << prec_zone_width << "," << end - start << "," << omp_get_num_threads() << std::endl;
-                ensemble.output(grad_cv * 100 + seed); // to inspect the final state (1k frames)
+                ensemble.output(i * 1000 + seed); // to inspect the final state (1k frames)
             }
         }
     }
