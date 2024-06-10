@@ -27,7 +27,7 @@ int main(int argc, char* argv[]) {
 
     #pragma omp parallel for collapse(2) num_threads(120) // 120 calculations, one per core. 10 nodes.
     for (int seed = nodeID*10; seed < (nodeID+1)*10; seed++) { // 10 seeds
-        for (int i = 0; i < 12; i++) {  // 12 widths
+        for (int i = 0; i < 12; i++) {  // 12 widths. not optimal workload distribution but easier to verify output
             int width = widths[i];
             Domain domain(-length/2, -width/2, length/2, width/2);
 
