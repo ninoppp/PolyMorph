@@ -3,7 +3,7 @@ import pandas as pd
 
 # merge all csv files in the folder. for both experiments separately
 source = 'data'
-folders = ['thresh_1, ''thresh_01', 'thresh_001', 'thresh_0001']
+folders = ['thresh_1', 'thresh_01', 'thresh_001', 'thresh_0001']
 nodes = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
 experiments = ['cv', 'width']
 
