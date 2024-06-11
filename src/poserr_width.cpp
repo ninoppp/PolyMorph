@@ -12,6 +12,7 @@ int main(int argc, char* argv[]) {
         return 1;
     }
     int nodeID = std::atoi(nodeID_str);
+    std::cout << "Node ID: " << nodeID << std::endl;
     write_config();
 
     int length = 60;
@@ -39,7 +40,6 @@ int main(int argc, char* argv[]) {
             ensemble.is_producing = [domain](const Polygon& p) { // left side is producing
                 return std::vector<bool> {p.midpoint().x < domain.x0 + 10}; 
             };
-            // CONTINUE HERE
 
             Solver solver(domain, dx, Reactions::linearDegradation);
             Interpolator interpolator(ensemble, solver);

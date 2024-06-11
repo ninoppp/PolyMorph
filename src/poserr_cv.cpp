@@ -11,6 +11,7 @@ int main(int argc, char* argv[]) {
     }
     int nodeID = std::atoi(nodeID_str);
     std::cout << "Node ID: " << nodeID << std::endl;
+    write_config();
 
     std::string csv_filename = "positional_error_cv_" + std::to_string(nodeID) + ".csv";
     std::ofstream file(csv_filename, std::ios::app);

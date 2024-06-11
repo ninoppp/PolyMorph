@@ -1,7 +1,7 @@
 #!/bin/bash
-#SBATCH --job-name=poserr_cv_t0001      # Job name    (default: sbatch)
-#SBATCH --output=poserr_cv_t0001-%j.out # Output file (default: slurm-%j.out)
-#SBATCH --error=poserr_cv_t0001-%j.err  # Error file  (default: slurm-%j.out)
+#SBATCH --job-name=poserr_width_t0001      # Job name    (default: sbatch)
+#SBATCH --output=poserr_width_t0001-%j.out # Output file (default: slurm-%j.out)
+#SBATCH --error=poserr_width_t001-%j.err  # Error file  (default: slurm-%j.out)
 #SBATCH --ntasks=10
 #SBATCH --nodes=10               
 #SBATCH --ntasks-per-node=1        
@@ -13,7 +13,7 @@ module load gcc
 module list
 
 make clean
-make poserr_cv
+make poserr_width
 
 export OMP_NUM_THREADS=120
 
