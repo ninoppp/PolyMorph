@@ -5,11 +5,14 @@
 #include <omp.h>
 
 int main(int argc, char* argv[]) {
-  if (argc < 2) {
-      std::cerr << "Node ID not provided." << std::endl;
-      return 1;
+  const char* nodeID_str = getenv("SLURM_NODEID");
+  if (!nodeID_str) {
+      std::cerr << "SLURM_NODEID is not set." << std::endl;
+      //return 1;
   }
-  int nodeID = std::stoi(argv[1]);
+  int nodeID = 0;//std::atoi(nodeID_str);
+
+  //assert(kh == 0); // adhesion stiffness should zero
 
   double cv[] = {0.01, 0.03, 0.07,
                     0.1, 0.3, 0.7, 
@@ -17,19 +20,20 @@ int main(int argc, char* argv[]) {
                     10};
 
   write_config();
-  Domain domain(-30, -15, 30, 15);
+  Domain domain(-10, -10, 10, 10);
 
-  #pragma omp parallel for collapse(2) num_threads(100)
-  for (int seed = nodeID*10; seed < (nodeID+1)*10; seed++) {
-    for (int i = 0; i < 10; i++) {
-      double Amax_CV = cv[i];
+  //#pragma omp parallel for collapse(2) num_threads(100)
+  //for (int seed = nodeID*10; seed < (nodeID+1)*10; seed++) {
+    //for (int i = 0; i < 10; i++) {
+      int seed = 0; // tmp
+      double Amax_CV = 10;//cv[i];
 
       #pragma omp critical
       std::cout << "Core " << omp_get_thread_num() << " generating OFF with alpha_cv=" << Amax_CV << " and seed=" << seed << std::endl;
 
       double start = walltime();
       Ensemble ensemble("ensemble/default.off", domain, seed);
-      ensemble.Amax_dist = create_lognormal(p_mu, {Amax_CV})[0];
+      ensemble.Amax_dist = create_lognormal({Amax_mu}, {Amax_CV})[0];
       EnsembleController::redraw_params_from_dists(ensemble);
       EnsembleController::grow_tissue(ensemble);
       double end = walltime();
@@ -47,10 +51,11 @@ int main(int argc, char* argv[]) {
       
       #pragma omp critical
       {
-        ensemble.output(int(real_CV * 100));
+        std::cout << "Core " << omp_get_thread_num() << " used CV=" << Amax_CV << " and measured real CV=" << real_CV << std::endl;
+        ensemble.output(real_CV_trunc);
         ensemble.writeOFF("ensemble/tissues_vararea/" + std::to_string(real_CV_trunc) + ".off");
       }
-    }
-  }
+    //}
+  //}
   return 0;
 }

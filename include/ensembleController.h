@@ -100,7 +100,17 @@ namespace EnsembleController {
         ensemble.step();
       }
       interpolator.scatter();
-      //ensemble.output(f);
+      ensemble.output(f); // only for debug
+      /*double Amax = 0;
+      double Amin = 100;
+      for (auto polygon : ensemble.polygons) {
+        if (polygon.Amax > max) {
+          Amax = polygon.Amax;
+        } else if (polygon.Amax < min) {
+          Amin = polygon.Amax;
+        }
+      }
+      std::cout << "Amax range: max=" << max << " min=" << min << std::endl;*/
       // check if all 4 corners are occupied by a polygon
       if (max == INT32_MAX &&
           solver.parent_idx(1, 1) >= Nr &&
@@ -108,6 +118,7 @@ namespace EnsembleController {
           solver.parent_idx(1, solver.Ny - 2) >= Nr &&
           solver.parent_idx(solver.Nx - 2, 1) >= Nr) {
         std::cout << "All corners filled. Relaxing now" << std::endl;
+        stop_growth(ensemble);// testing for now
         max = f + f/3; // run again for 1/3 of the time to relax the tissue
       }
       f++;
