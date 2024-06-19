@@ -102,27 +102,29 @@ std::vector<std::lognormal_distribution<>> create_lognormal(const std::vector<do
     return dists;
 }
 
-// sample from a lognormal distribution, with a cutoff factor
-double sample(std::lognormal_distribution<>& dist, std::mt19937& rng) {
+// sample from a lognormal distribution, with optional use of cutoff factor
+double sample(std::lognormal_distribution<>& dist, std::mt19937& rng, bool cutoff=false) {
     double mean = get_mean(dist);
     double x = dist(rng);   
     int max_tries = 50;
-    while (x > cutoff_factor*mean) {
-        x = dist(rng);
-        if (max_tries-- == 0) {
-            x = mean;
-            break;
-        } 
-    }
+    if (cutoff) {
+        while (x > cutoff_factor*mean) {
+            x = dist(rng);
+            if (max_tries-- == 0) {
+                x = mean;
+                break;
+            } 
+        }
+    }   
     return x;
 }
 
 // returns a vector of samples from a vector of lognormal distributions
-std::vector<double> sample(std::vector<std::lognormal_distribution<>>& dists, std::mt19937& rng) {
+std::vector<double> sample(std::vector<std::lognormal_distribution<>>& dists, std::mt19937& rng, bool cutoff=false) {
     std::vector<double> samples;
     auto mean = get_means(dists);
     for (int i = 0; i < dists.size(); i++) {
-        double x = sample(dists[i], rng);
+        double x = sample(dists[i], rng, cutoff);
         samples.push_back(x);
     }
     return samples;
@@ -138,8 +140,11 @@ void welcome() {
 }
 
 // saving simluations parameters
-void write_config() {
-    std::ofstream config("simulation.cfg");
+void write_config(std::string prefix = "") {
+    if (prefix != "") {
+        prefix += "_";
+    }
+    std::ofstream config(prefix + "simulation.cfg");
     config
         << "Date=" << __DATE__ << std::endl
         << "Time=" << __TIME__ << std::endl

@@ -75,7 +75,7 @@ struct Ensemble
       polygons[p].alpha0 = sample(alpha_dist, rng);
       polygons[p].alpha = polygons[p].alpha0;
       // PolyMorph extension
-      polygons[p].D = sample(D_dist, rng);
+      polygons[p].D = sample(D_dist, rng, true);
       polygons[p].k = sample(k_dist, rng);
       polygons[p].threshold = sample(threshold_dist, rng);
       polygons[p].p = std::vector<double>(NUM_SPECIES, 0);
@@ -338,8 +338,8 @@ struct Ensemble
         const double A0 = polygons[p].A0;
         std::vector<Vertex> vold;
         vold.swap(v);
-        polygons[p] = {{vold[vend[2]]}, polygons[p].phase, 0, 0, sample(Amax_dist, rng), sample(alpha_dist, rng), 0, sample(D_dist, rng), sample(k_dist, rng)}; // new polygon 1
-        polygons.push_back({{vold[vend[0]]}, polygons[p].phase, 0, 0, sample(Amax_dist, rng), sample(alpha_dist, rng), 0, sample(D_dist, rng), sample(k_dist, rng)}); // new polygon 2
+        polygons[p] = {{vold[vend[2]]}, polygons[p].phase, 0, 0, sample(Amax_dist, rng), sample(alpha_dist, rng), 0, sample(D_dist, rng, true), sample(k_dist, rng)}; // new polygon 1
+        polygons.push_back({{vold[vend[0]]}, polygons[p].phase, 0, 0, sample(Amax_dist, rng), sample(alpha_dist, rng), 0, sample(D_dist, rng, true), sample(k_dist, rng)}); // new polygon 2
         for (std::size_t i = vend[1]; i != vend[2]; i = (i + 1) % vold.size())
           polygons[p].vertices.push_back(vold[i]);
         for (std::size_t i = vend[3]; i != vend[0]; i = (i + 1) % vold.size())

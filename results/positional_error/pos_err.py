@@ -6,7 +6,7 @@ from math import sqrt
 
 pos_offset = 19 # source position (data is in absolute coordinates)
 n = 100 # number of samples
-def SE(stddev):
+def stderr(stddev):
     return stddev / sqrt(2*(n-1)) # standard error of the standard deviation
 
 viridis = colormaps.get_cmap('viridis')  # Get the viridis colormap
@@ -25,7 +25,11 @@ plt.figure(figsize=(10, 5))
 for i, thresh in enumerate(thresholds): 
     subset = pos_err[pos_err['threshold'] == thresh]
     plt.plot(subset['cv'], subset['readout_pos'], marker='o', label=f'Threshold C_theta = {thresh}', color=colors[i])
+<<<<<<< HEAD
     plt.errorbar(subset['cv'], subset['readout_pos'], yerr=SE(subset['readout_pos']), color=colors[i])
+=======
+    plt.errorbar(subset['cv'], subset['readout_pos'], yerr=stderr(subset['readout_pos']), color=colors[i])
+>>>>>>> 7c2336d1e3d144760bce1c634f9d821cb8ee6909
 
 plt.title('Positional error vs gradient variability CV')
 plt.xscale('log')
@@ -42,8 +46,13 @@ for i, thresh in enumerate(thresholds):
     readout_pos = subset.groupby('cv')['readout_pos'].mean()
     min = subset.groupby('cv')['readout_pos'].min()
     max = subset.groupby('cv')['readout_pos'].max()
+<<<<<<< HEAD
     plt.plot(grad_cv, readout_pos, marker='o', label='Threshold C_theta = ' + f'{thresh}', color=colors[i])
     plt.fill_between(grad_cv, min, max, alpha=0.2, color=colors[i]) # min and max values as error estimates
+=======
+    plt.plot(grad_cv, readout_pos, marker='o', label='Threshold C_theta = '+f'{thresh}', color=colors[i])
+    plt.fill_between(grad_cv, min, max, alpha=0.2) # min and max values as error estimates
+>>>>>>> 7c2336d1e3d144760bce1c634f9d821cb8ee6909
 
 plt.title('Readout Position vs Gradient Coefficient-Variation')
 plt.xscale('log')
@@ -67,7 +76,11 @@ plt.figure(figsize=(10, 5))
 for i, thresh in enumerate(thresholds): 
     subset = pos_err[pos_err['threshold'] == thresh]
     plt.plot(subset['width'], subset['readout_pos'], marker='o', label=f'Threshold C_theta = {thresh}', color=colors[i])
+<<<<<<< HEAD
     plt.errorbar(subset['width'], subset['readout_pos'], yerr=SE(subset['readout_pos']), color=colors[i])
+=======
+    plt.errorbar(subset['width'], subset['readout_pos'], yerr=stderr(subset['readout_pos']), color=colors[i])
+>>>>>>> 7c2336d1e3d144760bce1c634f9d821cb8ee6909
 
 plt.title('Positional error vs domain width')
 plt.xlabel('Domain width [units ~ avg. cell radius]')
