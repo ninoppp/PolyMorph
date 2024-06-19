@@ -140,8 +140,11 @@ void welcome() {
 }
 
 // saving simluations parameters
-void write_config() {
-    std::ofstream config("simulation.cfg");
+void write_config(std::string prefix = "") {
+    if (prefix != "") {
+        prefix += "_";
+    }
+    std::ofstream config(prefix + "simulation.cfg");
     config
         << "Date=" << __DATE__ << std::endl
         << "Time=" << __TIME__ << std::endl

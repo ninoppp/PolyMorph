@@ -1,8 +1,12 @@
 #include "ensembleController.h"
 
+double analytic_solution(double x) {
+
+}
+
 int main(int argc, char* argv[]) {
     validate_parameters();
-    write_config();
+    write_config("convergence");
 
     std::ofstream file("convergence.csv");
     file << "dx,error" << std::endl;
