@@ -24,7 +24,7 @@ colors = viridis(np.linspace(0, 1, len(thresholds)+1))
 plt.figure(figsize=(10, 5))
 for i, thresh in enumerate(thresholds): 
     subset = pos_err[pos_err['threshold'] == thresh]
-    plt.plot(subset['cv'], subset['readout_pos'], marker='o', label=f'Threshold c0 = {thresh}', color=colors[i])
+    plt.plot(subset['cv'], subset['readout_pos'], marker='o', label=f'Threshold C_theta = {thresh}', color=colors[i])
     plt.errorbar(subset['cv'], subset['readout_pos'], yerr=SE(subset['readout_pos']), color=colors[i])
 
 plt.title('Positional error vs gradient variability CV')
@@ -42,8 +42,8 @@ for i, thresh in enumerate(thresholds):
     readout_pos = subset.groupby('cv')['readout_pos'].mean()
     min = subset.groupby('cv')['readout_pos'].min()
     max = subset.groupby('cv')['readout_pos'].max()
-    plt.plot(grad_cv, readout_pos, marker='o', label='Threshold C_theta} = '+f'{thresh}', color=colors[i])
-    plt.fill_between(grad_cv, min, max, alpha=0.2) # min and max values as error estimates
+    plt.plot(grad_cv, readout_pos, marker='o', label='Threshold C_theta = ' + f'{thresh}', color=colors[i])
+    plt.fill_between(grad_cv, min, max, alpha=0.2, color=colors[i]) # min and max values as error estimates
 
 plt.title('Readout Position vs Gradient Coefficient-Variation')
 plt.xscale('log')
@@ -66,7 +66,7 @@ colors = viridis(np.linspace(0, 1, len(thresholds+2)))
 plt.figure(figsize=(10, 5))
 for i, thresh in enumerate(thresholds): 
     subset = pos_err[pos_err['threshold'] == thresh]
-    plt.plot(subset['width'], subset['readout_pos'], marker='o', label=f'Threshold c0 = {thresh}', color=colors[i])
+    plt.plot(subset['width'], subset['readout_pos'], marker='o', label=f'Threshold C_theta = {thresh}', color=colors[i])
     plt.errorbar(subset['width'], subset['readout_pos'], yerr=SE(subset['readout_pos']), color=colors[i])
 
 plt.title('Positional error vs domain width')
