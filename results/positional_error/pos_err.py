@@ -42,8 +42,8 @@ for i, thresh in enumerate(thresholds):
     readout_pos = subset.groupby('cv')['readout_pos'].mean()
     min = subset.groupby('cv')['readout_pos'].min()
     max = subset.groupby('cv')['readout_pos'].max()
-    plt.plot(grad_cv, readout_pos, marker='o', label='Threshold C_theta = '+f'{thresh}', color=colors[i])
-    plt.fill_between(grad_cv, min, max, alpha=0.2) # min and max values as error estimates
+    plt.plot(grad_cv, readout_pos, marker='o', label='Threshold C_theta = ' + f'{thresh}', color=colors[i])
+    plt.fill_between(grad_cv, min, max, alpha=0.2, color=colors[i]) # min and max values as error estimates
 
 plt.title('Readout Position vs Gradient Coefficient-Variation')
 plt.xscale('log')

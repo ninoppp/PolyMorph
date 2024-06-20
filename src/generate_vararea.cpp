@@ -15,9 +15,8 @@ int main(int argc, char* argv[]) {
   //assert(kh == 0); // adhesion stiffness should zero
 
   double cv[] = {0.01, 0.03, 0.07,
-                    0.1, 0.3, 0.7, 
-                    1.0, 3.0, 7.0, 
-                    10};
+                    0.1, 0.3, 0.5, 0.7, 
+                    1.0, 3.0, 5.0, 7.0, 10};
 
   write_config();
   Domain domain(-10, -10, 10, 10);
@@ -32,6 +31,7 @@ int main(int argc, char* argv[]) {
       std::cout << "Core " << omp_get_thread_num() << " generating OFF with alpha_cv=" << Amax_CV << " and seed=" << seed << std::endl;
 
       double start = walltime();
+      Domain domain(-30, -15, 30, 15);
       Ensemble ensemble("ensemble/default.off", domain, seed);
       ensemble.Amax_dist = create_lognormal({Amax_mu}, {Amax_CV})[0];
       EnsembleController::redraw_params_from_dists(ensemble);
