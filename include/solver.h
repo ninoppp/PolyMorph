@@ -85,13 +85,13 @@ struct Solver {
     }
 
     void step(double dt) {
-        // resize grids if necessary TODO reenable
+        // resize grids if necessary
         if (RESIZE_GRID) {
             if (domain.width() >= (Nx + 1) * dx || domain.height() >= (Ny + 1) * dx
                 || domain.width() <= (Nx - 1) * dx || domain.height() <= (Ny - 1) * dx) {
-                int Nx_new = floor(domain.width() / dx);
-                int Ny_new = floor(domain.height() / dx);
-                rescale(Nx_new, Ny_new, 0, 0);
+                int Nx_new = domain.width() / dx + 2; // include endpoint
+                int Ny_new = domain.height() / dx + 2;
+                rescale(Nx_new, Ny_new, 0, 0); // ToDo: use offset if domain changes by large amount 
             }
         }
 
