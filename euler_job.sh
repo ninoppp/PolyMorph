@@ -7,7 +7,7 @@
 #SBATCH --ntasks-per-node=1        
 #SBATCH --cpus-per-task=128       
 #SBATCH --mem-per-cpu=1024        
-#SBATCH --time=06:00:00     
+#SBATCH --time=03:00:00     
 #SBATCH --constraint=EPYC_7763    # Select node with CPU
 
 module load gcc

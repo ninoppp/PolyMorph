@@ -3,6 +3,7 @@ import matplotlib.pyplot as plt
 from matplotlib import colormaps
 import pandas as pd
 from math import sqrt
+from scipy import stats
 
 pos_offset = 19 # source position (data is in absolute coordinates)
 n = 100 # number of samples
@@ -53,7 +54,7 @@ plt.grid(True)
 plt.legend()
 plt.savefig("readout_position.pdf")
 
-
+    
 # --- width ---
 # positional error
 data = pd.read_csv('data/positional_error_width.csv')
@@ -68,6 +69,11 @@ for i, thresh in enumerate(thresholds):
     subset = pos_err[pos_err['threshold'] == thresh]
     plt.plot(subset['width'], subset['readout_pos'], marker='o', label=f'Threshold C_theta = {thresh}', color=colors[i])
     plt.errorbar(subset['width'], subset['readout_pos'], yerr=stderr(subset['readout_pos']), color=colors[i])
+
+# plot reference line 1/sqrt(width)
+x = np.linspace(widths.min(), widths.max(), 100)
+y = 1 / np.sqrt(x)
+plt.plot(x, y, label='1/sqrt(width)', color='gray', linestyle='--')
 
 plt.title('Positional error vs domain width')
 plt.xlabel('Domain width [units ~ avg. cell radius]')
