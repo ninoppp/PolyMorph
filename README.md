@@ -4,14 +4,14 @@ Bachelor's thesis project of Nicolas Müller, ETH Zurich.
 
 ## Usage Instructions: Quick Start 
 ```shell
-$ cd PolyMorph
+$ cd PolyMorph/
 $ sh run.sh
 ```
 
 Alternatively a standard makefile is provided:
 
 ```shell
-$ cd PolyMorph
+$ cd PolyMorph/
 $ make
 $ OMP_NUM_THREADS=8 ./polymorph
 ```
