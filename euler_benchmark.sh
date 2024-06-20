@@ -2,11 +2,13 @@
 #SBATCH --job-name=Benchmark      # Job name    (default: sbatch)
 #SBATCH --output=Benchmark-%j.out # Output file (default: slurm-%j.out)
 #SBATCH --error=Benchmark-%j.err  # Error file  (default: slurm-%j.out)
-#SBATCH --ntasks=1                # Number of tasks
+#SBATCH --ntasks=5
+#SBATCH --nodes=5               
+#SBATCH --ntasks-per-node=1 
 #SBATCH --constraint=EPYC_7763    # Select node with CPU
-#SBATCH --cpus-per-task=128         # Number of CPUs per task
-#SBATCH --mem-per-cpu=1024        # Memory per CPU
-#SBATCH --time=03:00:00           # Wall clock time limit
+#SBATCH --cpus-per-task=128
+#SBATCH --mem-per-cpu=1024        
+#SBATCH --time=12:00:00           
 
 module load gcc
 module list
