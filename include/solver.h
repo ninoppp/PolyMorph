@@ -98,7 +98,7 @@ struct Solver {
         Grid<std::vector<double>> unew(Nx, Ny, std::vector<double>(NUM_SPECIES, 0.0));
 
         // Forward Euler with central differences
-        #pragma omp parallel for
+        #pragma omp parallel for collapse(2)
         for (int i = 0; i < Nx; i++) {
             for (int j = 0; j < Ny; j++) {   
                 const std::vector<double> reaction = R(u(i, j), k(i, j));
