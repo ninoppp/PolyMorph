@@ -28,10 +28,10 @@ for i, thresh in enumerate(thresholds):
     plt.plot(subset['cv'], subset['readout_pos'], marker='o', label=f'Threshold C_theta = {thresh}', color=colors[i])
     plt.errorbar(subset['cv'], subset['readout_pos'], yerr=stderr(subset['readout_pos']), color=colors[i])
 
-plt.title('Positional error vs gradient variability CV')
+plt.title('Positional error vs gradient variability')
 plt.xscale('log')
 plt.xlabel('Gradient CV (D,k,p)')
-plt.ylabel('Positional error sigma')
+plt.ylabel('Positional error')
 plt.grid(True)
 plt.legend()
 plt.savefig("positional_error_cv.pdf")
@@ -46,10 +46,10 @@ for i, thresh in enumerate(thresholds):
     plt.plot(grad_cv, readout_pos, marker='o', label='Threshold C_theta = ' + f'{thresh}', color=colors[i])
     plt.fill_between(grad_cv, min, max, alpha=0.2, color=colors[i]) # min and max values as error estimates
 
-plt.title('Readout Position vs Gradient Coefficient-Variation')
+plt.title('Readout position vs gradient variability')
 plt.xscale('log')
 plt.xlabel('Gradient CV (D,k,p)')
-plt.ylabel('Readout Position (distance to source)')
+plt.ylabel('Readout Position / avg. cell radius')
 plt.grid(True)
 plt.legend()
 plt.savefig("readout_position.pdf")
@@ -72,12 +72,12 @@ for i, thresh in enumerate(thresholds):
 
 # plot reference line 1/sqrt(width)
 x = np.linspace(widths.min(), widths.max(), 100)
-y = 1 / np.sqrt(x)
-plt.plot(x, y, label='1/sqrt(width)', color='gray', linestyle='--')
+y = 2 / np.sqrt(x)
+plt.plot(x, y, label='2.0/sqrt(width)', color='gray', linestyle='--')
 
 plt.title('Positional error vs domain width')
-plt.xlabel('Domain width [units ~ avg. cell radius]')
-plt.ylabel('Positional error sigma')
+plt.xlabel('Domain width / avg. cell radius]')
+plt.ylabel('Positional error')
 plt.grid(True)
 plt.legend()
 plt.savefig("positional_error_width.pdf")
