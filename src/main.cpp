@@ -3,7 +3,7 @@
 #include "utils.h"
 
 void default_testrun() {
-    double L = 40;
+    double L = 50;
     Domain domain(-L/2, -L/2, L/2, L/2);
     Ensemble ensemble("ensemble/default.off", domain); 
     Solver solver(domain, dx, Reactions::linearDegradation); // init solver
@@ -18,7 +18,7 @@ void default_testrun() {
             interpolator.scatter();
             solver.step(dt);
             interpolator.gather();
-            domain.step(dt); // only needed if domain is growing/shrinking
+            //domain.step(dt); // only needed if domain is growing/shrinking
         } 
         ensemble.output(f);
         solver.output(f);

@@ -11,3 +11,4 @@ node_id,dx,gridpoints,time_ensemble,time_all,threads
 node_id,dx,gridpoints,time_ensemble,time_all,threads
 0,1.47,1225,71.9583,110.161,16
 0,1.04,2401,59.7113,144.171,16
+0,0.738,4624,62.2165,180.297,16
