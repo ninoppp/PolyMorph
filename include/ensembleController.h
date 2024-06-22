@@ -160,6 +160,16 @@ namespace EnsembleController {
       cell.alpha0 = ensemble.alpha_dist(ensemble.rng);
     }
   }
+
+  // avg number of children. 
+  // only works when calling "gather" before this
+  double get_avg_gridpoints_per_polygon(Ensemble& ensemble) {
+    int sum = 0;
+    for (int p = Nr; p < ensemble.polygons.size(); p++) {
+      sum += ensemble.polygons[p].children.size();
+    }
+    return sum / (ensemble.polygons.size() - Nr);
+  }
 };
 
 #endif
