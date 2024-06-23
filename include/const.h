@@ -63,6 +63,7 @@ constexpr double cutoff_factor = 2.0; // [-] lognormal dists are cutoff at mu*fa
 
 const std::vector<double> chemotaxis_strength = {0}; // force per concentration gradient
 const std::vector<int> chem_affect_flag = {1}; // which cell types to affect with each chem species
+constexpr double domain_bd_stiffness = kr / 2; // [1/T^2] domain boundary stiffness
 
 constexpr int RNG_SEED = 90178009; // random number generator seed
 
