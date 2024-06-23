@@ -112,11 +112,11 @@ void Interpolator::gather() {
   for (auto& cell : ensemble.polygons) {
     cell.children.clear();
   }
+
   for (int i = istart; i < iend; i++) {
     for (int j = jstart; j < jend; j++) {
       if (solver.parent_idx(i, j) >= int(Nr)) { // skip background nodes
-        auto& cell = ensemble.polygons[solver.parent_idx(i, j)]; 
-        cell.children.push_back(Index(i, j)); // cannot parallelize this part
+        ensemble.polygons[solver.parent_idx(i, j)].children.push_back(Index(i, j)); // cannot parallelize this part
       }
     }
   }

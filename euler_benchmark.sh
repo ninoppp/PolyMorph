@@ -1,7 +1,7 @@
 #!/bin/bash
-#SBATCH --job-name=benchmark_typical      # Job name    (default: sbatch)
-#SBATCH --output=benchmark_typical-%j.out # Output file (default: slurm-%j.out)
-#SBATCH --error=benchmark_typical-%j.err  # Error file  (default: slurm-%j.out)
+#SBATCH --job-name=scaling      # Job name    (default: sbatch)
+#SBATCH --output=scaling-%j.out # Output file (default: slurm-%j.out)
+#SBATCH --error=scaling-%j.err  # Error file  (default: slurm-%j.out)
 #SBATCH --ntasks=1
 #SBATCH --nodes=1               
 #SBATCH --ntasks-per-node=1 
@@ -14,10 +14,10 @@ module load gcc
 module list
 
 make clean
-make benchmark_typical
+make scaling
 
 # Run the program for OMP_NUM_THREADS equal to 1, 2, 4, 8, 16, 32, 64, 128
-for ((i=4; i<=5; i++))
+for ((i=0; i<=7; i++))
 do
   OMP_NUM_THREADS=$((2**i))
   echo "Running benchmark with OMP_NUM_THREADS=$OMP_NUM_THREADS"
