@@ -8,7 +8,7 @@
 #SBATCH --constraint=EPYC_7763    # Select node with CPU
 #SBATCH --cpus-per-task=128
 #SBATCH --mem-per-cpu=1024        
-#SBATCH --time=08:00:00           
+#SBATCH --time=16:00:00           
 
 module load gcc
 module list
@@ -17,7 +17,7 @@ make clean
 make scaling
 
 # Run the program for OMP_NUM_THREADS equal to 1, 2, 4, 8, 16, 32, 64, 128
-for ((i=0; i<=7; i++))
+for ((i=2; i<=7; i++))
 do
   OMP_NUM_THREADS=$((2**i))
   echo "Running benchmark with OMP_NUM_THREADS=$OMP_NUM_THREADS"
