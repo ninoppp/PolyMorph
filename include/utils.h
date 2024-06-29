@@ -108,7 +108,7 @@ double sample(std::lognormal_distribution<>& dist, std::mt19937& rng, bool cutof
     double x = dist(rng);   
     int max_tries = 50;
     if (cutoff) {
-        while (x > cutoff_factor*mean) {
+        while (x > dist_cutoff_factor*mean) {
             x = dist(rng);
             if (max_tries-- == 0) {
                 x = mean;
@@ -194,7 +194,7 @@ void write_config(std::string prefix = "") {
         << "Nf=" << Nf << std::endl
         << "Ns=" << Ns << std::endl
         << "Nr=" << Nr << std::endl
-        << "cutoff_factor=" << cutoff_factor << std::endl
+        << "dist_cutoff_factor=" << dist_cutoff_factor << std::endl
         << "chemotaixs_strength=" << to_string(chemotaxis_strength) << std::endl
         << "RNG_SEED=" << RNG_SEED << std::endl
         << "Output::u=" << Output::u << std::endl

@@ -454,9 +454,11 @@ struct Ensemble
         v[i].a.add((polygons[p].vertices[i].r.y > domain.y1) * domain_bd_stiffness, {0, (domain.y1 - polygons[p].vertices[i].r.y)});
 
         // chemotaxis
-        for (int sp = 0; sp < NUM_SPECIES; sp++) {
-          if (chem_affect_flag[sp] == polygons[p].flag) {
-            v[i].a.add(chemotaxis_strength[sp], v[i].grad_u[sp]);
+        if (CHEMOTAXIS) {
+          for (int sp = 0; sp < NUM_SPECIES; sp++) {
+            if (chem_affect_flag[sp] == polygons[p].flag) {
+              v[i].a.add(chemotaxis_strength[sp], v[i].grad_u[sp]);
+            }
           }
         }
       }
