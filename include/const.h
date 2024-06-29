@@ -36,7 +36,7 @@ constexpr double cc = 30; //30; // [1/T] collision damping rate
 constexpr double dt = 1e-4; // [T] time step // default 1e-4
 
 constexpr std::size_t Nf = 100; // number of output frames
-constexpr std::size_t Ns = 1500; // number of time steps between frames // default 1000
+constexpr std::size_t Ns = 1000; // number of time steps between frames // default 1000
 constexpr int Nr = 0; // number of rigid polygons (keep as int or things will break)
 
 constexpr double drmax = h + sh + ss; // maximum interaction distance
@@ -44,7 +44,7 @@ constexpr double drmax = h + sh + ss; // maximum interaction distance
 // Diffusion parameters
 constexpr double dx = 0.3; // [L] grid spacing for solver
 constexpr double anisotropy = 1.0; // [-] diffusion anisotropy (default 1)
-constexpr bool ADVECTION_DILUTION = false; // calculate velocity field for advection-dilution terms
+constexpr bool ADVECTION_DILUTION = true; // calculate velocity field for advection-dilution terms
 constexpr bool CHEMOTAXIS = true; // enable chemotaxis. slightly performance enhancing if disabled
 constexpr bool RESIZE_GRID = false; // resize grid if domain changes/grows
 constexpr int NUM_SPECIES = 1; // [-] number of diffusable species (size of D, k, p)
@@ -79,6 +79,7 @@ namespace Output {
     constexpr bool threshold = true; // threshold
     constexpr bool flag = true; // boolean polygon flag 
     constexpr bool velocity = true; // velocity field
+    constexpr bool grad_u = true; // concentration gradient
 }; 
 
 #endif

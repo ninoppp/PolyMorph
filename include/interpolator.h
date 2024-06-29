@@ -217,24 +217,19 @@ Point Interpolator::bilinear_vel_interpolation(int i, int j) {
 
 Point Interpolator::IDW_vel_interpolation(int i, int j, double cutoff_radius) {
   int cutoff_index = cutoff_radius / solver.dx;
-  std::vector<Point> velocities;
-  std::vector<double> weights;
+  double total_weight = 0;
+  Point velocity = Point(0, 0);
   for (int ii = i - cutoff_index; ii <= i + cutoff_index; ii++) {
     for (int jj = j - cutoff_index; jj <= j + cutoff_index; jj++) {
       if (ii >= 0 && ii < solver.Nx && jj >= 0 && jj < solver.Ny && solver.parent_idx(ii, jj) >= 0) {
-        velocities.push_back(solver.velocity(ii, jj));
-        double distance = (Point(ii, jj) - Point(i, j)).length();
-        weights.push_back(1.0 / (distance + 1e-6 * h)); // avoid division by zero
+        double distance = (i - ii) * (i - ii) + (j - jj) * (j - jj);
+        double weight = 1.0 / (distance + 1e-6 * h); // avoid division by zero
+        velocity.add(weight, solver.velocity(ii, jj));
+        total_weight += weight;
       }
     }
   }
-  Point vel = Point(0, 0);
-  double total_weight = 0;
-  for (int k = 0; k < velocities.size(); k++) {
-    vel.add(weights[k], velocities[k]);
-    total_weight += weights[k];
-  }
-  return 1.0/total_weight * vel;
+  return 1.0/total_weight * velocity;
 }
 
 void Interpolator::apply_vel_boundary_conditions() {

@@ -70,7 +70,7 @@ std::string Grid<std::vector<double>>::to_vtk(std::string name) {
     return xml.str();
 }
 
-template<> // for Point-vector grids
+template<> // for Point grids
 std::string Grid<Point>::to_vtk(std::string name) {
     std::stringstream xml;
     xml << "<DataArray type=\"Float64\" Name=\"" << name 

@@ -3,7 +3,7 @@
 #include "utils.h"
 
 void velocity_testrun() {
-    assert(ADVECTION_DILUTION);
+    //assert(ADVECTION_DILUTION);
     double L = 50;
     Domain domain(-L/2, -L/2, L/2, L/2);
     //domain.set_growth_rate(10, 0);
