@@ -6,9 +6,9 @@ import numpy as np
 df = pd.read_csv('scaling.csv')
 resolutions = df['dx'].unique()
 
-df.sort_values(['node_id', 'dx', 'gridpoints', 'threads'], ascending=[True, False, True, True], inplace=True)
-df.to_csv('scaling.csv', index=False)
-exit()
+#df.sort_values(['node_id', 'dx', 'gridpoints', 'threads'], ascending=[True, False, True, True], inplace=True)
+#df.to_csv('scaling.csv', index=False)
+#exit()
 viridis = colormaps.get_cmap('viridis')  # Get the viridis colormap
 colors = viridis(np.linspace(0, 1, resolutions.size))
 
@@ -23,7 +23,7 @@ for i, dx in enumerate(resolutions):
 plt.xlabel('Threads')
 plt.ylabel('Time (s)')
 plt.xscale('log', base=2)
-plt.yscale('log', base=10)
+#plt.yscale('log', base=10)
 plt.title('Scaling')
 plt.legend()
 plt.grid()
