@@ -26,10 +26,16 @@ struct Interpolator {
   std::size_t find_parent(Point grid_point);
 
   // returns the interpolated velocity at a grid point inside a parent polygon
-  Point interior_velocity(const Point& grid_point, const int parent_idx);
+  Point interior_vel_interpolation(const Point& grid_point, const int parent_idx);
 
   // bilinear interpolation (partly extrapolation) of velocity field at background nodes
   Point bilinear_vel_interpolation(int i, int j);
+
+  // inverse distance weighting interpolation of velocity field at background nodes
+  Point IDW_vel_interpolation(int i, int j, double cutoff_radius);
+
+  // take growth of domain and use as velocity boundary conditions
+  void apply_vel_boundary_conditions(); 
 };
 
 void Interpolator::scatter() {
@@ -48,28 +54,33 @@ void Interpolator::scatter() {
   assert(solver.domain.y0 + jend * solver.dx <= ensemble.y1);
   #endif
 
+  if (ADVECTION_DILUTION) apply_vel_boundary_conditions();
+
   #pragma omp parallel for
   for (int i = istart; i < iend; i++) {
     for (int j = jstart; j < jend; j++) { 
-      // spatial coordinates of grid point
       const double x = solver.domain.x0 + i * solver.dx;
       const double y = solver.domain.y0 + j * solver.dx;
       const Point grid_point(x, y);
       // check if still the same parent (ignore rigid)
-      if (prev_idx(i, j) >= int(Nr) && prev_idx(i, j) < ensemble.polygons.size() && ensemble.polygons[prev_idx(i, j)].contains(grid_point)) {
+      if (prev_idx(i, j) >= Nr && prev_idx(i, j) < ensemble.polygons.size() && ensemble.polygons[prev_idx(i, j)].contains(grid_point)) {
         new_idx(i, j) = prev_idx(i, j);
       } 
       else {
         new_idx(i, j) = find_parent(grid_point);
       }
-      // scatter values
-      if (new_idx(i, j) < int(Nr)) { // is background node
+      // scatter values ToDo: benchmark and probably remove this
+      if (new_idx(i, j) < Nr) { // is background node
         solver.D(i, j) = D0; // background diffusion
         solver.k(i, j) = k0; // background degradation
         solver.p(i, j) = p0; // background production (should be zero)
-        // set velocity to zero
+        // interpolate velocity
         if (ADVECTION_DILUTION) {
-          solver.velocity(i, j) = Point(0, 0);
+          if (new_idx(i, j) > 0) { // rigid polygon
+            solver.velocity(i, j) = Point(0, 0);
+          } else { // true background
+            solver.velocity(i, j) = IDW_vel_interpolation(i, j, velocity_cutoff_radius);
+          }
         }
       } else { 
         solver.D(i, j) = ensemble.polygons[new_idx(i, j)].D;
@@ -77,34 +88,12 @@ void Interpolator::scatter() {
         solver.p(i, j) = ensemble.polygons[new_idx(i, j)].p;
         // interpolate velocity
         if (ADVECTION_DILUTION) {
-          solver.velocity(i, j) = interior_velocity(grid_point, new_idx(i, j));
+          solver.velocity(i, j) = interior_vel_interpolation(grid_point, new_idx(i, j));
         }
       }
     }
   }
-  solver.parent_idx = new_idx; 
-
-  // interpolate remaining velocity field
-  if (ADVECTION_DILUTION) {
-    // set boundary to domain velocity
-    for (int i = 0; i < solver.Nx; i++) {
-      solver.velocity(i, 0) = solver.domain.growth_rate[3] * Point(0, -1); // south
-      solver.velocity(i, solver.Ny - 1) = solver.domain.growth_rate[1] * Point(0, 1); // north
-    }
-    for (int j = 0; j < solver.Ny; j++) {
-      solver.velocity(0, j) = solver.domain.growth_rate[2] * Point(-1, 0); // west
-      solver.velocity(solver.Nx - 1, j) = solver.domain.growth_rate[0] * Point(1, 0); // east
-    }
-    // interior points
-    #pragma omp parallel for
-    for (int i = 1; i < solver.Nx - 1; i++) {
-      for (int j = 1; j < solver.Ny - 1; j++) {
-        if (solver.parent_idx(i, j) < 0) { // only treat real background nodes. No velocity in rigid polygons
-          solver.velocity(i, j) = bilinear_vel_interpolation(i, j);
-        } 
-      }
-    }
-  }
+  solver.parent_idx = new_idx; // ToDo: could make this in place
 }
 
 void Interpolator::gather() {
@@ -171,7 +160,7 @@ std::size_t Interpolator::find_parent(Point grid_point) {
   return -2; // background node (reached boundary of ensemble box)
 }
 
-Point Interpolator::interior_velocity(const Point& grid_point, const int parent_idx) {
+Point Interpolator::interior_vel_interpolation(const Point& grid_point, const int parent_idx) {
   const Polygon& parent = ensemble.polygons[parent_idx];
   std::vector<double> weights;
   double total_weight = 0;
@@ -224,6 +213,41 @@ Point Interpolator::bilinear_vel_interpolation(int i, int j) {
             + w_down * solver.velocity(i, j_down) 
             + w_up * solver.velocity(i, j_up);
   return vel;
+}
+
+Point Interpolator::IDW_vel_interpolation(int i, int j, double cutoff_radius) {
+  int cutoff_index = cutoff_radius / solver.dx;
+  std::vector<Point> velocities;
+  std::vector<double> weights;
+  for (int ii = i - cutoff_index; ii <= i + cutoff_index; ii++) {
+    for (int jj = j - cutoff_index; jj <= j + cutoff_index; jj++) {
+      if (ii >= 0 && ii < solver.Nx && jj >= 0 && jj < solver.Ny && solver.parent_idx(ii, jj) >= 0) {
+        velocities.push_back(solver.velocity(ii, jj));
+        double distance = (Point(ii, jj) - Point(i, j)).length();
+        weights.push_back(1.0 / (distance + 1e-6 * h)); // avoid division by zero
+      }
+    }
+  }
+  Point vel = Point(0, 0);
+  double total_weight = 0;
+  for (int k = 0; k < velocities.size(); k++) {
+    vel.add(weights[k], velocities[k]);
+    total_weight += weights[k];
+  }
+  return 1.0/total_weight * vel;
+}
+
+void Interpolator::apply_vel_boundary_conditions() {
+  // set boundary to domain velocity
+  for (int i = 0; i < solver.Nx; i++) {
+    solver.velocity(i, 0) = solver.domain.growth_rate[3] * Point(0, -1); // south
+    solver.velocity(i, solver.Ny - 1) = solver.domain.growth_rate[1] * Point(0, 1); // north
+  }
+  for (int j = 0; j < solver.Ny; j++) {
+    solver.velocity(0, j) = solver.domain.growth_rate[2] * Point(-1, 0); // west
+    solver.velocity(solver.Nx - 1, j) = solver.domain.growth_rate[0] * Point(1, 0); // east
+  }
+  
 }
 
 #endif
