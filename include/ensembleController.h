@@ -79,6 +79,8 @@ namespace EnsembleController {
   void stop_growth(Ensemble& ensemble) {
     for (int p = Nr; p < ensemble.polygons.size(); p++) {
       ensemble.polygons[p].alpha = 0;
+      ensemble.polygons[p].alpha0 = 0;
+      ensemble.polygons[p].Amax = MAXFLOAT; 
     }
   }
 
