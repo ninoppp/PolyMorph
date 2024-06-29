@@ -137,11 +137,13 @@ void Interpolator::gather() {
       }
     } 
     // store gradient at vertices
-    for (auto& vertex : cell.vertices) {
-      const int i = std::round((vertex.r.x - solver.domain.x0) / solver.dx);
-      const int j = std::round((vertex.r.y - solver.domain.y0) / solver.dx);
-      if (i >= 0 && i < solver.Nx && j >= 0 && j < solver.Ny) {
-        vertex.grad_u = solver.grad_u(i, j);
+    if (CHEMOTAXIS) {
+      for (auto& vertex : cell.vertices) {
+        const int i = std::round((vertex.r.x - solver.domain.x0) / solver.dx);
+        const int j = std::round((vertex.r.y - solver.domain.y0) / solver.dx);
+        if (i >= 0 && i < solver.Nx && j >= 0 && j < solver.Ny) {
+          vertex.grad_u = solver.grad_u(i, j);
+        }
       }
     }
   }
