@@ -33,9 +33,6 @@ struct Interpolator {
 
   // inverse distance weighting interpolation of velocity field at background nodes
   Point IDW_vel_interpolation(int i, int j, double cutoff_radius);
-
-  // take growth of domain and use as velocity boundary conditions
-  void apply_vel_boundary_conditions(); 
 };
 
 void Interpolator::scatter() {
@@ -54,46 +51,62 @@ void Interpolator::scatter() {
   assert(solver.domain.y0 + jend * solver.dx <= ensemble.y1);
   #endif
 
-  if (ADVECTION_DILUTION) apply_vel_boundary_conditions();
-
-  #pragma omp parallel for
-  for (int i = istart; i < iend; i++) {
-    for (int j = jstart; j < jend; j++) { 
-      const double x = solver.domain.x0 + i * solver.dx;
-      const double y = solver.domain.y0 + j * solver.dx;
-      const Point grid_point(x, y);
-      // check if still the same parent (ignore rigid)
-      if (prev_idx(i, j) >= Nr && prev_idx(i, j) < ensemble.polygons.size() && ensemble.polygons[prev_idx(i, j)].contains(grid_point)) {
-        new_idx(i, j) = prev_idx(i, j);
-      } 
-      else {
-        new_idx(i, j) = find_parent(grid_point);
-      }
-      // scatter values ToDo: benchmark and probably remove this
-      if (new_idx(i, j) < Nr) { // is background node
-        solver.D(i, j) = D0; // background diffusion
-        solver.k(i, j) = k0; // background degradation
-        solver.p(i, j) = p0; // background production (should be zero)
-        // interpolate velocity
-        if (ADVECTION_DILUTION) {
-          if (new_idx(i, j) > 0) { // rigid polygon
-            solver.velocity(i, j) = Point(0, 0);
-          } else { // true background
-            solver.velocity(i, j) = IDW_vel_interpolation(i, j, velocity_cutoff_radius);
+  #pragma omp parallel
+  {
+    #pragma omp for collapse(2)
+    for (int i = istart; i < iend; i++) {
+      for (int j = jstart; j < jend; j++) { 
+        const double x = solver.domain.x0 + i * solver.dx;
+        const double y = solver.domain.y0 + j * solver.dx;
+        const Point grid_point(x, y);
+        // check if still the same parent (ignore rigid)
+        if (prev_idx(i, j) >= Nr && prev_idx(i, j) < ensemble.polygons.size() && ensemble.polygons[prev_idx(i, j)].contains(grid_point)) {
+          new_idx(i, j) = prev_idx(i, j);
+        } 
+        else {
+          new_idx(i, j) = find_parent(grid_point);
+        }
+        // scatter values ToDo: benchmark and probably remove this
+        if (new_idx(i, j) < Nr) { // is background node
+          solver.D(i, j) = D0; // background diffusion
+          solver.k(i, j) = k0; // background degradation
+          solver.p(i, j) = p0; // background production (should be zero)
+        } else { 
+          solver.D(i, j) = ensemble.polygons[new_idx(i, j)].D;
+          solver.k(i, j) = ensemble.polygons[new_idx(i, j)].k;
+          solver.p(i, j) = ensemble.polygons[new_idx(i, j)].p;
+          if (ADVECTION_DILUTION) {
+            solver.velocity(i, j) = interior_vel_interpolation(grid_point, new_idx(i, j));
           }
         }
-      } else { 
-        solver.D(i, j) = ensemble.polygons[new_idx(i, j)].D;
-        solver.k(i, j) = ensemble.polygons[new_idx(i, j)].k;
-        solver.p(i, j) = ensemble.polygons[new_idx(i, j)].p;
-        // interpolate velocity
-        if (ADVECTION_DILUTION) {
-          solver.velocity(i, j) = interior_vel_interpolation(grid_point, new_idx(i, j));
+      }
+    }
+    solver.parent_idx = new_idx; // ToDo: could make this in place
+
+    // interpolate remaining velocity field
+    if (ADVECTION_DILUTION) {
+      // set boundary to domain velocity
+      #pragma omp for nowait
+      for (int i = 0; i < solver.Nx; i++) {
+        solver.velocity(i, 0) = solver.domain.growth_rate[3] * Point(0, -1); // south
+        solver.velocity(i, solver.Ny - 1) = solver.domain.growth_rate[1] * Point(0, 1); // north
+      }
+      #pragma omp for nowait
+      for (int j = 0; j < solver.Ny; j++) {
+        solver.velocity(0, j) = solver.domain.growth_rate[2] * Point(-1, 0); // west
+        solver.velocity(solver.Nx - 1, j) = solver.domain.growth_rate[0] * Point(1, 0); // east
+      }
+      // background nodes
+      #pragma omp for collapse(2)
+      for (int i = 1; i < solver.Nx - 1; i++) {
+        for (int j = 1; j < solver.Ny - 1; j++) {
+          if (solver.parent_idx(i, j) < 0) { // only treat real background nodes. No velocity in rigid polygons
+            solver.velocity(i, j) = IDW_vel_interpolation(i, j, velocity_cutoff_radius);
+          } 
         }
       }
     }
   }
-  solver.parent_idx = new_idx; // ToDo: could make this in place
 }
 
 void Interpolator::gather() {
@@ -217,32 +230,25 @@ Point Interpolator::bilinear_vel_interpolation(int i, int j) {
 
 Point Interpolator::IDW_vel_interpolation(int i, int j, double cutoff_radius) {
   int cutoff_index = cutoff_radius / solver.dx;
-  double total_weight = 0;
+  double total_weight = 1e-6 * h; // avoid division by zero
   Point velocity = Point(0, 0);
   for (int ii = i - cutoff_index; ii <= i + cutoff_index; ii++) {
     for (int jj = j - cutoff_index; jj <= j + cutoff_index; jj++) {
-      if (ii >= 0 && ii < solver.Nx && jj >= 0 && jj < solver.Ny && solver.parent_idx(ii, jj) >= 0) {
-        double distance = (i - ii) * (i - ii) + (j - jj) * (j - jj);
-        double weight = 1.0 / (distance + 1e-6 * h); // avoid division by zero
-        velocity.add(weight, solver.velocity(ii, jj));
-        total_weight += weight;
+      double distance2 = (i - ii) * (i - ii) + (j - jj) * (j - jj);
+      // skip nodes outside cutoff radius
+      if (distance2 > cutoff_index * cutoff_index) continue; 
+      // ensure indices are within bounds
+      if (ii >= 0 && ii < solver.Nx && jj >= 0 && jj < solver.Ny) {
+        // use nodes inside polygon and boundary nodes
+        if (solver.parent_idx(ii, jj) >= 0 || ii == 0 || ii == solver.Nx-1 || jj == 0 || jj == solver.Ny-1) { 
+          double weight = 1.0 / (distance2 + 1e-6 * h); // avoid division by zero
+          velocity.add(weight, solver.velocity(ii, jj)); 
+          total_weight += weight;
+        }
       }
     }
   }
-  return 1.0/total_weight * velocity;
-}
-
-void Interpolator::apply_vel_boundary_conditions() {
-  // set boundary to domain velocity
-  for (int i = 0; i < solver.Nx; i++) {
-    solver.velocity(i, 0) = solver.domain.growth_rate[3] * Point(0, -1); // south
-    solver.velocity(i, solver.Ny - 1) = solver.domain.growth_rate[1] * Point(0, 1); // north
-  }
-  for (int j = 0; j < solver.Ny; j++) {
-    solver.velocity(0, j) = solver.domain.growth_rate[2] * Point(-1, 0); // west
-    solver.velocity(solver.Nx - 1, j) = solver.domain.growth_rate[0] * Point(1, 0); // east
-  }
-  
+  return 1.0 / total_weight * velocity;
 }
 
 #endif
