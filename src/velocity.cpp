@@ -6,7 +6,7 @@ void velocity_testrun() {
     assert(ADVECTION_DILUTION);
     double L = 25;
     Domain domain(-L/2, -L/2, L/2, L/2);
-    domain.set_growth_rate(5, 0);
+    //domain.set_growth_rate(5, 0);
     Ensemble ensemble("ensemble/tissue_127.off", domain); 
     Solver solver(domain, dx, Reactions::linearDegradation); // init solver
     //solver.boundary.west = {BoundaryCondition::Type::Dirichlet, 0};
