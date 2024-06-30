@@ -26,6 +26,7 @@ double infinity_norm(std::vector<double> &solution, double dx) {
     return error;
 }
 
+// takes the middle row of the long grid and stores it in a vector for comparison
 std::vector<double> grid_to_vec(Grid<std::vector<double>>& grid) {
     std::vector<double> vec;
     for (int i = 0; i < grid.sizeX(); i++) {
@@ -39,21 +40,21 @@ int main(int argc, char* argv[]) {
     write_config("convergence");
 
     std::ofstream file("convergence.csv");
-    file << "dx,abs_err" << std::endl;
+    file << "dx,rmse,inf_norm" << std::endl;
 
-    std::ofstream file_solution("solution.csv");
-    file_solution << "t,x,analytic,simulated" << std::endl;
+    //std::ofstream file_solution("solution.csv");
+    //file_solution << "dx,t,x,analytic,simulated" << std::endl;
     
-    double L = 100;
-    double W = 3;
-    Domain domain(-L/2, -W/2, L/2, W/2);
-    int num_steps = 1e5;
     double dt = 1e-4; // maybe make smaller
+    double T = 10; // final time
+    int num_steps = T / dt;
 
-    double DX[] = {0.3};// {4.0, 3.0, 2.0, 1.0, 0.75, 0.5, 0.3, 0.25, 0.125, 0.0625};
+    double DX[] = {0.4};// {5.0, 4.0, 3.0, 2.0, 1.5, 1.0, 0.75, 0.5, 0.4, 0.3, 0.25, 0.2, 0.15, 0.125, 0.1};
     
     for (double dx : DX) {
-        
+        double L = 300; // long enough to model x -> infinity
+        double W = 2*dx; // 3 nodes wide
+        Domain domain (-L/2, -W/2, L/2, W/2);
         Solver solver(domain, dx, Reactions::linearDegradation); // init solver
         solver.boundary.west = {BoundaryCondition::Type::Dirichlet, C0};
         solver.boundary.east = {BoundaryCondition::Type::Dirichlet, 0};
@@ -61,15 +62,21 @@ int main(int argc, char* argv[]) {
         for (int s = 0; s < num_steps; ++s) {
             solver.step(dt);
             if (s % 1000 == 0) {
+                /*for (int i = 0; i < solver.Nx; i++) {
+                    file_solution << dx << "," << s * dt << "," << i * dx << "," << analytic_solution(i * dx) << "," << sol[i] << std::endl;
+                }*/
                 auto sol = grid_to_vec(solver.u);
-                for (int i = 0; i < solver.Nx; i++) {
-                    file_solution << s * dt << "," << i * dx << "," << analytic_solution(i * dx) << "," << sol[i] << std::endl;
-                }
-                double error = RMSE(sol, dx);
-                std::cout << "dx=" << dx << " step=" << s << " RMSE=" << error << std::endl;
-                file << dx << "," << error << std::endl;
-            }
+                double rmse = RMSE(sol, dx);
+                double inf_norm = infinity_norm(sol, dx);
+                std::stringstream ss;
+                ss << "dx=" << dx << " t=" << s * dt << " step=" << s << " RMSE=" << rmse << " inf_norm=" << inf_norm;
+                LOG(ss.str());
+            }   
         }
+        auto sol = grid_to_vec(solver.u);
+        double rmse = RMSE(sol, dx);
+        double inf_norm = infinity_norm(sol, dx);
+        file << dx << "," << rmse << "," << inf_norm << std::endl;
     }
 
     file.close();
