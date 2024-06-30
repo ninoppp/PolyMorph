@@ -8,8 +8,13 @@
 #include <random>
 #include <sys/time.h>
 #include <omp.h>
+#include <ctime>
+#include <iomanip>
 
 #include "const.h"
+
+// Macro to include function name in log messages
+#define LOG(message) log(message, __func__)
 
 // easier to read than a pair
 struct Index {
@@ -29,6 +34,14 @@ double walltime(){
         return 0;
     }
     return (double)time.tv_sec + (double)time.tv_usec * .000001;
+}
+
+std::string getCurrentDateTime() {
+    auto time = std::time(nullptr);
+    auto loc_time = *std::localtime(&time);
+    std::ostringstream oss;
+    oss << std::put_time(&loc_time, "%Y-%m-%d %H:%M:%S");
+    return oss.str();
 }
 
 void validate_parameters() {
@@ -130,12 +143,25 @@ std::vector<double> sample(std::vector<std::lognormal_distribution<>>& dists, st
     return samples;
 }
 
+// write log message to file
+void log(const std::string& message, const std::string& func) {
+    const std::string function = "[" + func + "]";
+    std::ofstream out; 
+    try {
+        out.open("log.txt", std::ios::app);
+        out << getCurrentDateTime() << "  " << function << "  " << message << std::endl;
+        out.close();
+    } catch (const std::exception& e) {
+        std::cerr << "Error: Could not open log file: " << e.what() << std::endl;
+    }
+}
+
 // writes a nice welcome message to console to lift my mood
 void welcome() {
     std::cout << "--------------------------" << std::endl
             << "|  Welcome to PolyMorph  |" << std::endl
             << "--------------------------" << std::endl;
-    std::cout << "simulation started at " << __DATE__ << ", " << __TIME__ << std::endl;
+    std::cout << "simulation started at " << getCurrentDateTime() << std::endl;
     std::cout << "max threads = " << omp_get_max_threads() << std::endl;
 }
 

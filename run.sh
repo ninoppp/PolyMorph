@@ -1,19 +1,19 @@
 #!/bin/bash
 
 #output="./out"
-output="/mnt/c/Users/muell/Desktop/PolymorphOutput" # nico or muell
+output="/mnt/c/Users/nico/Desktop/PolymorphOutput" # nico or muell
 OMP_NUM_THREADS=8
 
 move_files() {
     echo "moving output files to folder ..."
     local timestamp=$(date +%Y-%m-%d_%H-%M)
     mkdir $output/$timestamp
-    mv *.vtp *.vts *.cfg "$output/$timestamp/"
+    mv *.vtp *.vts *.cfg log.txt "$output/$timestamp/"
 }
 
 cleanup_files() {
     echo "cleaning up leftover output files ..."
-    rm *.vtp *.vts *.cfg
+    rm *.vtp *.vts *.cfg log.txt
     make clean
 }
 
