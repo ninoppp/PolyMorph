@@ -18,17 +18,17 @@ int main(int argc, char* argv[]) {
     file << "threshold,grad_cv,seed,readout_pos,prec_zone_width,time,num_threads" << std::endl;
     
     Domain domain(-30, -15, 30, 15);
-    double cv[] = {0.01, 0.03, 0.07,
+    double cv[] = {1.0, 3.0, 5.0, 10}; /*{0.01, 0.03, 0.07,
                     0.1, 0.3, 0.5, 0.7, 
                     1.0, 3.0, 5.0, 7.0, 
-                    10};
+                    10};*/
 
     //omp_set_nested(1);
     omp_set_dynamic(0);
 
     #pragma omp parallel for collapse(2) num_threads(120) // 120 calculations per node. 1200 total
-    for (int i = 0; i < 12; i++) { // 12 cv values
-        for (int seed = nodeID*10; seed < (nodeID+1)*10; seed++) { // 10 seeds
+    for (int i = 0; i < 4; i++) { // 12 cv values TODO revert back
+        for (int seed = nodeID*30; seed < (nodeID+1)*30; seed++) { // 10 seeds
             
             double grad_cv = cv[i];
             

@@ -1,21 +1,22 @@
 #!/bin/bash
-#SBATCH --job-name=vel     # Job name    (default: sbatch)
-#SBATCH --output=vel-%j.out # Output file (default: slurm-%j.out)
-#SBATCH --error=vel-%j.err  # Error file  (default: slurm-%j.out)
+#SBATCH --job-name=poserr_cv     # Job name    (default: sbatch)
+#SBATCH --output=poserr_cv-%j.out # Output file (default: slurm-%j.out)
+#SBATCH --error=poserr_cv-%j.err  # Error file  (default: slurm-%j.out)
 #SBATCH --ntasks=1
 #SBATCH --nodes=1               
 #SBATCH --ntasks-per-node=1        
-#SBATCH --cpus-per-task=32       
-#SBATCH --mem-per-cpu=2048        
-#SBATCH --time=00:30:00     
+#SBATCH --cpus-per-task=120       
+#SBATCH --mem-per-cpu=1024        
+#SBATCH --time=08:00:00     
 
+module load stack
 module load gcc
 module list
 
 make clean
-make velocity
+make poserr_cv
 
-export OMP_NUM_THREADS=32
+export OMP_NUM_THREADS=120
 
 echo "running job in parallel with $OMP_NUM_THREADS threads... "
 srun ./polymorph
