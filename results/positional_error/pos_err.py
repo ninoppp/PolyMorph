@@ -15,7 +15,7 @@ viridis = colormaps.get_cmap('viridis')  # Get the viridis colormap
 
 # --- cv ---
 # positional error
-data = pd.read_csv('data/positional_error_cv.csv')
+data = pd.read_csv('data/positional_error_cv_high.csv')
 data['readout_pos'] = data['readout_pos'] + pos_offset
 grad_cv = data['cv'].unique()
 thresholds = data['threshold'].unique()
