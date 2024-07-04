@@ -153,7 +153,7 @@ namespace EnsembleController {
     for (int p = 0; p < ensemble.polygons.size(); p++) {
       auto& cell = ensemble.polygons[p];
       // vectors
-      cell.D = sample(ensemble.D_dist, ensemble.rng);
+      cell.D = sample(ensemble.D_dist, ensemble.rng, true);
       cell.p = sample(ensemble.p_dist, ensemble.rng);
       cell.k = sample(ensemble.k_dist, ensemble.rng);
       cell.threshold = sample(ensemble.threshold_dist, ensemble.rng);
