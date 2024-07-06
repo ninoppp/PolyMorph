@@ -43,5 +43,5 @@ int main(int argc, char* argv[]) {
   welcome();
   validate_parameters();
   write_config();
-  default_testrun();
+  //default_testrun();
 }
