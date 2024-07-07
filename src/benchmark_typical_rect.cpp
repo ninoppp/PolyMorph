@@ -32,7 +32,7 @@ int main (int argc, char *argv[]) {
                 Ensemble ensemble("ensemble/tissues_varwidth/30_0.off", domain); 
                 Solver solver(domain, dx, Reactions::linearDegradation); // init solver
                 Interpolator interpolator(ensemble, solver);
-                ensemble.is_producing = [](const Polygon& p) { return std::vector<bool> {p.vertices[0].p == Nr}; };
+                ensemble.is_producing = [domain](const Polygon& p) { return std::vector<bool> {p.midpoint().x < domain.x0 + 10}; };
 
                 double start = walltime();
                 for (std::size_t f = 1; f <= Nf; ++f) {
@@ -46,11 +46,11 @@ int main (int argc, char *argv[]) {
             }
 
             { // ensemble + solver + interpolation
-                Domain domain(-L/2, -L/2, L/2, L/2);
-                Ensemble ensemble("ensemble/default.off", domain); 
+                Domain domain(-L/2, -W/2, L/2, W/2);
+                Ensemble ensemble("ensemble/tissues_varwidth/30_0.off", domain); 
                 Solver solver(domain, dx, Reactions::linearDegradation); // init solver
                 Interpolator interpolator(ensemble, solver);
-                ensemble.is_producing = [](const Polygon& p) { return std::vector<bool> {p.vertices[0].p == Nr}; };
+                ensemble.is_producing = [domain](const Polygon& p) { return std::vector<bool> {p.midpoint().x < domain.x0 + 10}; };
 
                 double start = walltime();
                 for (std::size_t f = 1; f <= Nf; ++f) {
