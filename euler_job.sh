@@ -1,13 +1,14 @@
 #!/bin/bash
-#SBATCH --job-name=typ_rect     # Job name    (default: sbatch)
-#SBATCH --output=typ_rect-%j.out # Output file (default: slurm-%j.out)
-#SBATCH --error=typ_rect-%j.err  # Error file  (default: slurm-%j.out)
-#SBATCH --ntasks=10
-#SBATCH --nodes=10               
+#SBATCH --job-name=bench_typ     # Job name    (default: sbatch)
+#SBATCH --output=bench_typ-%j.out # Output file (default: slurm-%j.out)
+#SBATCH --error=bench_typ-%j.err  # Error file  (default: slurm-%j.out)
+#SBATCH --ntasks=1
+#SBATCH --nodes=1               
 #SBATCH --ntasks-per-node=1        
 #SBATCH --cpus-per-task=8       
 #SBATCH --mem-per-cpu=1024        
-#SBATCH --time=08:00:00     
+#SBATCH --time=08:00:00    
+#SBATCH --constraint=EPYC_7763    # Select node with CPU
 
 module load stack
 module load gcc

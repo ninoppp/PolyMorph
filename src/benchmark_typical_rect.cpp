@@ -14,12 +14,12 @@ int main (int argc, char *argv[]) {
     const int nodeID = std::atoi(nodeID_str);
     const double L = 60;
     const double W = 30;
-    const double DX[] = {1.47, 1.04, 0.738, 0.522, 0.369, 0.301, 0.261}; // specifc number due to nodes per polygon estimation
-    const int repetitions = 10;
+    const double DX[] = {0.2}; //{1.47, 1.04, 0.738, 0.522, 0.369, 0.301, 0.261}; // specifc number due to nodes per polygon estimation
+    const int repetitions = 30;
     write_config();
 
     // setup output
-    std::ofstream file("benchmark_typical_rect_" + std::to_string(nodeID) + ".csv", std::ios::app);
+    std::ofstream file("benchmark_typical_rect_02_" + std::to_string(nodeID) + ".csv", std::ios::app);
     file << "node_id,dx,gridpoints,time_ensemble,time_all,threads" << std::endl;
     for (int r = 0; r < repetitions; ++r) {
         for (double dx : DX) {
