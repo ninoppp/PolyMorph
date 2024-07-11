@@ -22,7 +22,7 @@ for i, dx in enumerate(resolutions):
     df_dx.reset_index(drop=True, inplace=True)
     df_dx.loc[:, 'speedup'] = df_dx['time_all'][0] / df_dx['time_all']
     speedup = df_dx.groupby('threads')['speedup'].mean()
-    plt.plot(threads, speedup, label=f'dx={dx}', marker='o', color=colors[i])
+    plt.plot(threads, speedup, label=f'Δx={dx}', marker='o', color=colors[i])
     #plt.errorbar(df_dx['threads'].unique(), speedup, yerr=speedup.std(), fmt='o', capsize=5, color=colors[i])
     #T0 = df_dx['time_all'][1]
     #speedup = T0 / df_dx['time_all']

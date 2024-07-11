@@ -23,7 +23,7 @@ df = df.groupby('polygons').mean().reset_index()
 df.plot(x='polygons', y=['ensemble', 'solver', 'scatter', 'gather'], ax=ax, marker='o', color=colors)
 plt.xlabel('Number of Polygons')
 plt.ylabel('Runtime (s)')
-plt.title('Runtime of Ensemble, Solver, Scatter, Gather')
+#plt.title('Runtime of Ensemble, Solver, Scatter, Gather')
 plt.savefig('benchmark_rect_polygons.pdf')
 
 
@@ -40,8 +40,8 @@ df['ensemble'] /= df['ensemble'][0]
 df.plot(x='gridpoints', y=['ensemble', 'solver', 'scatter', 'gather'], ax=ax, marker='o', color=colors)
 
 plt.xlabel('Number of grid points')
-plt.ylabel('Relative increase in runtime (T / T0)')
+plt.ylabel('Relative increase in runtime T / T0')
 plt.xscale('log')
 plt.yscale('log')
-plt.title('Runtime vs. number of grid points')
+#plt.title('Runtime vs. number of grid points')
 plt.savefig('benchmark_rect_gridpoints.pdf')

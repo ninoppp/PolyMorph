@@ -5,22 +5,21 @@ import numpy as np
 
 # area in rect tissue = 1.348
 # gridpoints per cell = 1.348 / dx^2
-cell_area = 1.348
-
+cell_area = 1.348 # dense tissue simulation
 viridis = colormaps.get_cmap('viridis')
 colors = viridis(np.linspace(0, 1, 4))
-data = pd.read_csv('benchmark_rect_sorted.csv')
 
-df = data[data['width'] == 30]
+df = pd.read_csv('benchmark_typical_rect.csv')
+df['ratio'] = df['time_all']/df['time_ensemble']
+min = df.groupby('dx')['ratio'].min()
+max = df.groupby('dx')['ratio'].max()
+stddev = df.groupby('dx').std()
 df = df.groupby('dx').mean()
-#drop dx=0.125
-#df = df.drop(0.125)
-df['ratio'] = df['all']/df['ensemble']
-
-print(df)
 
 plt.figure()
 plt.plot(cell_area / (df.index**2), df['ratio'], marker='o', color=colors[0])
+plt.errorbar(cell_area / df.index**2, df['ratio'], yerr=stddev['ratio'], color=colors[0])
+#plt.fill_between(cell_area / df.index**2, min, max, color=colors[0], alpha=0.2)
 
 plt.xlabel('Number of grid points per cell')
 plt.ylabel('Time coupled / time mechanical ')
