@@ -42,6 +42,6 @@ df.plot(x='gridpoints', y=['ensemble', 'solver', 'scatter', 'gather'], ax=ax, ma
 plt.xlabel('Number of grid points')
 plt.ylabel('Relative increase in runtime T / T0')
 plt.xscale('log')
-plt.yscale('log')
+plt.yscale('log', base=2)
 #plt.title('Runtime vs. number of grid points')
 plt.savefig('benchmark_rect_gridpoints.pdf')

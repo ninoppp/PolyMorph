@@ -44,4 +44,7 @@ int main(int argc, char* argv[]) {
   validate_parameters();
   write_config();
   //default_testrun();
+  Domain domain(-50, -50, 50, 50);
+  Ensemble tmp ("ensemble/typical.off", domain);
+  std::cout << "Number of polygons: " << tmp.polygons.size() << std::endl;
 }
