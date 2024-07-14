@@ -162,7 +162,7 @@ std::size_t Interpolator::find_parent(Point grid_point) {
         if (v->p >= Nr && ensemble.polygons[v->p].contains(grid_point)) { // don't want to check rigid polygons
           return v->p;
         } else {
-          checked_polygons.insert(v->p);
+          checked_polygons.insert(v->p); // maybe more efficient to omit the set. not many vert of same polygon in box
         }
       }
     }
@@ -228,7 +228,7 @@ Point Interpolator::bilinear_vel_interpolation(int i, int j) {
   return vel;
 }
 
-Point Interpolator::IDW_vel_interpolation(int i, int j, double cutoff_radius) {
+Point Interpolator::IDW_vel_interpolation(int i, int j, double cutoff_radius) { // maybe interpolate with vertices inside the local box
   int cutoff_index = cutoff_radius / solver.dx;
   double total_weight = 1e-6 * h; // avoid division by zero
   Point velocity = Point(0, 0);
