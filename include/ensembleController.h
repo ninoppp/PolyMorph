@@ -47,7 +47,7 @@ namespace EnsembleController {
   }
 
   // NOT TESTED YET. 
-  // readout positions for each flag
+  // readout positions for each flag (corresponding to a different threshold)
   std::vector<double> mean_readout_positions(Ensemble& ensemble, Solver& solver) {
     int num_readouts = threshold_mu.size();
     std::vector<double> mean_border_x(num_readouts);
@@ -116,17 +116,8 @@ namespace EnsembleController {
         ensemble.step();
       }
       interpolator.scatter();
-      ensemble.output(f); // only for debug
-      /*double Amax = 0;
-      double Amin = 100;
-      for (auto polygon : ensemble.polygons) {
-        if (polygon.Amax > max) {
-          Amax = polygon.Amax;
-        } else if (polygon.Amax < min) {
-          Amin = polygon.Amax;
-        }
-      }
-      std::cout << "Amax range: max=" << max << " min=" << min << std::endl;*/
+      //ensemble.output(f); // only for debug
+      
       // check if all 4 corners are occupied by a polygon
       if (max == INT32_MAX &&
           solver.parent_idx(1, 1) >= Nr &&

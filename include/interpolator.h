@@ -75,7 +75,7 @@ void Interpolator::scatter() {
           solver.D(i, j) = ensemble.polygons[new_idx(i, j)].D;
           solver.k(i, j) = ensemble.polygons[new_idx(i, j)].k;
           solver.p(i, j) = ensemble.polygons[new_idx(i, j)].p;
-          if (ADVECTION_DILUTION) {
+          if (ADVECTION_DILUTION_EN) {
             solver.velocity(i, j) = interior_vel_interpolation(grid_point, new_idx(i, j));
           }
         }
@@ -84,7 +84,7 @@ void Interpolator::scatter() {
     solver.parent_idx = new_idx; // ToDo: could make this in place
 
     // interpolate remaining velocity field
-    if (ADVECTION_DILUTION) {
+    if (ADVECTION_DILUTION_EN) {
       // set boundary to domain velocity
       #pragma omp for nowait
       for (int i = 0; i < solver.Nx; i++) {
@@ -139,7 +139,7 @@ void Interpolator::gather() {
       }
     } 
     // store gradient at vertices
-    if (CHEMOTAXIS) {
+    if (CHEMOTAXIS_EN) {
       for (auto& vertex : cell.vertices) {
         const int i = std::round((vertex.r.x - solver.domain.x0) / solver.dx);
         const int j = std::round((vertex.r.y - solver.domain.y0) / solver.dx);

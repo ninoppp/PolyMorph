@@ -1,5 +1,10 @@
 #include "ensembleController.h"
 
+/** [Usage example]
+*
+* @brief Measure actual cell radius in packed rectangular tissue used for positional error experiments
+*/
+
 int main() {
     double diameter = 0;
     for (int width : {6, 8, 10, 13, 17, 20, 25, 30, 35, 40}) {
@@ -21,5 +26,6 @@ int main() {
     return 0;
 }
 
+// Output:
 // average diameter = 1.31
 // radius = 0.655

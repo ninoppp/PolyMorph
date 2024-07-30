@@ -1,10 +1,12 @@
 #include "ensembleController.h"
 
-/*!
-    * @brief Benchmark a typical simulation setup with varying grid spacing.
-    * 
-    * How much slower is PolyMorph compared to PolyHoop with different number of nodes per polygon?
+/** [NOT intended as usage example]
+*
+* @brief Benchmark relative runtime of coupled vs uncoupled simulation on a growth scenario (starting from a single cell)
+* 
+* Varying grid spacing. How much slower is PolyMorph compared to PolyHoop with different number of nodes per polygon?
 */
+
 int main (int argc, char *argv[]) {
     const char* nodeID_str = getenv("SLURM_NODEID");
     if (!nodeID_str) {
@@ -15,12 +17,14 @@ int main (int argc, char *argv[]) {
     const int nodeID = std::atoi(nodeID_str);
     const double L = 50;
     const double DX[] = {1.47, 1.04, 0.738, 0.522, 0.369, 0.301, 0.261}; // specifc number due to nodes per polygon estimation
+    const int repetitions = 30;
     write_config();
 
     // setup output
     std::ofstream file("benchmark_typical_" + std::to_string(nodeID) + ".csv", std::ios::app);
     file << "node_id,dx,gridpoints,time_ensemble,time_all,threads" << std::endl;
-    for (int rep = 0; rep < 10; ++rep) {
+    
+    for (int rep = 0; rep < repetitions; ++rep) {
         for (double dx : DX) {
             std::cout << "Node ID: " << nodeID << " dx: " << dx << " threads: " << omp_get_max_threads() << std::endl;
             double time_ensemble, time_all;

@@ -54,9 +54,8 @@ struct Solver {
         this->Ny = domain.height() / dx + 1;
         this->u = Grid<std::vector<double>>(Nx, Ny, std::vector<double>(NUM_SPECIES, 0.0));
 
-        std::cout << "solver dimensions Nx=" << Nx << " Ny=" << Ny << std::endl;
+        std::cout << "solver dimensions: Nx=" << Nx << " Ny=" << Ny << " dx=" << dx << std::endl;
         std::cout << "domain: [" << domain.x0 << ", " << domain.x1 << "] x [" << domain.y0 << ", " << domain.y1 << "]" << std::endl;
-        std::cout << "dx=" << dx << std::endl;
 
         // initialize with background values
         parent_idx = Grid<int>(Nx, Ny, -2);
@@ -64,7 +63,7 @@ struct Solver {
         p = Grid<std::vector<double>>(Nx, Ny, p0);
         k = Grid<std::vector<double>>(Nx, Ny, k0);
         grad_u = Grid<std::vector<Point>>(Nx, Ny, std::vector<Point>(NUM_SPECIES, Point(0, 0)));
-        if (ADVECTION_DILUTION) {
+        if (ADVECTION_DILUTION_EN) {
             velocity = Grid<Point>(Nx, Ny, Point(0, 0));
         }
     }
@@ -76,7 +75,7 @@ struct Solver {
         p.rescale(Nx_new, Ny_new, offset_x, offset_y, p0);
         k.rescale(Nx_new, Ny_new, offset_x, offset_y, k0);
         parent_idx.rescale(Nx_new, Ny_new, offset_x, offset_y, -2);
-        if (ADVECTION_DILUTION) {
+        if (ADVECTION_DILUTION_EN) {
             velocity.rescale(Nx_new, Ny_new, offset_x, offset_y, Point(0, 0));
         }
         this->Nx = Nx_new;
@@ -84,9 +83,10 @@ struct Solver {
         std::cout << "rescaled solver to Nx=" << Nx << " Ny=" << Ny << std::endl;
     }
 
+    /// @param dt time step. allows for independent time stepping between ensemble and solver
     void step(double dt) {
         // resize grids if necessary
-        if (RESIZE_GRID) {
+        if (RESIZE_GRID_EN) {
             if (domain.width() >= (Nx + 1) * dx || domain.height() >= (Ny + 1) * dx
                 || domain.width() <= (Nx - 1) * dx || domain.height() <= (Ny - 1) * dx) {
                 int Nx_new = domain.width() / dx + 2; // include endpoint
@@ -120,7 +120,7 @@ struct Solver {
                         unew(i, j)[sp] = u(i, j)[sp] + dt * (diffusion + reaction[sp] + p(i, j)[sp]); 
                         grad_u(i, j)[sp] = {(e - w) / (2 * dx), (n - s) / (2 * dx)};
                         
-                        if(ADVECTION_DILUTION) {
+                        if(ADVECTION_DILUTION_EN) {
                             const double advection = velocity(i, j) * grad_u(i, j)[sp]; // dot product
                             const double dvdx = (j == Ny-1 || j == 0) ? 0 : (velocity(i, j+1).y - velocity(i, j-1).y) / (2 * dx);
                             const double dvdy = (i == Nx-1 || i == 0) ? 0 : (velocity(i+1, j).x - velocity(i-1, j).x) / (2 * dx);
@@ -133,7 +133,7 @@ struct Solver {
             }
         }
         // update state
-        u = unew;
+        u = unew; // ToDo: overload assignment operator for Grid using OpenMP
     }
 
     void output(const std::size_t frame) {
@@ -164,7 +164,7 @@ struct Solver {
         if (Output::D) file << D.to_vtk("D");
         if (Output::k) file << k.to_vtk("k");
         if (Output::p) file << p.to_vtk("p");
-        if (Output::velocity && ADVECTION_DILUTION) file << velocity.to_vtk("velocity");
+        if (Output::velocity && ADVECTION_DILUTION_EN) file << velocity.to_vtk("velocity");
         
         file << "</PointData>" << std::endl;    // end of point data
         file << "</Piece>" << std::endl;
@@ -178,7 +178,8 @@ struct Solver {
         //if (frame == Nf) output_pvd(); // output pvd file on last frame. Necessary for varying grid sizes          
     }
 
-    void output_pvd() {  // TODO remove or fix visualization  
+    /// @deprecated
+    void output_pvd() {  // ToDo remove or fix visualization  
         std::ofstream file("rd_frame.pvd");
         file << "<?xml version=\"1.0\"?>" << std::endl;
         file << "<VTKFile type=\"Collection\" version=\"0.1\">" << std::endl;

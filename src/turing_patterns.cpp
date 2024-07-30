@@ -1,6 +1,11 @@
 #include "ensembleController.h"
 
-void turing_patterns_experiment() {
+/** [Usage example]
+*
+* @brief Not working yet. ToDo: Have to fine-tune parameters and initial condition
+*/
+
+int main() {
   assert(NUM_SPECIES == 2 && "Turing requires two species");
   assert(NUM_KIN == 3 && "Turing requires 3 kinetic coefficients (a, b, gamma)");
   assert(p_mu[0] == 0 && p_mu[1] == 0 && "Production rates must be zero");

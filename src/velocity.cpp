@@ -1,12 +1,14 @@
-#include "experiments.h"
 #include "ensembleController.h"
 #include "utils.h"
 
-void velocity_testrun() {
-    assert(ADVECTION_DILUTION);
+int main() {
+    welcome();
+    validate_parameters();
+    write_config("velocity");
+    assert(ADVECTION_DILUTION_EN && "Advection-dilution must be enabled");
     double L = 25;
     Domain domain(-L/2, -L/2, L/2, L/2);
-    //domain.set_growth_rate(5, 0);
+    domain.set_growth_rate(3.0);
     Ensemble ensemble("ensemble/tissue_127.off", domain); 
     Solver solver(domain, dx, Reactions::linearDegradation); // init solver
     //solver.boundary.west = {BoundaryCondition::Type::Dirichlet, 0};
@@ -25,11 +27,4 @@ void velocity_testrun() {
         ensemble.output(f);
         solver.output(f);
     }
-}
-
-int main(int argc, char* argv[]) {
-  welcome();
-  validate_parameters();
-  write_config();
-  velocity_testrun();
 }

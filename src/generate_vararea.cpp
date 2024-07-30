@@ -4,15 +4,20 @@
 #include <iostream>
 #include <omp.h>
 
+/** [NOT intended as usage example]
+*
+* @brief Generates tissues with different Amax_cv values. Unstable atm. ToDo: fix
+*/
+
 int main(int argc, char* argv[]) {
   const char* nodeID_str = getenv("SLURM_NODEID");
   if (!nodeID_str) {
       std::cerr << "SLURM_NODEID is not set." << std::endl;
-      //return 1;
+      return 1;
   }
-  int nodeID = 0;//std::atoi(nodeID_str);
+  int nodeID = std::atoi(nodeID_str);
 
-  //assert(kh == 0); // adhesion stiffness should zero
+  assert(kh == 0); // adhesion stiffness should zero
 
   double cv[] = {0.01, 0.03, 0.07,
                     0.1, 0.3, 0.5, 0.7, 
@@ -21,10 +26,10 @@ int main(int argc, char* argv[]) {
   write_config();
   Domain domain(-10, -10, 10, 10);
 
-  //#pragma omp parallel for collapse(2) num_threads(100)
-  //for (int seed = nodeID*10; seed < (nodeID+1)*10; seed++) {
-    //for (int i = 0; i < 10; i++) {
-      int seed = 0; // tmp
+  #pragma omp parallel for collapse(2) num_threads(100)
+  for (int seed = nodeID*10; seed < (nodeID+1)*10; seed++) {
+    for (int i = 0; i < 10; i++) {
+      //int seed = 0; // tmp
       double Amax_CV = 10;//cv[i];
 
       #pragma omp critical
@@ -55,7 +60,7 @@ int main(int argc, char* argv[]) {
         ensemble.output(real_CV_trunc);
         ensemble.writeOFF("ensemble/tissues_vararea/" + std::to_string(real_CV_trunc) + ".off");
       }
-    //}
-  //}
+    }
+  }
   return 0;
 }

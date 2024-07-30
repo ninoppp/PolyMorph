@@ -1,0 +1,48 @@
+<VTKFile type="PolyData" version="0.1" byte_order="LittleEndian">
+  <PolyData>
+    <Piece NumberOfPoints="40" NumberOfPolys="1">
+      <CellData>
+        <DataArray type="Float64" Name="area" format="ascii">
+2.9717 
+        </DataArray>
+        <DataArray type="Float64" Name="u" NumberOfComponents="1" format="ascii">
+0.0153595 
+        </DataArray>
+        <DataArray type="Float64" Name="D" NumberOfComponents="1" format="ascii">
+32 
+        </DataArray>
+        <DataArray type="Float64" Name="k" NumberOfComponents="1" format="ascii">
+1 
+        </DataArray>
+        <DataArray type="Float64" Name="p" NumberOfComponents="1" format="ascii">
+1 
+        </DataArray>
+        <DataArray type="Float64" Name="threshold" NumberOfComponents="1" format="ascii">
+0.001 
+        </DataArray>
+        <DataArray type="Int8" Name="flag" format="ascii">
+0 
+        </DataArray>
+        <DataArray type="Float64" Name="perimeter" format="ascii">
+6.12768 
+        </DataArray>
+        <DataArray type="Float64" Name="neighbors" format="ascii">
+0 
+        </DataArray>
+      </CellData>
+      <Points>
+        <DataArray type="Float64" Name="Points" NumberOfComponents="3" format="ascii">
+0.869436 -0.443225 0 0.933785 -0.303405 0 0.963909 -0.152466 0 0.964708 7.31243e-17 0 0.963909 0.152466 0 0.933785 0.303405 0 0.869436 0.443225 0 0.780466 0.567041 0 0.690202 0.689919 0 0.577111 0.794325 0 0.442868 0.869618 0 0.298111 0.917492 0 0.152861 0.963847 0 2.17288e-16 0.98184 0 -0.152861 0.963847 0 -0.298111 0.917492 0 -0.442868 0.869618 0 -0.577111 0.794325 0 -0.690202 0.689919 0 -0.780466 0.567041 0 -0.869436 0.443225 0 -0.933785 0.303405 0 -0.963909 0.152466 0 -0.964708 -3.02649e-17 0 -0.963909 -0.152466 0 -0.933785 -0.303405 0 -0.869436 -0.443225 0 -0.780466 -0.567041 0 -0.690202 -0.689919 0 -0.577111 -0.794325 0 -0.442868 -0.869618 0 -0.298111 -0.917492 0 -0.152861 -0.963847 0 -3.63115e-16 -0.98184 0 0.152861 -0.963847 0 0.298111 -0.917492 0 0.442868 -0.869618 0 0.577111 -0.794325 0 0.690202 -0.689919 0 0.780466 -0.567041 0 
+        </DataArray>
+      </Points>
+      <Polys>
+        <DataArray type="Int64" Name="connectivity" format="ascii">
+0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27 28 29 30 31 32 33 34 35 36 37 38 39 
+        </DataArray>
+        <DataArray type="Int64" Name="offsets" format="ascii">
+40 
+        </DataArray>
+      </Polys>
+    </Piece>
+  </PolyData>
+</VTKFile>
