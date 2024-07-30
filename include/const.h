@@ -57,7 +57,7 @@ const std::vector<double> D_CV = {0}; // [-] diffusivity CV
 const std::vector<double> p0 =   {0}; // [1/(L^2*T)] production rate background (usually zero)
 const std::vector<double> p_mu = {1}; // [1/(L^2*T)] production rate mean
 const std::vector<double> p_CV = {0}; // [-] production rate CV
-const std::vector<double> threshold_mu = {0.001}; // [1/L^2] concentration threshold mean (can use any number of thresholds, but define your ensemble.set_flag accordingly!)
+const std::vector<double> threshold_mu = {0.005}; // [1/L^2] concentration threshold mean (can use any number of thresholds, but define your ensemble.set_flag accordingly!)
 const std::vector<double> threshold_CV = {0.0}; // [-] threshold CV
 
 constexpr double dx = 0.3; // [L] grid spacing for solver

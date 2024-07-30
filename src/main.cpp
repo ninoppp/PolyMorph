@@ -9,15 +9,13 @@ int main(int argc, char* argv[]) {
     welcome();
     validate_parameters(); // checks that correct number of kinetic parameters are set
     write_config();
-    double L = 50;
-    
-    // setup core components
+    double L = 60;
+    // set up core components
     Domain domain(-L/2, -L/2, L/2, L/2); // initialize square domain
     Ensemble ensemble("ensemble/default.off", domain); // init ensemble
     Reaction reaction = Reactions::linearDegradation; // define reaction model
     Solver solver(domain, dx, reaction); // init solver
     Interpolator interpolator(ensemble, solver); // init interpolator
-    
     // optional: set boundary conditions (default zero-flux)
     solver.boundary.west = {BoundaryCondition::Type::Dirichlet, 0}; 
     // optional: set production lambda (default no cell-based production)
@@ -33,6 +31,7 @@ int main(int argc, char* argv[]) {
             interpolator.scatter(); // interpolate data to grid
             solver.step(dt); // advance chemical solver
             interpolator.gather(); // interpolate data back to ensemble
+            EnsembleController::stop_growth_if_flagged(ensemble); // flagged cells stop growing
             //domain.step(dt); // only needed if domain is growing/shrinking
         } 
         ensemble.output(f); // print frame
