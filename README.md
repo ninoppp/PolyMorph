@@ -53,6 +53,9 @@ Additionally, depending on the experiment:
 `/out`: Default output folder for files 
 `/ensemble`: Input files with pre-grown tissues for various tasks
 
+`/results`: Data and plotting scripts of my personal experiments
+`/bench`: Benchmarking data and plots 
+
 ## Source Code Documentation
 In the following the most important components of the code are briefly explained. For a more detailed explanation see the /documentation (ToDo: doxygen) and the report (ToDo: link or pdf). 
 
