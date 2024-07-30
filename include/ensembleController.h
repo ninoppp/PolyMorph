@@ -70,6 +70,7 @@ namespace EnsembleController {
 
   // assign all flags without need for solver step
   void apply_flag(Ensemble& ensemble) {
+    #pragma omp parallel for
     for (int p = Nr; p < ensemble.polygons.size(); p++) {
       auto& cell = ensemble.polygons[p];
       cell.flag = ensemble.set_flag(cell);
@@ -77,10 +78,23 @@ namespace EnsembleController {
   }
 
   void stop_growth(Ensemble& ensemble) {
+    #pragma omp parallel for
     for (int p = Nr; p < ensemble.polygons.size(); p++) {
       ensemble.polygons[p].alpha = 0;
-      ensemble.polygons[p].alpha0 = 0;
       ensemble.polygons[p].Amax = MAXFLOAT; 
+    }
+  }
+
+  void stop_growth_if_flagged(Ensemble& ensemble) {
+    #pragma omp parallel for
+    for (int p = Nr; p < ensemble.polygons.size(); p++) {
+      if (ensemble.polygons[p].flag) {
+        ensemble.polygons[p].alpha = 0;
+        ensemble.polygons[p].Amax = MAXFLOAT; 
+      } else if (!ensemble.polygons[p].flag && ensemble.polygons[p].alpha == 0) {
+        ensemble.polygons[p].alpha = ensemble.polygons[p].alpha0;
+        ensemble.polygons[p].Amax = sample(ensemble.Amax_dist, ensemble.rng);
+      }
     }
   }
 
@@ -150,6 +164,7 @@ namespace EnsembleController {
   // regenerate all distribution-drawn parameters
   // needed when manipulating dists after ensemble initialization
   void redraw_params_from_dists(Ensemble& ensemble) {
+    #pragma omp parallel for
     for (int p = 0; p < ensemble.polygons.size(); p++) {
       auto& cell = ensemble.polygons[p];
       // vectors
@@ -167,6 +182,7 @@ namespace EnsembleController {
   // only works when calling "gather" before this
   double get_avg_gridpoints_per_polygon(Ensemble& ensemble) {
     int sum = 0;
+    #pragma omp parallel for reduction(+:sum)
     for (int p = Nr; p < ensemble.polygons.size(); p++) {
       sum += ensemble.polygons[p].children.size();
     }

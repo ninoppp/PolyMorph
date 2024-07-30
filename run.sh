@@ -1,7 +1,7 @@
 #!/bin/bash
 
 #output="./out"
-output="/mnt/c/Users/muell/Desktop/PolymorphOutput" # nico or muell
+output="/mnt/c/Users/nico/Desktop/PolymorphOutput" # nico or muell
 OMP_NUM_THREADS=8
 
 move_files() {
