@@ -44,19 +44,19 @@ Remember to set the correct number of threads (default: 8) and desired output fo
 A standard usage produces 3 output types:
 - A series of ``.vtp`` frames containing the polygons to be visualized in paraview.
 - A series of ``.vts`` frames containing the grid of the finite difference solver. Can be loaded into the same paraview session. 
-- ``simulation.cfg`` saves all parameters (set in const.h) used for this simulation run for reproducibility. 
+- ``simulation.cfg`` saves all parameters (set in const.h) used for a simulation run for reproducibility. 
 
 Additionally, depending on the experiment:
 - A ``.off`` file for saving the polygon ensemble at a certain time point (usually at the end) to later load as the input/starting point of another simulation. 
 - A ``.csv`` file containing measurement data
 
 ## Folder Structure
-`root`: makefile, run.sh, euler job scripts, binary executable  
+`root`: makefile, run.sh, [Euler](https://scicomp.ethz.ch/wiki/Euler) job scripts, binary executable  
 `/include`: Contains all header files which make up the core of this software  
 `/src`: Contains cpp files with main() functions; a default testrun (main.cpp) plus a few example experiments.  
 `/out`: Default output folder for files  
 `/ensemble`: Input files with pre-grown tissues for various tasks  
-`/results`: Data and plotting scripts of my personal experiments  
+`/results`: Data and plotting scripts for my personal experiments  
 `/bench`: Benchmarking data and plots 
 
 ## Source Code Documentation
