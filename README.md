@@ -138,4 +138,4 @@ Good luck, have fun!
 ## Limitations
 - Does not support polygon fusion.
 - Nested polygons (one inside the other) should technically work fine but might hold unwanted behavior or even crash. Not tested thoroughly. 
-- Use of rigid polygons was also not tested thoroughly enough. 
+- Use of rigid polygons was also not tested thoroughly enough.  
