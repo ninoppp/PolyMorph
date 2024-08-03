@@ -4,6 +4,19 @@
 #include <vector>
 #include "const.h"
 
+/**
+ * @brief Reaction models for the reaction-diffusion equations
+ * 
+ * Each reaction takes two vectors: 
+ * - u: the local concentrations of each species
+ * - k: all local kinetic parameters for the reaction
+ * 
+ * And returns a vector
+ * - r: the local reaction contributions for each species
+ * 
+ * Local meaning at a specific grid point. 
+ */
+
 using Reaction = std::function<std::vector<double>(const std::vector<double>&, const std::vector<double>&)>;
 
 namespace Reactions {
