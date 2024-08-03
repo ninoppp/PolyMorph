@@ -94,7 +94,44 @@ When simulating your own scenario, the three files you want to primarily conside
 
 - ``const.h``: Basically the input file. Here you can set all parameters for your scenario
 - ``ensembleController.h``: As described above this file shows you how to interact with the simulation in a very simple way without having to modify any core functionalities of the software. Take the already existing functions in this file as inspiration on how to implement your additions. 
-- ``reaction.h``: Just have a quick look at how reactions are defined so you understand how the kinetic parameters set in const.h are being used. 
+- ``reaction.h``: Definitely have a quick look at how reactions are defined so you understand how the kinetic parameters set in const.h are being used. The file is only 50 sparse lines long. 
+
+### Production lambda function
+The function ``std::function<std::vector<bool>(const Polygon&)> Ensemble::is_producing`` defines which cells produce a diffusable species. Producing cells draw a production constant ``p`` from the respective lognormal distribution. Non-producing cells have ``p=0``. The function takes the polygon/cell as an argument and returns a boolean vector of length `NUM_SPECIES` to define which species are produced by this cell. Some examples:
+
+```C++  
+// Default behavior: always false (no cell based production)
+ensemble.is_producing = [](const Polygon& p) { 
+    return std::vector(NUM_SPECIES, false); 
+};
+
+// System with only one species produced by the starting cell (index 0)
+ensemble.is_producing = [](const Polygon& p) { 
+    return std::vector<bool> {
+        p.vertices[0].p == 0
+    };
+};
+
+// System with two species produced by cells at two ends of the domain: 
+ensemble.is_producing = [domain](const Polygon& p) { 
+    return std::vector<bool>{ 
+        p.midpoint().x < domain.x0 + 10, 
+        p.midpoint().x > domain.x1 - 10
+    }; 
+};``
+```
+
+### Flagging lambda function
+Similarly you can apply an integer flag to certain cells with ``std::function<int(const Polygon&)> Ensemble::set_flag``. This flag can e.g. be used to represent different cell types and model domain boundaries. Example: 
+
+```C++
+// System with 1 species. 
+// Cells with concentration below their threshold: 1. Otherwise: 0
+ensemble.set_flag = [](const Polygon& p) { 
+    return p.u[0] < p.threshold[0]; 
+};
+```
+
 
 Good luck, have fun!
 
