@@ -35,7 +35,7 @@ constexpr double cd = 0; // [-] drag coefficient
 constexpr double cc = 30; // [1/T] collision damping rate
 constexpr double dt = 1e-4; // [T] time step
 
-constexpr std::size_t Nf = 200; // number of output frames
+constexpr std::size_t Nf = 150; // number of output frames
 constexpr std::size_t Ns = 1000; // number of time steps between frames // default 1000
 constexpr int Nr = 0; // number of rigid polygons (keep as int or things will break)
 
@@ -43,7 +43,7 @@ constexpr double drmax = h + sh + ss; // maximum interaction distance
 
 // -- New PolyMorph parameters --
 constexpr bool ADVECTION_DILUTION_EN = false; // enable advection-dilution and calculate velocity field
-constexpr bool CHEMOTAXIS_EN = false; // enable chemotaxis. slightly performance enhancing if disabled
+constexpr bool CHEMOTAXIS_EN = false; // enable chemotaxis. slightly performance enhancing if disabled (and not just chemotaxis_strength = 0)
 constexpr bool RESIZE_GRID_EN = false; // enable resizing of grid if domain changes/grows (not optimized. can be computationally expensive)
 constexpr int NUM_SPECIES = 1; // [-] number of diffusable species (defines size of D,p vectors)
 constexpr int NUM_KIN = 1; // [-] number of kinetic coefficients (defines size of k vectors)
@@ -57,7 +57,7 @@ const std::vector<double> D_CV = {0}; // [-] diffusivity CV
 const std::vector<double> p0 =   {0}; // [1/(L^2*T)] production rate background (usually zero)
 const std::vector<double> p_mu = {1}; // [1/(L^2*T)] production rate mean
 const std::vector<double> p_CV = {0}; // [-] production rate CV
-const std::vector<double> threshold_mu = {0.005}; // [1/L^2] concentration threshold mean (can use any number of thresholds, but define your ensemble.set_flag accordingly!)
+const std::vector<double> threshold_mu = {0.001}; // [1/L^2] concentration threshold mean (can use any number of thresholds, but define your ensemble.set_flag accordingly!)
 const std::vector<double> threshold_CV = {0.0}; // [-] threshold CV
 
 constexpr double dx = 0.3; // [L] grid spacing for solver
