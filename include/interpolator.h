@@ -101,7 +101,7 @@ void Interpolator::scatter() {
       for (int i = 1; i < solver.Nx - 1; i++) {
         for (int j = 1; j < solver.Ny - 1; j++) {
           if (solver.parent_idx(i, j) < 0) { // only treat real background nodes. No velocity in rigid polygons
-            solver.velocity(i, j) = IDW_vel_interpolation(i, j, velocity_cutoff_radius);
+            solver.velocity(i, j) = IDW_vel_interpolation(i, j, velocity_cutoff_radius); // <- change between IDW and bilinear interpolation method here. can also just set zero
           } 
         }
       }
@@ -216,15 +216,15 @@ Point Interpolator::bilinear_vel_interpolation(int i, int j) {
   const double dy_down = j - j_down;
   const double dy_up = j_up - j;
   // calculate weights
-  const double w_left = dx_right / (dx_left + dx_right);
-  const double w_right = dx_left / (dx_left + dx_right);
-  const double w_down = dy_up / (dy_down + dy_up);
-  const double w_up = dy_down / (dy_down + dy_up);
+  const double eps = 1e-6 * h; // avoid division by zero
+  const double w_left = dx_right / (dx_left + dx_right + eps);
+  const double w_right = dx_left / (dx_left + dx_right + eps);
+  const double w_down = dy_up / (dy_down + dy_up + eps);
+  const double w_up = dy_down / (dy_down + dy_up + eps);
   // interpolate velocity
-  Point vel = w_left * solver.velocity(i_left, j) 
-            + w_right * solver.velocity(i_right, j) 
-            + w_down * solver.velocity(i, j_down) 
-            + w_up * solver.velocity(i, j_up);
+  Point vel;
+  vel.x = w_left * solver.velocity(i_left, j).x + w_right * solver.velocity(i_right, j).x; 
+  vel.y = w_down * solver.velocity(i, j_down).y + w_up * solver.velocity(i, j_up).y;
   return vel;
 }
 
