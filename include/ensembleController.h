@@ -76,6 +76,7 @@ namespace EnsembleController {
     }
   }
 
+  // stops proliferation completely, both growth and cell division
   void stop_growth(Ensemble& ensemble) {
     for (int p = Nr; p < ensemble.polygons.size(); p++) {
       ensemble.polygons[p].alpha = 0;
@@ -84,9 +85,17 @@ namespace EnsembleController {
     }
   }
 
+  // only stops cell divisions (keeps growing) ToDo: fix instability with exploding cells
+  void stop_division(Ensemble& ensemble) {
+    for (int p = Nr; p < ensemble.polygons.size(); p++) {
+      // ToDo: test if this is sufficient or if additional condition has to be added in ensemble code
+      ensemble.polygons[p].Amax = MAXFLOAT; 
+    }
+  }
+
   // generate tissue filling out the given domain
   // domain should center at (0,0) to produce a uniform tissue
-  void grow_tissue(Ensemble& ensemble) {
+  void grow_tissue(Ensemble& ensemble, bool output_frames = false) {
     if (beta != 0.8) {
       std::cout << "Warning: beta=" << beta << ". It's recommended to grow with beta=0.8" << std::endl;
     }
@@ -102,17 +111,9 @@ namespace EnsembleController {
         ensemble.step();
       }
       interpolator.scatter();
-      ensemble.output(f); // only for debug
-      /*double Amax = 0;
-      double Amin = 100;
-      for (auto polygon : ensemble.polygons) {
-        if (polygon.Amax > max) {
-          Amax = polygon.Amax;
-        } else if (polygon.Amax < min) {
-          Amin = polygon.Amax;
-        }
+      if (output_frames) {
+        ensemble.output(f);
       }
-      std::cout << "Amax range: max=" << max << " min=" << min << std::endl;*/
       // check if all 4 corners are occupied by a polygon
       if (max == INT32_MAX &&
           solver.parent_idx(1, 1) >= Nr &&
@@ -120,7 +121,7 @@ namespace EnsembleController {
           solver.parent_idx(1, solver.Ny - 2) >= Nr &&
           solver.parent_idx(solver.Nx - 2, 1) >= Nr) {
         std::cout << "All corners filled. Relaxing now" << std::endl;
-        stop_growth(ensemble);// testing for now
+        stop_growth(ensemble);// change to stop cell division
         max = f + f/3; // run again for 1/3 of the time to relax the tissue
       }
       f++;
