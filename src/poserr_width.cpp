@@ -5,6 +5,13 @@
 #include "utils.h"
 #include "ensembleController.h"
 
+/** [Usage example]
+*
+* @brief @brief Measure positional error for different domain widths
+* Intended to be run on a cluster with SLURM_NODEID set. 
+* Runs 120 simulations per node (i.e. requires >= 120 cores) 
+*/
+
 int main(int argc, char* argv[]) {
     const char* nodeID_str = getenv("SLURM_NODEID");
     if (!nodeID_str) {

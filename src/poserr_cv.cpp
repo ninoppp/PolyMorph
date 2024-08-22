@@ -3,6 +3,13 @@
 #include <fstream>
 #include <omp.h>
 
+/** [Usage example]
+*
+* @brief Measure positional error for different gradient variability
+* Intended to be run on a cluster with SLURM_NODEID set. 
+* Runs 120 simulations per node (i.e. requires >= 120 cores) 
+*/
+
 int main(int argc, char* argv[]) {
     const char* nodeID_str = getenv("SLURM_NODEID");
     if (!nodeID_str) {
@@ -18,18 +25,17 @@ int main(int argc, char* argv[]) {
     file << "threshold,grad_cv,seed,readout_pos,prec_zone_width,time,num_threads" << std::endl;
     
     Domain domain(-30, -15, 30, 15);
-    double cv[] = {1.0, 3.0, 5.0, 7.0, 10}; 
-                /*{0.01, 0.03, 0.07,
+    double cv[] = {0.01, 0.03, 0.07,
                     0.1, 0.3, 0.5, 0.7, 
                     1.0, 3.0, 5.0, 7.0, 
-                    10};*/
+                    10};
 
     //omp_set_nested(1);
     omp_set_dynamic(0);
 
     #pragma omp parallel for collapse(2) num_threads(120) // 120 calculations per node. 1200 total
-    for (int i = 0; i < 5; i++) { // 12 cv values
-        for (int seed = nodeID*24; seed < (nodeID+1)*24; seed++) { // 10 seeds
+    for (int i = 0; i < 12; i++) { // 12 cv values
+        for (int seed = nodeID*10; seed < (nodeID+1)*10; seed++) { // 10 seeds
             double grad_cv = cv[i];
             
             std::string off_file = "ensemble/tissues_varwidth/30_" + std::to_string(seed) + ".off";
@@ -39,13 +45,13 @@ int main(int argc, char* argv[]) {
             std::cout << "Core " << omp_get_thread_num() << " calculating with gcv=" << grad_cv << " seed=" << seed << " and off file " << off_file << std::endl;
             
             // create distributions
-            ensemble.D_dist = create_lognormal(D_mu, {grad_cv}); // FIX! has to be done before constructing
+            ensemble.D_dist = create_lognormal(D_mu, {grad_cv});
             ensemble.k_dist = create_lognormal(k_mu, {grad_cv});
             ensemble.p_dist = create_lognormal(p_mu, {grad_cv});
             ensemble.is_producing = [domain](const Polygon& p) { // left side is producing
                 return std::vector<bool> {p.midpoint().x < domain.x0 + 10}; 
             };
-            EnsembleController::redraw_params_from_dists(ensemble); // apply the new distributions
+            EnsembleController::redraw_params_from_dists(ensemble); // Important: apply the new distributions
 
             Solver solver(domain, dx, Reactions::linearDegradation);
             Interpolator interpolator(ensemble, solver);
@@ -54,7 +60,7 @@ int main(int argc, char* argv[]) {
             double start = walltime();
             ensemble.step(); // update boxes
             interpolator.scatter();
-            int num_steps = 200000;
+            int num_steps = 200000; // empirical time to steady state with dt=1e-4
             for (int step = 0; step < num_steps; step++) {
                 solver.step(dt);
             } 

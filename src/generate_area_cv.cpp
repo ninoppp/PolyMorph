@@ -12,7 +12,7 @@ int main(int argc, char* argv[]) {
   const char* nodeID_str = getenv("SLURM_NODEID");
   if (!nodeID_str) {
       std::cerr << "SLURM_NODEID is not set." << std::endl;
-      //return 1;
+      return 1;
   }
   const int nodeID = 0;//std::atoi(nodeID_str);
 

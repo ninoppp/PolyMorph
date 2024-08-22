@@ -35,9 +35,9 @@ struct Ensemble
   std::vector<std::lognormal_distribution<>> p_dist = create_lognormal(p_mu, p_CV);
   std::vector<std::lognormal_distribution<>> threshold_dist = create_lognormal(threshold_mu, threshold_CV);
 
-  // lambda functions
-  std::function<std::vector<bool>(Polygon&)> is_producing = [](Polygon& p) { return std::vector(NUM_SPECIES, false); };
-  std::function<int(Polygon&)> set_flag = [](Polygon& p) { return p.u[0] < p.threshold[0]; };
+  // lambda functions ToDo: make const reference? should not create problem I think
+  std::function<std::vector<bool>(const Polygon&)> is_producing = [](const Polygon& p) { return std::vector(NUM_SPECIES, false); };
+  std::function<int(const Polygon&)> set_flag = [](const Polygon& p) { return p.u[0] < p.threshold[0]; };
 
   Ensemble(const char* name, Domain& domain, int seed=RNG_SEED) : t(0), domain(domain)
   {
@@ -401,10 +401,12 @@ struct Ensemble
       // PolyMorph extension: set production
       const std::vector<bool> producing = is_producing(polygons[p]); // which species are produced by the cell
       const std::vector<double> p_sample = sample(p_dist, rng);
+      #if DEBUG
       if (producing.size() != NUM_SPECIES) {
         std::cerr << "is_producing function must return a vector of size NUM_SPECIES" << std::endl;
         exit(1);
       }
+      #endif
       for (int i = 0; i < NUM_SPECIES; i++) {
         if (polygons[p].p[i] == 0 && producing[i]) {
           polygons[p].p[i] = p_sample[i];
@@ -454,7 +456,7 @@ struct Ensemble
         v[i].a.add((polygons[p].vertices[i].r.y > domain.y1) * domain_bd_stiffness, {0, (domain.y1 - polygons[p].vertices[i].r.y)});
 
         // chemotaxis
-        if (CHEMOTAXIS) {
+        if (CHEMOTAXIS_EN) {
           for (int sp = 0; sp < NUM_SPECIES; sp++) {
             if (chem_affect_flag[sp] == polygons[p].flag) {
               v[i].a.add(chemotaxis_strength[sp], v[i].grad_u[sp]);

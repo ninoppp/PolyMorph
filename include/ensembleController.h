@@ -47,7 +47,7 @@ namespace EnsembleController {
   }
 
   // NOT TESTED YET. 
-  // readout positions for each flag
+  // readout positions for each flag (corresponding to a different threshold)
   std::vector<double> mean_readout_positions(Ensemble& ensemble, Solver& solver) {
     int num_readouts = threshold_mu.size();
     std::vector<double> mean_border_x(num_readouts);
@@ -70,6 +70,7 @@ namespace EnsembleController {
 
   // assign all flags without need for solver step
   void apply_flag(Ensemble& ensemble) {
+    #pragma omp parallel for
     for (int p = Nr; p < ensemble.polygons.size(); p++) {
       auto& cell = ensemble.polygons[p];
       cell.flag = ensemble.set_flag(cell);
@@ -78,9 +79,9 @@ namespace EnsembleController {
 
   // stops proliferation completely, both growth and cell division
   void stop_growth(Ensemble& ensemble) {
+    #pragma omp parallel for
     for (int p = Nr; p < ensemble.polygons.size(); p++) {
       ensemble.polygons[p].alpha = 0;
-      ensemble.polygons[p].alpha0 = 0;
       ensemble.polygons[p].Amax = MAXFLOAT; 
     }
   }
@@ -151,6 +152,7 @@ namespace EnsembleController {
   // regenerate all distribution-drawn parameters
   // needed when manipulating dists after ensemble initialization
   void redraw_params_from_dists(Ensemble& ensemble) {
+    #pragma omp parallel for
     for (int p = 0; p < ensemble.polygons.size(); p++) {
       auto& cell = ensemble.polygons[p];
       // vectors
@@ -168,6 +170,7 @@ namespace EnsembleController {
   // only works when calling "gather" before this
   double get_avg_gridpoints_per_polygon(Ensemble& ensemble) {
     int sum = 0;
+    #pragma omp parallel for reduction(+:sum)
     for (int p = Nr; p < ensemble.polygons.size(); p++) {
       sum += ensemble.polygons[p].children.size();
     }

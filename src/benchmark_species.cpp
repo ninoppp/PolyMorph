@@ -1,9 +1,10 @@
 #include "ensembleController.h"
 
-/*!
-    * @brief Benchmark different number of species
-    TODO
+/** [NOT intended as usage example]
+*
+* @brief Benchmark different number of species. Not implemented yet (TODO)
 */
+
 int main (int argc, char *argv[]) {
     const char* nodeID_str = getenv("SLURM_NODEID");
     if (!nodeID_str) {
@@ -21,7 +22,7 @@ int main (int argc, char *argv[]) {
     std::ofstream file("scaling.csv", std::ios::app);
     file << "node_id,dx,gridpoints,polygons,species,time,threads" << std::endl;
 
-    for (NUM_SPECIES : N) {
+    for (int NUM_SPECIES : N) {
         std::cout << "Node ID: " << nodeID << " dx: " << dx << " threads: " << omp_get_max_threads() << std::endl;
         Domain domain(-L/2, -W/2, L/2, W/2);
         Ensemble ensemble("ensemble/tissues_varwidth/40_0.off", domain); 

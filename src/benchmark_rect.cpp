@@ -5,10 +5,12 @@
 #include "utils.h"
 #include "ensembleController.h"
 
-/*
-This measures runtime of all components respective to the number of gridpoints and polygons.
-No scaling.
+/** [NOT intended as usage example]
+*
+* @brief This program measures runtime of all components (ensemble, solver, scatter, gather) respective to the number of gridpoints and polygons.
+* Designed to be run on a cluster node with 128 threads.
 */
+
 int main(int argc, char* argv[]) {
     const char* nodeID_str = getenv("SLURM_NODEID");
     if (!nodeID_str) {

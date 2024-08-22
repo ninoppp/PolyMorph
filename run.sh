@@ -1,8 +1,8 @@
 #!/bin/bash
 
-#output="./out"
-output="/mnt/c/Users/muell/Desktop/PolymorphOutput" # nico or muell
-OMP_NUM_THREADS=8
+OMP_NUM_THREADS=8 # <- change this to available cores
+output="./out" # <- change this to your desired output folder
+#output="/mnt/c/Users/nico/Desktop/PolymorphOutput"
 
 move_files() {
     echo "moving output files to folder ..."
@@ -13,7 +13,7 @@ move_files() {
 
 cleanup_files() {
     echo "cleaning up leftover output files ..."
-    rm *.vtp *.vts *.cfg log.txt
+    rm *.vtp *.vts *.cfg log.txt *.off
     make clean
 }
 
