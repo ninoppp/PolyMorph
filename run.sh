@@ -8,7 +8,7 @@ move_files() {
     echo "moving output files to folder ..."
     local timestamp=$(date +%Y-%m-%d_%H-%M)
     mkdir $output/$timestamp
-    mv *.vtp *.vts *.cfg log.txt "$output/$timestamp/"
+    mv *.vtp *.vts *.cfg log.txt *.off "$output/$timestamp/"
 }
 
 cleanup_files() {

@@ -9,7 +9,7 @@ int main(int argc, char* argv[]) {
     welcome();
     validate_parameters(); // checks that correct number of kinetic parameters are set
     write_config();
-    double L = 60;
+    double L = 30;
     // set up core components
     Domain domain(-L/2, -L/2, L/2, L/2); // initialize square domain
     Ensemble ensemble("ensemble/default.off", domain); // init ensemble

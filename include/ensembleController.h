@@ -86,6 +86,19 @@ namespace EnsembleController {
     }
   }
 
+  void stop_growth_if_flagged(Ensemble& ensemble) {
+    #pragma omp parallel for
+    for (int p = Nr; p < ensemble.polygons.size(); p++) {
+      if (ensemble.polygons[p].flag) {
+        ensemble.polygons[p].alpha = 0;
+        ensemble.polygons[p].Amax = MAXFLOAT; 
+      } else if (!ensemble.polygons[p].flag && ensemble.polygons[p].alpha == 0) {
+        ensemble.polygons[p].alpha = ensemble.polygons[p].alpha0;
+        ensemble.polygons[p].Amax = sample(ensemble.Amax_dist, ensemble.rng);
+      }
+    }
+  }
+
   // only stops cell divisions (keeps growing) ToDo: fix instability with exploding cells
   void stop_division(Ensemble& ensemble) {
     for (int p = Nr; p < ensemble.polygons.size(); p++) {
