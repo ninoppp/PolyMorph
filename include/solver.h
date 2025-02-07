@@ -38,8 +38,9 @@ struct Solver {
     Domain& domain;
     int Nx, Ny; // number of grid points
     double dx; // grid spacing
+    double t; // time
     Boundary boundary; // boundary conditions
-    Reaction R = [](const std::vector<double>& u, const std::vector<double>& k) { return std::vector<double>(NUM_SPECIES, 0.0); }; // reaction term
+    Reaction R = [](const std::vector<double>& u, const std::vector<double>& k, double t) { return std::vector<double>(NUM_SPECIES, 0.0); }; // reaction term
     Grid<int> parent_idx; // polygon idx
     Grid<std::vector<double>> u; // concentrations
     Grid<std::vector<double>> D; // diffusion coefficients
@@ -48,7 +49,7 @@ struct Solver {
     Grid<Point> velocity; // velocity field
     Grid<std::vector<Point>> grad_u; // concentration gradient
 
-    Solver(Domain& domain, const double dx, Reaction R) : domain(domain), R(R), dx(dx) {
+    Solver(Domain& domain, const double dx, Reaction R) : t(0), domain(domain), R(R), dx(dx) {
         this->boundary = Boundary::zeroFlux();
         this->Nx = domain.width() / dx + 1;
         this->Ny = domain.height() / dx + 1;
@@ -101,7 +102,7 @@ struct Solver {
         #pragma omp parallel for collapse(2)
         for (int i = 0; i < Nx; i++) {
             for (int j = 0; j < Ny; j++) {   
-                const std::vector<double> reaction = R(u(i, j), k(i, j));
+                const std::vector<double> reaction = R(u(i, j), k(i, j), t);
                 for (int sp = 0; sp < NUM_SPECIES; sp++) {
                     // dirichlet boundary conditions
                     if      (i == 0     && boundary.west.type  == BoundaryCondition::Type::Dirichlet) { unew(i, j)[sp] = boundary.west.value; continue; } 
@@ -134,6 +135,7 @@ struct Solver {
         }
         // update state
         u = unew; // ToDo: overload assignment operator for Grid using OpenMP
+        t += dt; // advance the time
     }
 
     void output(const std::size_t frame) {

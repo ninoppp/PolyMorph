@@ -17,11 +17,11 @@
  * Local meaning at a specific grid point. 
  */
 
-using Reaction = std::function<std::vector<double>(const std::vector<double>&, const std::vector<double>&)>;
+using Reaction = std::function<std::vector<double>(const std::vector<double>& u, const std::vector<double>& k, double t)>;
 
 namespace Reactions {
 
-Reaction linearDegradation = [](const std::vector<double>& u, const std::vector<double>& k) {
+Reaction linearDegradation = [](const std::vector<double>& u, const std::vector<double>& k, double t) {
     std::vector<double> r(NUM_SPECIES);
     for (int i = 0; i < NUM_SPECIES; i++) {
         r[i] = -k[i]*u[i];
@@ -29,7 +29,7 @@ Reaction linearDegradation = [](const std::vector<double>& u, const std::vector<
     return r;
 };
 
-Reaction inhibition = [](const std::vector<double>& u, const std::vector<double>& k) {
+Reaction inhibition = [](const std::vector<double>& u, const std::vector<double>& k, double t) {
     std::vector<double> r(NUM_SPECIES);
     r = {
         -k[0]*u[0] - k[2]*u[0]*u[1], // species 2 inhibits species 1
@@ -38,7 +38,7 @@ Reaction inhibition = [](const std::vector<double>& u, const std::vector<double>
     return r;
 };
 
-Reaction turing = [](const std::vector<double>& u, const std::vector<double>& k) {
+Reaction turing = [](const std::vector<double>& u, const std::vector<double>& k, double t) {
     std::vector<double> r(NUM_SPECIES);
     const double a = k[0];
     const double b = k[1];
