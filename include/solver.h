@@ -43,6 +43,7 @@ struct Solver {
     Reaction R = [](const std::vector<double>& u, const std::vector<double>& k, double t) { return std::vector<double>(NUM_SPECIES, 0.0); }; // reaction term
     Grid<int> parent_idx; // polygon idx
     Grid<std::vector<double>> u; // concentrations
+    Grid<std::vector<double>> unew; // temporary grid for updating concentrations
     Grid<std::vector<double>> D; // diffusion coefficients
     Grid<std::vector<double>> p; // production rates
     Grid<std::vector<double>> k; // kinetic coefficients
@@ -54,7 +55,8 @@ struct Solver {
         this->Nx = domain.width() / dx + 1;
         this->Ny = domain.height() / dx + 1;
         this->u = Grid<std::vector<double>>(Nx, Ny, std::vector<double>(NUM_SPECIES, 0.0));
-
+        this->unew = Grid<std::vector<double>>(Nx, Ny, std::vector<double>(NUM_SPECIES, 0.0));
+        
         std::cout << "solver dimensions: Nx=" << Nx << " Ny=" << Ny << " dx=" << dx << std::endl;
         std::cout << "domain: [" << domain.x0 << ", " << domain.x1 << "] x [" << domain.y0 << ", " << domain.y1 << "]" << std::endl;
 
@@ -96,8 +98,6 @@ struct Solver {
             }
         }
 
-        Grid<std::vector<double>> unew(Nx, Ny, std::vector<double>(NUM_SPECIES, 0.0));
-
         // Forward Euler with central differences
         #pragma omp parallel for collapse(2)
         for (int i = 0; i < Nx; i++) {
@@ -134,7 +134,7 @@ struct Solver {
             }
         }
         // update state
-        u = unew; // ToDo: overload assignment operator for Grid using OpenMP
+        u.parallel_copy_from(unew); // parallelized assignment operator
         t += dt; // advance the time
     }
 
