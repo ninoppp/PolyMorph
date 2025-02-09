@@ -116,7 +116,7 @@ struct Solver {
                         const double e = (i == Nx-1) ? u(i-1, j)[sp] + 2*dx*boundary.east.value  : u(i+1, j)[sp];
                         const double w = (i == 0)    ? u(i+1, j)[sp] - 2*dx*boundary.west.value  : u(i-1, j)[sp];
                         // calculate diffusion term
-                        const double diffusion = D(i, j)[sp] / (dx*dx) * (e + w + anisotropy * (n + s) - 2 * (1 + anisotropy) * u(i, j)[sp]);
+                        const double diffusion = D(i, j)[sp] / (dx*dx) * (e + w + anisotropy[sp] * (n + s) - 2 * (1 + anisotropy[sp]) * u(i, j)[sp]);
                         // update grid point
                         unew(i, j)[sp] = u(i, j)[sp] + dt * (diffusion + reaction[sp] + p(i, j)[sp]); 
                         grad_u(i, j)[sp] = {(e - w) / (2 * dx), (n - s) / (2 * dx)};
