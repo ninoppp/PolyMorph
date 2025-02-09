@@ -73,7 +73,7 @@ namespace EnsembleController {
     #pragma omp parallel for
     for (int p = Nr; p < ensemble.polygons.size(); p++) {
       auto& cell = ensemble.polygons[p];
-      cell.cell_type = ensemble.set_flag(cell);
+      cell.cell_type = ensemble.cellTypeEffect(cell, cell.u, cell.grad_u, 0);
     }
   }
 

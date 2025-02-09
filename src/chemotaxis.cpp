@@ -22,7 +22,7 @@ int main() {
     Interpolator interpolator(ensemble, solver);
     
     //ensemble.is_producing = [](const Polygon& p) { return std::vector<bool> {p.vertices[0].p % 30 == 0}; };
-    ensemble.set_flag = [](const Polygon& p) { return p.vertices[0].p % 3 == 0; };
+    // ensemble.set_flag = [](const Polygon& p) { return p.vertices[0].p % 3 == 0; };
 
     ensemble.output(0); // print the initial state
     solver.output(0); // print the initial state

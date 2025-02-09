@@ -10,18 +10,33 @@ int main(int argc, char* argv[]) {
     write_config();
     double L = 30;
     // set up core components
-    Domain domain(-L/2, -L/2, L/2, L/2); // initialize square domain
-    Ensemble ensemble("ensemble/default.off", domain); // init ensemble
+    Domain domain(-L/2, -L/2, L/2, L/2); // initialize rectangular domain
+    Ensemble ensemble("ensemble/test.off", domain); // init ensemble with input file
     Reaction reaction = Reactions::linearDegradation; // define reaction model
     Solver solver(domain, dx, reaction); // init solver
     Interpolator interpolator(ensemble, solver); // init interpolator
-    // optional: set boundary conditions (default zero-flux)
+    // set boundary conditions (default: zero-flux)
     solver.boundary.west = {BoundaryCondition::Type::Dirichlet, 0}; 
-    // optional: set production lambda (default no cell-based production)
-    ensemble.is_producing = [](const Polygon& p) { return std::vector<bool> {p.vertices[0].p == 0}; }; // starting cell (index 0) produces. Vector for multiple species
-    // optional: when are cells "flagged"
-    ensemble.set_flag = [](const Polygon& p) { return p.u[0] < p.threshold[0]; }; // cells are flagged when local concentration drops below threshold
-
+    
+    // define production lambda (default no cell-based production)
+    ensemble.is_producing = [](const Polygon& p) { 
+        return std::vector<bool> {p.global_index() == 0}; // starting cell (index 0) produces. Vector for multiple species
+    }; 
+    // define cell type lambda
+    ensemble.cellTypeEffect = [](const Polygon& self, const std::vector<double>& u, const std::vector<Point>& grad_u, double t) { 
+        if (u[0] < 0.005) return 1; // differentiate cell type if concentration is below threshold
+        else return 0; 
+    };
+    // define growth rate lambda
+    ensemble.growthRateEffect = [](const Polygon& self, const std::vector<double>& u, const std::vector<Point>& grad_u, double t) { 
+        if (u[0] < 0.005) return 0.0; // stop growth if concentration is below threshold
+        else return self.alpha; 
+    };
+    // define acceleration lambda
+    ensemble.accelerationEffect = [](const Polygon& self, const std::vector<double>& u, const std::vector<Point>& grad_u, double t) { 
+        return Point(0, 0); // no acceleration effect
+    };
+    
     ensemble.output(0); // print the initial state
     solver.output(0); // print the initial state
     for (std::size_t f = 1; f <= Nf; ++f) {

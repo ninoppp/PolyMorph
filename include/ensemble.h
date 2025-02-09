@@ -27,6 +27,7 @@ struct Ensemble
   
   std::mt19937 rng; // random number generator
 
+  // distributions
   const double Amax_lnCV = std::log(1 + Amax_CV*Amax_CV);
   const double alpha_lnCV = std::log(1 + alpha_CV*alpha_CV);
   std::lognormal_distribution<> Amax_dist = std::lognormal_distribution<>(std::log(Amax_mu) - Amax_lnCV/2, std::sqrt(Amax_lnCV)); // division area distribution
@@ -44,7 +45,7 @@ struct Ensemble
   ConcentrationEffect<int> cellTypeEffect = [](const Polygon& self, const std::vector<double>& u, const std::vector<Point>& grad_u, double t) { return 0; };
 
   std::function<std::vector<bool>(const Polygon&)> is_producing = [](const Polygon& p) { return std::vector(NUM_SPECIES, false); }; // TODO: maybe integrate in effect system
-  std::function<int(const Polygon&)> set_flag = [](const Polygon& p) { return p.u[0] < p.threshold[0]; }; // TODO: remove in favor of cellTypeEffect
+  //std::function<int(const Polygon&)> set_flag = [](const Polygon& p) { return p.u[0] < p.threshold[0]; }; // TODO: remove in favor of cellTypeEffect
 
   Ensemble(const char* name, Domain& domain, int seed=RNG_SEED) : t(0), domain(domain)
   {
@@ -404,6 +405,7 @@ struct Ensemble
           k = i, i = j++;
       }
       
+      // TODO: Rework this whole block into time integration and create production lambda
       // PolyMorph extension: set production
       const std::vector<bool> producing = is_producing(polygons[p]); // which species are produced by the cell
       const std::vector<double> p_sample = sample(p_dist, rng);
@@ -420,12 +422,13 @@ struct Ensemble
           polygons[p].p[i] = 0;
         }
       }
-      // set cell_type
-      polygons[p].cell_type = set_flag(polygons[p]);
-
+      // set cell_type TODO: move to better place
+      polygons[p].cell_type = cellTypeEffect(polygons[p], polygons[p].u, polygons[p].grad_u, t);
+      
       // compute vertex accelerations
       polygons[p].area(); // update the polygon area
       const double ls = polygons[p].perimeter0() / std::sqrt(Q * 4 * M_PI * polygons[p].A0); // inverse stretch ratio
+      const Point accEff = accelerationEffect(polygons[p], polygons[p].u, polygons[p].grad_u, t);
       for (std::size_t i = v.size() - 1, k = i - 1, j = 0; j < v.size(); k = i, i = j++)
       {
         const Point e1 = v[i].r - v[k].r;
@@ -455,20 +458,24 @@ struct Ensemble
                           - (a1 / ((l1 + l2) * b1)) * (n - a1 * (e1 - e2))
                           + (a2 / ((l2 + l3) * b2)) * (e3.cross() + a2 * e3));
 
+        // concentration effect on cell acceleration
+        v[i].a.add(1, accEff);
+
         // domain boundaries
         v[i].a.add((polygons[p].vertices[i].r.x < domain.x0) * domain_bd_stiffness, {(domain.x0 - polygons[p].vertices[i].r.x), 0});
         v[i].a.add((polygons[p].vertices[i].r.x > domain.x1) * domain_bd_stiffness, {(domain.x1 - polygons[p].vertices[i].r.x), 0});
         v[i].a.add((polygons[p].vertices[i].r.y < domain.y0) * domain_bd_stiffness, {0, (domain.y0 - polygons[p].vertices[i].r.y)});
         v[i].a.add((polygons[p].vertices[i].r.y > domain.y1) * domain_bd_stiffness, {0, (domain.y1 - polygons[p].vertices[i].r.y)});
 
-        // chemotaxis
-        if (CHEMOTAXIS_EN) {
-          for (int sp = 0; sp < NUM_SPECIES; sp++) {
-            if (chem_affect_cell_type[sp] == polygons[p].cell_type) {
-              v[i].a.add(chemotaxis_strength[sp], v[i].grad_u[sp]);
-            }
-          }
-        }
+        // chemotaxis TODO: remwork with AccelerationEffect
+        // if (CHEMOTAXIS_EN) {
+        //   for (int sp = 0; sp < NUM_SPECIES; sp++) {
+        //     if (chem_affect_cell_type[sp] == polygons[p].cell_type) {
+        //       v[i].a.add(chemotaxis_strength[sp], v[i].grad_u[sp]);
+        //     }
+        //   }
+        // }
+
       }
     }
     
@@ -498,9 +505,10 @@ struct Ensemble
         v.v.add(dt, v.a); // update vertex velocity
         v.r.add(dt, v.v); // update vertex position
       }
-      polygons[p].area(); // compute the new polygon area (Q: why did the order of this change)
-      if (polygons[p].A > beta * polygons[p].A0 || polygons[p].alpha < 0) {
-        polygons[p].A0 += polygons[p].alpha * dt; // apply the area growth rate
+      polygons[p].area(); // compute the new polygon area
+      double alpha_new = growthRateEffect(polygons[p], polygons[p].u, polygons[p].grad_u, t); 
+      if (polygons[p].A > beta * polygons[p].A0 || alpha_new < 0) {
+        polygons[p].A0 += alpha_new * dt; // apply the area growth rate
       }
     }
     t += dt; // advance the time

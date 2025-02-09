@@ -60,6 +60,8 @@ struct Polygon
   bool phase; // phase of the enclosed medium
   double A0, A, Amax, alpha; // target, actual & division area, area growth rate
   std::vector<double> D, k, p, u, threshold; // diffusion, kinetic coefficients, production, concentration, threshold
+  // TODO: update this instead of gradient at vertices!!!
+  std::vector<Point> grad_u = std::vector<Point>(NUM_SPECIES, Point(0, 0)); // local concentration gradient
   int cell_type = 0; // cell type (or general purpose flag for different user applications)
   std::vector<Index> children; // stores the indices of the FD grid points that lie INSIDE the polygon
 
@@ -101,6 +103,10 @@ struct Polygon
       midp = midp + v.r;
     }
     return 1.0/vertices.size() * midp;
+  }
+
+  size_t global_index() const {
+    return vertices[0].p; // vertices store the global polygon index they belong to
   }
 };
 
