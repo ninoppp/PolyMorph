@@ -58,7 +58,7 @@ int main(int argc, char* argv[]) {
       {
         std::cout << "Core " << omp_get_thread_num() << " used CV=" << Amax_CV << " and measured real CV=" << real_CV << std::endl;
         ensemble.output(real_CV_trunc);
-        ensemble.writeOFF("ensemble/tissues_cell_area_cv/" + std::to_string(real_CV_trunc) + ".off");
+        ensemble.write_OFF("ensemble/tissues_cell_area_cv/" + std::to_string(real_CV_trunc) + ".off");
       }
     }
   //}

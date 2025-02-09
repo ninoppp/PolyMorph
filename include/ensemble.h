@@ -40,7 +40,7 @@ struct Ensemble
 
   // lambda functions
   ConcentrationEffect<Point> accelerationEffect = [](const Polygon& self, const std::vector<double>& u, const std::vector<Point>& grad_u, double t) { return Point(0, 0); };
-  ConcentrationEffect<double> growthRateEffect = [](const Polygon& self, const std::vector<double>& u, const std::vector<Point>& grad_u, double t) { return self.alpha0; };
+  ConcentrationEffect<double> growthRateEffect = [](const Polygon& self, const std::vector<double>& u, const std::vector<Point>& grad_u, double t) { return self.alpha; };
   ConcentrationEffect<int> cellTypeEffect = [](const Polygon& self, const std::vector<double>& u, const std::vector<Point>& grad_u, double t) { return 0; };
 
   std::function<std::vector<bool>(const Polygon&)> is_producing = [](const Polygon& p) { return std::vector(NUM_SPECIES, false); }; // TODO: maybe integrate in effect system
@@ -79,8 +79,7 @@ struct Ensemble
       polygons[p].phase = std::abs(z[j]) % 2; // the z coordinate is used as the phase 
       polygons[p].A0 = polygons[p].area(); // use the initial area as target area
       polygons[p].Amax = sample(Amax_dist, rng);
-      polygons[p].alpha0 = sample(alpha_dist, rng);
-      polygons[p].alpha = polygons[p].alpha0;
+      polygons[p].alpha = sample(alpha_dist, rng);
       // PolyMorph extension
       polygons[p].D = sample(D_dist, rng, true);
       polygons[p].k = sample(k_dist, rng);
@@ -189,7 +188,7 @@ struct Ensemble
                         pnew[0].phase = polygons[p[inside[0]]].phase; // use the phase of the outer polygon
                         pnew[0].A0 = (1-2*inside[0]) * polygons[p1].A0 + (1-2*inside[1]) * polygons[p2].A0;
                         pnew[0].Amax  = !inside[0] * polygons[p1].Amax  + !inside[1] * polygons[p2].Amax;
-                        pnew[0].alpha0 = !inside[0] * polygons[p1].alpha0 + !inside[1] * polygons[p2].alpha0;
+                        pnew[0].alpha = !inside[0] * polygons[p1].alpha + !inside[1] * polygons[p2].alpha;
                         pnew[0].area(); // compute the new area
                       }
                     }
@@ -250,17 +249,17 @@ struct Ensemble
                         if (inside[0] || inside[1])
                         {
                           pnew[inside[0]].A0 = pn[inside[1]].A + polygons[p1].A0;
-                          pnew[inside[0]].alpha0 = polygons[p1].alpha0;
+                          pnew[inside[0]].alpha = polygons[p1].alpha;
                           pnew[inside[1]].A0 = pn[inside[1]].A;
-                          pnew[inside[1]].alpha0 = 0;
+                          pnew[inside[1]].alpha = 0;
                         }
                         else
                         {
                           const double f = pn[0].A / (pn[0].A + pn[1].A);
                           pnew[0].A0 = polygons[p1].A0 * f;
-                          pnew[0].alpha0 = polygons[p1].alpha0 * f;
+                          pnew[0].alpha = polygons[p1].alpha * f;
                           pnew[1].A0 = polygons[p1].A0 * (1 - f);
-                          pnew[1].alpha0 = polygons[p1].alpha0 * (1 - f);
+                          pnew[1].alpha = polygons[p1].alpha * (1 - f);
                         }
                       }
                     }
@@ -345,8 +344,8 @@ struct Ensemble
         const double A0 = polygons[p].A0;
         std::vector<Vertex> vold;
         vold.swap(v);
-        polygons[p] = {{vold[vend[2]]}, polygons[p].phase, 0, 0, sample(Amax_dist, rng), sample(alpha_dist, rng), 0, sample(D_dist, rng, true), sample(k_dist, rng)}; // new polygon 1
-        polygons.push_back({{vold[vend[0]]}, polygons[p].phase, 0, 0, sample(Amax_dist, rng), sample(alpha_dist, rng), 0, sample(D_dist, rng, true), sample(k_dist, rng)}); // new polygon 2
+        polygons[p] = {{vold[vend[2]]}, polygons[p].phase, 0, 0, sample(Amax_dist, rng), sample(alpha_dist, rng), sample(D_dist, rng, true), sample(k_dist, rng)}; // new polygon 1
+        polygons.push_back({{vold[vend[0]]}, polygons[p].phase, 0, 0, sample(Amax_dist, rng), sample(alpha_dist, rng), sample(D_dist, rng, true), sample(k_dist, rng)}); // new polygon 2
         for (std::size_t i = vend[1]; i != vend[2]; i = (i + 1) % vold.size())
           polygons[p].vertices.push_back(vold[i]);
         for (std::size_t i = vend[3]; i != vend[0]; i = (i + 1) % vold.size())
@@ -362,8 +361,8 @@ struct Ensemble
         
         polygons[p].threshold = sample(threshold_dist, rng);
         polygons.back().threshold = sample(threshold_dist, rng);
-        polygons[p].alpha = polygons[p].alpha0;
-        polygons.back().alpha = polygons.back().alpha0;
+        polygons[p].alpha = polygons[p].alpha;
+        polygons.back().alpha = polygons.back().alpha;
         polygons[p].u = std::vector<double>(NUM_SPECIES, 0);
         polygons.back().u = std::vector<double>(NUM_SPECIES, 0);
         polygons[p].p = std::vector<double>(NUM_SPECIES, 0);
@@ -735,7 +734,7 @@ struct Ensemble
     file << "</VTKFile>\n";
   }
 
-  void writeOFF(std::string filename) const {
+  void write_OFF(std::string filename) const {
         std::ofstream file(filename);
         if (!file.is_open()) {
             std::cerr << "Error: Could not open file " << filename << std::endl;

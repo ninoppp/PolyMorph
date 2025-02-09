@@ -134,7 +134,6 @@ double sample(std::lognormal_distribution<>& dist, std::mt19937& rng, bool cutof
 // returns a vector of samples from a vector of lognormal distributions
 std::vector<double> sample(std::vector<std::lognormal_distribution<>>& dists, std::mt19937& rng, bool cutoff=false) {
     std::vector<double> samples;
-    auto mean = get_means(dists);
     for (int i = 0; i < dists.size(); i++) {
         double x = sample(dists[i], rng, cutoff);
         samples.push_back(x);

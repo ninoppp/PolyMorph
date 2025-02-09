@@ -30,11 +30,10 @@ int main(int argc, char* argv[]) {
             interpolator.scatter(); // interpolate data to grid
             solver.step(dt); // advance chemical solver
             interpolator.gather(); // interpolate data back to ensemble
-            EnsembleController::stop_growth_if_flagged(ensemble); // flagged cells stop growing
             //domain.step(dt); // only needed if domain is growing/shrinking
         } 
         ensemble.output(f); // print frame
         solver.output(f); // print frame
     }
-    ensemble.writeOFF("final_state.off"); // save final state, can reuse as input later
+    ensemble.write_OFF("final_state.off"); // save final state, can reuse as input later
 }

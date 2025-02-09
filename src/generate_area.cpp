@@ -58,7 +58,7 @@ int main(int argc, char* argv[]) {
       {
         std::cout << "Core " << omp_get_thread_num() << " used Amax_mu=" << Amax_mu << " and measured real area=" << real_area << std::endl;
         ensemble.output(real_area_trunc);
-        ensemble.writeOFF("ensemble/tissues_cell_area/" + std::to_string(real_area_trunc) + ".off");
+        ensemble.write_OFF("ensemble/tissues_cell_area/" + std::to_string(real_area_trunc) + ".off");
       }
     }
   //}

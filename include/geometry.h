@@ -27,7 +27,7 @@ struct Point  // basically a 2D vector
     #pragma omp atomic
     y += a * r.y;
   }
-  // Polymorph extension: lexographical comparison for std::map (used in writeOFF)
+  // Polymorph extension: lexographical comparison for std::map (used in write_OFF)
   bool operator<(const Point& r) const {
     if (x == r.x) return y < r.y;
     return x < r.x;
@@ -58,7 +58,7 @@ struct Polygon
 {
   std::vector<Vertex> vertices; // vertex list in counter-clockwise orientation
   bool phase; // phase of the enclosed medium
-  double A0, A, Amax, alpha0, alpha; // target, actual & division area, area growth rate
+  double A0, A, Amax, alpha; // target, actual & division area, area growth rate
   std::vector<double> D, k, p, u, threshold; // diffusion, kinetic coefficients, production, concentration, threshold
   int cell_type = 0; // cell type (or general purpose flag for different user applications)
   std::vector<Index> children; // stores the indices of the FD grid points that lie INSIDE the polygon
