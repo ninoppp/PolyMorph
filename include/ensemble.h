@@ -13,6 +13,9 @@
 #include "geometry.h"
 #include "domain.h"
 
+template <typename T>
+using ConcentrationEffect = std::function<T(const Polygon& self, const std::vector<double>& u, const std::vector<Point>& grad_u, double t)>;
+
 struct Ensemble
 {
   Domain& domain; // simulation domain
@@ -35,9 +38,13 @@ struct Ensemble
   std::vector<std::lognormal_distribution<>> p_dist = create_lognormal(p_mu, p_CV);
   std::vector<std::lognormal_distribution<>> threshold_dist = create_lognormal(threshold_mu, threshold_CV);
 
-  // lambda functions ToDo: make const reference? should not create problem I think
-  std::function<std::vector<bool>(const Polygon&)> is_producing = [](const Polygon& p) { return std::vector(NUM_SPECIES, false); };
-  std::function<int(const Polygon&)> set_flag = [](const Polygon& p) { return p.u[0] < p.threshold[0]; };
+  // lambda functions
+  ConcentrationEffect<Point> accelerationEffect = [](const Polygon& self, const std::vector<double>& u, const std::vector<Point>& grad_u, double t) { return Point(0, 0); };
+  ConcentrationEffect<double> growthRateEffect = [](const Polygon& self, const std::vector<double>& u, const std::vector<Point>& grad_u, double t) { return self.alpha0; };
+  ConcentrationEffect<int> cellTypeEffect = [](const Polygon& self, const std::vector<double>& u, const std::vector<Point>& grad_u, double t) { return 0; };
+
+  std::function<std::vector<bool>(const Polygon&)> is_producing = [](const Polygon& p) { return std::vector(NUM_SPECIES, false); }; // TODO: maybe integrate in effect system
+  std::function<int(const Polygon&)> set_flag = [](const Polygon& p) { return p.u[0] < p.threshold[0]; }; // TODO: remove in favor of cellTypeEffect
 
   Ensemble(const char* name, Domain& domain, int seed=RNG_SEED) : t(0), domain(domain)
   {

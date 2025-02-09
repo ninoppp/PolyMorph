@@ -66,6 +66,7 @@ constexpr double dist_cutoff_factor = 2.0; // [-] used to cut off lognormal dist
 constexpr double velocity_cutoff_radius = 3.0 * Amax_mu; // [L] radius for IDW interpolation of velocity field. Coupled to Amax to account for length scale
 constexpr double domain_bd_stiffness = kr / 2; // [1/T^2] domain boundary stiffness (too high can cause instabilities)
 
+// ToDo rework this into new effect system
 const std::vector<double> chemotaxis_strength = {0}; // force proportional to concentration gradient
 const std::vector<int> chem_affect_cell_type = {1}; // which cell types (cell_type) to affect with each species
 

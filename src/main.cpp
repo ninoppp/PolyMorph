@@ -1,5 +1,4 @@
 #include "ensembleController.h"
-
 /** [Usage example]
 *
 * @brief Standard simulation example. Exponential growth, starting from a single cell

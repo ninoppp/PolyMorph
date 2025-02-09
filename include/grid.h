@@ -38,7 +38,7 @@ size_t Grid<std::vector<double>>::sizeZ() const {
 }
 
 // parallelized assignment operator
-// assumes equal grid sizes. only used for updating concentration during solver step
+// assumes equal grid sizes. only used for updating concentration grid during solver step
 template<typename T>
 void Grid<T>::parallel_copy_from(const Grid<T>& other) {
     if (this != &other) {
