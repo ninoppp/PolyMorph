@@ -223,7 +223,7 @@ void write_config(std::string prefix = "") {
         << "Nr=" << Nr << std::endl
         << "dist_cutoff_factor=" << dist_cutoff_factor << std::endl
         << "chemotaixs_strength=" << to_string(chemotaxis_strength) << std::endl
-        << "chem_affect_flag=" << to_string(chem_affect_flag) << std::endl
+        << "chem_affect_cell_type=" << to_string(chem_affect_cell_type) << std::endl
         << "anisotropy=" << anisotropy << std::endl
         << "domain_bd_stiffness=" << domain_bd_stiffness << std::endl
         << "RNG_SEED=" << RNG_SEED << std::endl
@@ -233,7 +233,7 @@ void write_config(std::string prefix = "") {
         << "Output::k=" << Output::k << std::endl
         << "Output::parent_idx=" << Output::parent_idx << std::endl
         << "Output::threshold=" << Output::threshold << std::endl
-        << "Output::flag=" << Output::flag << std::endl
+        << "Output::cell_type=" << Output::cell_type << std::endl
         << "Output::velocity=" << Output::velocity << std::endl;
         // expand if more parameters become relevant
     config.close();

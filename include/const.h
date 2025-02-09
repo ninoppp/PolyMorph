@@ -67,7 +67,7 @@ constexpr double velocity_cutoff_radius = 3.0 * Amax_mu; // [L] radius for IDW i
 constexpr double domain_bd_stiffness = kr / 2; // [1/T^2] domain boundary stiffness (too high can cause instabilities)
 
 const std::vector<double> chemotaxis_strength = {0}; // force proportional to concentration gradient
-const std::vector<int> chem_affect_flag = {1}; // which cell types (flag) to affect with each species
+const std::vector<int> chem_affect_cell_type = {1}; // which cell types (cell_type) to affect with each species
 
 constexpr int RNG_SEED = 90178009; // random number generator seed
 
@@ -79,7 +79,7 @@ namespace Output {
     constexpr bool k = true; // kinetic coefficients
     constexpr bool parent_idx = true; // polygon idx grid
     constexpr bool threshold = true; // threshold
-    constexpr bool flag = true; // boolean polygon flag 
+    constexpr bool cell_type = true; // boolean polygon cell_type 
     constexpr bool velocity = true; // velocity field
     constexpr bool grad_u = true; // concentration gradient
 }; 

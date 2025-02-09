@@ -20,7 +20,7 @@ namespace EnsembleController {
     for (int p = Nr; p < ensemble.polygons.size(); p++) {
       auto& cell = ensemble.polygons[p];
       for (auto& vertex : cell.vertices) {
-        if (cell.flag) {
+        if (cell.cell_type) {
           xmin = std::min(xmin, vertex.r.x); // leftmost flagged point
         } else {
           xmax = std::max(xmax, vertex.r.x); // rightmost unflagged
@@ -36,7 +36,7 @@ namespace EnsembleController {
     // find first flagged grid point
     for (int j = 0; j < solver.Ny; j++) {
       for (int i = 0; i < solver.Nx; i++) {
-        if (solver.parent_idx(i, j) >= Nr && ensemble.polygons[solver.parent_idx(i, j)].flag) {
+        if (solver.parent_idx(i, j) >= Nr && ensemble.polygons[solver.parent_idx(i, j)].cell_type) {
           border_x.push_back(solver.domain.x0 + i * solver.dx);
           break;
         }
@@ -47,23 +47,23 @@ namespace EnsembleController {
   }
 
   // NOT TESTED YET. 
-  // readout positions for each flag (corresponding to a different threshold)
+  // readout positions for each cell_type (corresponding to a different threshold)
   std::vector<double> mean_readout_positions(Ensemble& ensemble, Solver& solver) {
     int num_readouts = threshold_mu.size();
     std::vector<double> mean_border_x(num_readouts);
-    for (int flag = 1; flag <= num_readouts; flag++) {
+    for (int cell_type = 1; cell_type <= num_readouts; cell_type++) {
       std::vector<double> border_x;
       // find first flagged grid point
       for (int j = 0; j < solver.Ny; j++) {
         for (int i = 0; i < solver.Nx; i++) {
-          if (solver.parent_idx(i, j) >= Nr && ensemble.polygons[solver.parent_idx(i, j)].flag == flag) {
+          if (solver.parent_idx(i, j) >= Nr && ensemble.polygons[solver.parent_idx(i, j)].cell_type == cell_type) {
             border_x.push_back(solver.domain.x0 + i * solver.dx);
             break;
           }
         }
       }
       const double mean = std::accumulate(border_x.begin(), border_x.end(), 0.0) / border_x.size();
-      mean_border_x[flag - 1] = mean;
+      mean_border_x[cell_type - 1] = mean;
     }
     return mean_border_x;
   }
@@ -73,7 +73,7 @@ namespace EnsembleController {
     #pragma omp parallel for
     for (int p = Nr; p < ensemble.polygons.size(); p++) {
       auto& cell = ensemble.polygons[p];
-      cell.flag = ensemble.set_flag(cell);
+      cell.cell_type = ensemble.set_flag(cell);
     }
   }
 
@@ -89,10 +89,10 @@ namespace EnsembleController {
   void stop_growth_if_flagged(Ensemble& ensemble) {
     #pragma omp parallel for
     for (int p = Nr; p < ensemble.polygons.size(); p++) {
-      if (ensemble.polygons[p].flag) {
+      if (ensemble.polygons[p].cell_type) {
         ensemble.polygons[p].alpha = 0;
         ensemble.polygons[p].Amax = MAXFLOAT; 
-      } else if (!ensemble.polygons[p].flag && ensemble.polygons[p].alpha == 0) {
+      } else if (!ensemble.polygons[p].cell_type && ensemble.polygons[p].alpha == 0) {
         ensemble.polygons[p].alpha = ensemble.polygons[p].alpha0;
         ensemble.polygons[p].Amax = sample(ensemble.Amax_dist, ensemble.rng);
       }

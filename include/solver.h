@@ -21,7 +21,7 @@ struct BoundaryCondition {
     double value; // value at boundary (Dirichlet case) or derivative at boundary (Neumann case)
 };
 
-struct Boundary { // ToDo: allow multiple species
+struct Boundary { // ToDo: currently BC is same for all species
     BoundaryCondition north, south, east, west;
     
     static Boundary zeroFlux() {

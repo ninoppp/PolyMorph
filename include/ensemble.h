@@ -414,8 +414,8 @@ struct Ensemble
           polygons[p].p[i] = 0;
         }
       }
-      // set flag
-      polygons[p].flag = set_flag(polygons[p]);
+      // set cell_type
+      polygons[p].cell_type = set_flag(polygons[p]);
 
       // compute vertex accelerations
       polygons[p].area(); // update the polygon area
@@ -458,7 +458,7 @@ struct Ensemble
         // chemotaxis
         if (CHEMOTAXIS_EN) {
           for (int sp = 0; sp < NUM_SPECIES; sp++) {
-            if (chem_affect_flag[sp] == polygons[p].flag) {
+            if (chem_affect_cell_type[sp] == polygons[p].cell_type) {
               v[i].a.add(chemotaxis_strength[sp], v[i].grad_u[sp]);
             }
           }
@@ -663,10 +663,10 @@ struct Ensemble
       file << "\n";
       file << "        </DataArray>\n";
     }
-    if (Output::flag) {
-      file << "        <DataArray type=\"Int8\" Name=\"flag\" format=\"ascii\">\n";
+    if (Output::cell_type) {
+      file << "        <DataArray type=\"Int8\" Name=\"cell_type\" format=\"ascii\">\n";
       for (auto& p : polygons)
-        file << p.flag << " ";
+        file << p.cell_type << " ";
       file << "\n";
       file << "        </DataArray>\n";
     }

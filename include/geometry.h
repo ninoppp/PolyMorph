@@ -60,8 +60,8 @@ struct Polygon
   bool phase; // phase of the enclosed medium
   double A0, A, Amax, alpha0, alpha; // target, actual & division area, area growth rate
   std::vector<double> D, k, p, u, threshold; // diffusion, kinetic coefficients, production, concentration, threshold
-  int flag = 0; // general purpose flag (e.g. to differentiate cell types)
-  std::vector<Index> children; // stores the indices of the FD grid points that lie within the polygon
+  int cell_type = 0; // cell type (or general purpose flag for different user applications)
+  std::vector<Index> children; // stores the indices of the FD grid points that lie INSIDE the polygon
 
   double area()
   {
