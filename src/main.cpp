@@ -8,13 +8,15 @@ int main(int argc, char* argv[]) {
     welcome();
     validate_parameters(); // checks that correct number of kinetic parameters are set
     write_config();
-    double L = 30;
+    
     // set up core components
+    double L = 30;
     Domain domain(-L/2, -L/2, L/2, L/2); // initialize rectangular domain
     Ensemble ensemble("ensemble/test.off", domain); // init ensemble with input file
     Reaction reaction = Reactions::linearDegradation; // define reaction model
     Solver solver(domain, dx, reaction); // init solver
     Interpolator interpolator(ensemble, solver); // init interpolator
+    
     // set boundary conditions (default: zero-flux)
     solver.boundary.west = {BoundaryCondition::Type::Dirichlet, 0}; 
     
@@ -22,17 +24,16 @@ int main(int argc, char* argv[]) {
     ensemble.is_producing = [](const Polygon& p) { 
         return std::vector<bool> {p.global_index() == 0}; // starting cell (index 0) produces. Vector for multiple species
     }; 
-    // define cell type lambda
+
+    // define lambdas for concentration effects on cell behavior
     ensemble.cellTypeEffect = [](const Polygon& self, const std::vector<double>& u, const std::vector<Point>& grad_u, double t) { 
-        if (u[0] < 0.005) return 1; // differentiate cell type if concentration is below threshold
+        if (u[0] < 0.005) return 1; // differentiate cell type if concentration falls below threshold
         else return 0; 
     };
-    // define growth rate lambda
     ensemble.growthRateEffect = [](const Polygon& self, const std::vector<double>& u, const std::vector<Point>& grad_u, double t) { 
-        if (u[0] < 0.005) return 0.0; // stop growth if concentration is below threshold
+        if (u[0] < 0.005) return 0.0; // stop growth if concentration falls below threshold
         else return self.alpha; 
     };
-    // define acceleration lambda
     ensemble.accelerationEffect = [](const Polygon& self, const std::vector<double>& u, const std::vector<Point>& grad_u, double t) { 
         return Point(0, 0); // no acceleration effect
     };

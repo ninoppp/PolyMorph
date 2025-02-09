@@ -241,7 +241,7 @@ struct Ensemble
                       if (!fuse)
                       {
                         fuse = true;
-                        std::cerr << "WARNING: Fusing polygons not supported" << std::endl;
+                        std::cerr << "WARNING: Fusing polygons not fully supported" << std::endl;
                         pnew[0] = pn[0];
                         pnew[1] = pn[1];
                         
@@ -270,8 +270,6 @@ struct Ensemble
       }
       if (!fuse) break; // break out of the while(true) loop if no fusion was prepared
       
-      // TODO: init PolyMorph members for pnew 1 & 2 here
-
       // add/remove the affected polygon(s), then repeat from the beginning, recomputing the boxes
       polygons[pnew[0].vertices[0].p] = pnew[0];
       if (pnew[1].vertices.size() == 0) // fusion type I: remove the second old polygon
@@ -371,6 +369,7 @@ struct Ensemble
       }
     }
     
+    // handle vertices (refine, coarsen, compute accelerations)
     #pragma omp parallel for
     for (std::size_t p = 0; p < polygons.size(); ++p)
     {
@@ -405,26 +404,6 @@ struct Ensemble
           k = i, i = j++;
       }
       
-      // TODO: Rework this whole block into time integration and create production lambda
-      // PolyMorph extension: set production
-      const std::vector<bool> producing = is_producing(polygons[p]); // which species are produced by the cell
-      const std::vector<double> p_sample = sample(p_dist, rng);
-      #if DEBUG
-      if (producing.size() != NUM_SPECIES) {
-        std::cerr << "is_producing function must return a vector of size NUM_SPECIES" << std::endl;
-        exit(1);
-      }
-      #endif
-      for (int i = 0; i < NUM_SPECIES; i++) {
-        if (polygons[p].p[i] == 0 && producing[i]) {
-          polygons[p].p[i] = p_sample[i];
-        } else if (polygons[p].p[i] != 0 && !producing[i]) {
-          polygons[p].p[i] = 0;
-        }
-      }
-      // set cell_type TODO: move to better place
-      polygons[p].cell_type = cellTypeEffect(polygons[p], polygons[p].u, polygons[p].grad_u, t);
-      
       // compute vertex accelerations
       polygons[p].area(); // update the polygon area
       const double ls = polygons[p].perimeter0() / std::sqrt(Q * 4 * M_PI * polygons[p].A0); // inverse stretch ratio
@@ -458,7 +437,7 @@ struct Ensemble
                           - (a1 / ((l1 + l2) * b1)) * (n - a1 * (e1 - e2))
                           + (a2 / ((l2 + l3) * b2)) * (e3.cross() + a2 * e3));
 
-        // concentration effect on cell acceleration
+        // concentration effect on cell acceleration (same for all vertices of a polygon)
         v[i].a.add(1, accEff);
 
         // domain boundaries
@@ -466,16 +445,6 @@ struct Ensemble
         v[i].a.add((polygons[p].vertices[i].r.x > domain.x1) * domain_bd_stiffness, {(domain.x1 - polygons[p].vertices[i].r.x), 0});
         v[i].a.add((polygons[p].vertices[i].r.y < domain.y0) * domain_bd_stiffness, {0, (domain.y0 - polygons[p].vertices[i].r.y)});
         v[i].a.add((polygons[p].vertices[i].r.y > domain.y1) * domain_bd_stiffness, {0, (domain.y1 - polygons[p].vertices[i].r.y)});
-
-        // chemotaxis TODO: remwork with AccelerationEffect
-        // if (CHEMOTAXIS_EN) {
-        //   for (int sp = 0; sp < NUM_SPECIES; sp++) {
-        //     if (chem_affect_cell_type[sp] == polygons[p].cell_type) {
-        //       v[i].a.add(chemotaxis_strength[sp], v[i].grad_u[sp]);
-        //     }
-        //   }
-        // }
-
       }
     }
     
@@ -500,16 +469,29 @@ struct Ensemble
     #pragma omp parallel for
     for (std::size_t p = Nr; p < polygons.size(); ++p)
     {
+      // Move vertices
       for (auto& v : polygons[p].vertices)
       {
         v.v.add(dt, v.a); // update vertex velocity
         v.r.add(dt, v.v); // update vertex position
       }
-      polygons[p].area(); // compute the new polygon area
+      // Apply area growth rate
+      polygons[p].area();
       double alpha_new = growthRateEffect(polygons[p], polygons[p].u, polygons[p].grad_u, t); 
       if (polygons[p].A > beta * polygons[p].A0 || alpha_new < 0) {
-        polygons[p].A0 += alpha_new * dt; // apply the area growth rate
+        polygons[p].A0 += alpha_new * dt;
       }
+      // Update chemical production
+      const std::vector<bool> producing = is_producing(polygons[p]); // which species are produced by the cell
+      for (int i = 0; i < NUM_SPECIES; i++) {
+        if (producing[i] && polygons[p].p[i] == 0) {
+          polygons[p].p[i] = sample(p_dist[i], rng);
+        } else if (!producing[i] && polygons[p].p[i] != 0) {
+          polygons[p].p[i] = 0;
+        }
+      }
+      // Determine cell_type
+      polygons[p].cell_type = cellTypeEffect(polygons[p], polygons[p].u, polygons[p].grad_u, t);
     }
     t += dt; // advance the time
   }
@@ -645,6 +627,20 @@ struct Ensemble
       file << "\n";
       file << "        </DataArray>\n";
     }
+    if (Output::grad_u) {
+      file << "        <DataArray type=\"Float64\" Name=\"grad_u_x\" NumberOfComponents=\"" << NUM_SPECIES << "\" format=\"ascii\">\n";
+      for (auto& p : polygons) 
+        for (int i = 0; i < NUM_SPECIES; i++)
+          file << p.grad_u[i].x << " ";
+      file << "\n";
+      file << "        </DataArray>\n";
+      file << "        <DataArray type=\"Float64\" Name=\"grad_u_y\" NumberOfComponents=\"" << NUM_SPECIES << "\" format=\"ascii\">\n";
+      for (auto& p : polygons) 
+        for (int i = 0; i < NUM_SPECIES; i++)
+          file << p.grad_u[i].y << " ";
+      file << "\n";
+      file << "        </DataArray>\n";
+    }
     if (Output::D) {
       file << "        <DataArray type=\"Float64\" Name=\"D\" NumberOfComponents=\"" << NUM_SPECIES << "\" format=\"ascii\">\n";
       for (auto& p : polygons) 
@@ -661,7 +657,7 @@ struct Ensemble
       file << "\n";
       file << "        </DataArray>\n";
     }
-    if (Output::parent_idx) {
+    if (Output::p) {
       file << "        <DataArray type=\"Float64\" Name=\"p\" NumberOfComponents=\"" << NUM_SPECIES << "\" format=\"ascii\">\n";
       for (auto& p : polygons)
         for (int i = 0; i < NUM_SPECIES; i++)

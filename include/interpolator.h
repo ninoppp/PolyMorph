@@ -126,28 +126,32 @@ void Interpolator::gather() {
   #pragma omp parallel for
   for (int p = Nr; p < ensemble.polygons.size(); p++) {
     auto& cell = ensemble.polygons[p];
-    // average concentration
-    cell.u = std::vector<double>(NUM_SPECIES, 0.0);
+    // average concentration & gradient
+    cell.u = std::vector<double>(NUM_SPECIES, 0.0); // TODO optimize memory usage here
+    cell.grad_u = std::vector<Point>(NUM_SPECIES, Point(0, 0));
+    // TODO switch inner outer loop to simplify
     for (const Index& idx : cell.children) {
       for (int i = 0; i < NUM_SPECIES; i++){
         cell.u[i] += solver.u(idx)[i];
+        cell.grad_u[i].add(1, solver.grad_u(idx)[i]);
       }
     }
     if (cell.children.size() > 0) { // avoid division by zero if cells exceed RD box
       for (int i = 0; i < NUM_SPECIES; i++) {
         cell.u[i] /= cell.children.size();
+        cell.grad_u[i] = 1.0 / cell.children.size() * cell.grad_u[i];
       }
     } 
     // store gradient at vertices
-    if (CHEMOTAXIS_EN) {
-      for (auto& vertex : cell.vertices) {
-        const int i = std::round((vertex.r.x - solver.domain.x0) / solver.dx);
-        const int j = std::round((vertex.r.y - solver.domain.y0) / solver.dx);
-        if (i >= 0 && i < solver.Nx && j >= 0 && j < solver.Ny) {
-          vertex.grad_u = solver.grad_u(i, j);
-        }
-      }
-    }
+    // if (CHEMOTAXIS_EN) {
+    //   for (auto& vertex : cell.vertices) {
+    //     const int i = std::round((vertex.r.x - solver.domain.x0) / solver.dx);
+    //     const int j = std::round((vertex.r.y - solver.domain.y0) / solver.dx);
+    //     if (i >= 0 && i < solver.Nx && j >= 0 && j < solver.Ny) {
+    //       vertex.grad_u = solver.grad_u(i, j);
+    //     }
+    //   }
+    // }
   }
 }
 

@@ -43,7 +43,6 @@ constexpr double drmax = h + sh + ss; // maximum interaction distance
 
 // -- New PolyMorph parameters --
 constexpr bool ADVECTION_DILUTION_EN = false; // enable advection-dilution and calculate velocity field
-constexpr bool CHEMOTAXIS_EN = false; // enable chemotaxis. slightly performance enhancing if disabled (and not just chemotaxis_strength = 0)
 constexpr bool RESIZE_GRID_EN = false; // enable resizing of grid if domain changes/grows (not optimized. can be computationally expensive)
 constexpr int NUM_SPECIES = 1; // [-] number of diffusable species (defines size of D,p vectors)
 constexpr int NUM_KIN = 1; // [-] number of kinetic coefficients (defines size of k vectors)
@@ -65,10 +64,6 @@ constexpr double dx = 0.3; // [L] grid spacing for solver
 constexpr double dist_cutoff_factor = 2.0; // [-] used to cut off lognormal dists at mu*factor to maintain stability. only used for diffusivity D atm.
 constexpr double velocity_cutoff_radius = 3.0 * Amax_mu; // [L] radius for IDW interpolation of velocity field. Coupled to Amax to account for length scale
 constexpr double domain_bd_stiffness = kr / 2; // [1/T^2] domain boundary stiffness (too high can cause instabilities)
-
-// ToDo rework this into new effect system
-const std::vector<double> chemotaxis_strength = {0}; // force proportional to concentration gradient
-const std::vector<int> chem_affect_cell_type = {1}; // which cell types (cell_type) to affect with each species
 
 constexpr int RNG_SEED = 90178009; // random number generator seed
 

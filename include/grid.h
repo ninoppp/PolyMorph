@@ -37,6 +37,11 @@ size_t Grid<std::vector<double>>::sizeZ() const {
     return data[0][0].size();
 }
 
+template<>
+size_t Grid<std::vector<Point>>::sizeZ() const {
+    return data[0][0].size();
+}
+
 // parallelized assignment operator
 // assumes equal grid sizes. only used for updating concentration grid during solver step
 template<typename T>
@@ -96,6 +101,36 @@ std::string Grid<Point>::to_vtk(std::string name) {
     }
     xml << "</DataArray>" << std::endl;
     
+    return xml.str();
+}
+
+template<> // for gradient grids
+std::string Grid<std::vector<Point>>::to_vtk(std::string name) {
+    std::stringstream xml;
+    xml << "<DataArray type=\"Float64\" Name=\"" << name 
+        << "_x\" NumberOfComponents=\"" << sizeZ() 
+        << "\" format=\"ascii\">" << std::endl;
+    for (int i = 0; i < sizeX(); i++) {
+        for (int j = 0; j < sizeY(); j++) {
+            for (int k = 0; k < sizeZ(); k++) {
+                xml << data[i][j][k].x << " ";
+            }
+        }
+        xml << std::endl;
+    }
+    xml << "</DataArray>" << std::endl;
+    xml << "<DataArray type=\"Float64\" Name=\"" << name 
+        << "_y\" NumberOfComponents=\"" << sizeZ() 
+        << "\" format=\"ascii\">" << std::endl;
+    for (int i = 0; i < sizeX(); i++) {
+        for (int j = 0; j < sizeY(); j++) {
+            for (int k = 0; k < sizeZ(); k++) {
+                xml << data[i][j][k].y << " ";
+            }
+        }
+        xml << std::endl;
+    }
+    xml << "</DataArray>" << std::endl;
     return xml.str();
 }
 

@@ -116,10 +116,10 @@ std::vector<std::lognormal_distribution<>> create_lognormal(const std::vector<do
 
 // sample from a lognormal distribution, with optional use of cutoff factor
 double sample(std::lognormal_distribution<>& dist, std::mt19937& rng, bool cutoff=false) {
-    double mean = get_mean(dist);
     double x = dist(rng);   
-    int max_tries = 50;
     if (cutoff) {
+        int max_tries = 50;
+        const double mean = get_mean(dist);
         while (x > dist_cutoff_factor*mean) {
             x = dist(rng);
             if (max_tries-- == 0) {
@@ -202,7 +202,6 @@ void write_config(std::string prefix = "") {
         << "NUM_SPECIES=" << NUM_SPECIES << std::endl
         << "NUM_KIN=" << NUM_KIN << std::endl
         << "ADVECTION_DILUTION_EN=" << ADVECTION_DILUTION_EN << std::endl
-        << "CHEMOTAXIS_EN=" << CHEMOTAXIS_EN << std::endl
         << "RESIZE_GRID_EN=" << RESIZE_GRID_EN << std::endl
         << "D0=" << to_string(D0) << std::endl
         << "k0=" << to_string(k0) << std::endl
@@ -221,8 +220,6 @@ void write_config(std::string prefix = "") {
         << "Ns=" << Ns << std::endl
         << "Nr=" << Nr << std::endl
         << "dist_cutoff_factor=" << dist_cutoff_factor << std::endl
-        << "chemotaixs_strength=" << to_string(chemotaxis_strength) << std::endl
-        << "chem_affect_cell_type=" << to_string(chem_affect_cell_type) << std::endl
         << "anisotropy=" << to_string(anisotropy) << std::endl
         << "domain_bd_stiffness=" << domain_bd_stiffness << std::endl
         << "RNG_SEED=" << RNG_SEED << std::endl
