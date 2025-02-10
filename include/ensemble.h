@@ -14,7 +14,7 @@
 #include "domain.h"
 
 template <typename T>
-using ConcentrationEffect = std::function<T(const Polygon& self, const std::vector<double>& u, const std::vector<Point>& grad_u, double t)>;
+using ConcentrationEffect = std::function<T(const Polygon& self, const std::vector<double>& c, const std::vector<Point>& grad_c, double t)>;
 
 struct Ensemble
 {
@@ -40,12 +40,12 @@ struct Ensemble
   std::vector<std::lognormal_distribution<>> threshold_dist = create_lognormal(threshold_mu, threshold_CV);
 
   // lambda functions
-  ConcentrationEffect<Point> accelerationEffect = [](const Polygon& self, const std::vector<double>& u, const std::vector<Point>& grad_u, double t) { return Point(0, 0); };
-  ConcentrationEffect<double> growthRateEffect = [](const Polygon& self, const std::vector<double>& u, const std::vector<Point>& grad_u, double t) { return self.alpha; };
-  ConcentrationEffect<int> cellTypeEffect = [](const Polygon& self, const std::vector<double>& u, const std::vector<Point>& grad_u, double t) { return 0; };
+  ConcentrationEffect<Point> accelerationEffect = [](const Polygon& self, const std::vector<double>& c, const std::vector<Point>& grad_c, double t) { return Point(0, 0); };
+  ConcentrationEffect<double> growthRateEffect = [](const Polygon& self, const std::vector<double>& c, const std::vector<Point>& grad_c, double t) { return self.alpha; };
+  ConcentrationEffect<int> cellTypeEffect = [](const Polygon& self, const std::vector<double>& c, const std::vector<Point>& grad_c, double t) { return 0; };
 
   std::function<std::vector<bool>(const Polygon&)> is_producing = [](const Polygon& p) { return std::vector(NUM_SPECIES, false); }; // TODO: maybe integrate in effect system
-  //std::function<int(const Polygon&)> set_flag = [](const Polygon& p) { return p.u[0] < p.threshold[0]; }; // TODO: remove in favor of cellTypeEffect
+  //std::function<int(const Polygon&)> set_flag = [](const Polygon& p) { return p.c[0] < p.threshold[0]; }; // TODO: remove in favor of cellTypeEffect
 
   Ensemble(const char* name, Domain& domain, int seed=RNG_SEED) : t(0), domain(domain)
   {
@@ -86,7 +86,7 @@ struct Ensemble
       polygons[p].k = sample(k_dist, rng);
       polygons[p].threshold = sample(threshold_dist, rng);
       polygons[p].p = std::vector<double>(NUM_SPECIES, 0);
-      polygons[p].u = std::vector<double>(NUM_SPECIES, 0);
+      polygons[p].c = std::vector<double>(NUM_SPECIES, 0);
       // end PolyMorph extension
       for (std::size_t i = Nv - 1, j = 0; j < Nv; i = j++)
         polygons[p].vertices[i].l0 = (polygons[p].vertices[j].r - polygons[p].vertices[i].r).length(); // edge rest length
@@ -362,8 +362,8 @@ struct Ensemble
         polygons.back().threshold = sample(threshold_dist, rng);
         polygons[p].alpha = polygons[p].alpha;
         polygons.back().alpha = polygons.back().alpha;
-        polygons[p].u = std::vector<double>(NUM_SPECIES, 0);
-        polygons.back().u = std::vector<double>(NUM_SPECIES, 0);
+        polygons[p].c = std::vector<double>(NUM_SPECIES, 0);
+        polygons.back().c = std::vector<double>(NUM_SPECIES, 0);
         polygons[p].p = std::vector<double>(NUM_SPECIES, 0);
         polygons.back().p = std::vector<double>(NUM_SPECIES, 0);
       }
@@ -407,7 +407,7 @@ struct Ensemble
       // compute vertex accelerations
       polygons[p].area(); // update the polygon area
       const double ls = polygons[p].perimeter0() / std::sqrt(Q * 4 * M_PI * polygons[p].A0); // inverse stretch ratio
-      const Point accEff = accelerationEffect(polygons[p], polygons[p].u, polygons[p].grad_u, t);
+      const Point accEff = accelerationEffect(polygons[p], polygons[p].c, polygons[p].grad_c, t);
       for (std::size_t i = v.size() - 1, k = i - 1, j = 0; j < v.size(); k = i, i = j++)
       {
         const Point e1 = v[i].r - v[k].r;
@@ -477,7 +477,7 @@ struct Ensemble
       }
       // Apply area growth rate
       polygons[p].area();
-      double alpha_new = growthRateEffect(polygons[p], polygons[p].u, polygons[p].grad_u, t); 
+      double alpha_new = growthRateEffect(polygons[p], polygons[p].c, polygons[p].grad_c, t); 
       if (polygons[p].A > beta * polygons[p].A0 || alpha_new < 0) {
         polygons[p].A0 += alpha_new * dt;
       }
@@ -491,7 +491,7 @@ struct Ensemble
         }
       }
       // Determine cell_type
-      polygons[p].cell_type = cellTypeEffect(polygons[p], polygons[p].u, polygons[p].grad_u, t);
+      polygons[p].cell_type = cellTypeEffect(polygons[p], polygons[p].c, polygons[p].grad_c, t);
     }
     t += dt; // advance the time
   }
@@ -619,25 +619,25 @@ struct Ensemble
     file << "\n";
     file << "        </DataArray>\n";
     // polymorph extension
-    if (Output::u) {
-      file << "        <DataArray type=\"Float64\" Name=\"u\" NumberOfComponents=\"" << NUM_SPECIES << "\" format=\"ascii\">\n";
+    if (Output::c) {
+      file << "        <DataArray type=\"Float64\" Name=\"c\" NumberOfComponents=\"" << NUM_SPECIES << "\" format=\"ascii\">\n";
       for (auto& p : polygons) 
         for (int i = 0; i < NUM_SPECIES; i++)
-          file << p.u[i] << " ";
+          file << p.c[i] << " ";
       file << "\n";
       file << "        </DataArray>\n";
     }
-    if (Output::grad_u) {
+    if (Output::grad_c) {
       file << "        <DataArray type=\"Float64\" Name=\"grad_u_x\" NumberOfComponents=\"" << NUM_SPECIES << "\" format=\"ascii\">\n";
       for (auto& p : polygons) 
         for (int i = 0; i < NUM_SPECIES; i++)
-          file << p.grad_u[i].x << " ";
+          file << p.grad_c[i].x << " ";
       file << "\n";
       file << "        </DataArray>\n";
       file << "        <DataArray type=\"Float64\" Name=\"grad_u_y\" NumberOfComponents=\"" << NUM_SPECIES << "\" format=\"ascii\">\n";
       for (auto& p : polygons) 
         for (int i = 0; i < NUM_SPECIES; i++)
-          file << p.grad_u[i].y << " ";
+          file << p.grad_c[i].y << " ";
       file << "\n";
       file << "        </DataArray>\n";
     }

@@ -13,7 +13,7 @@ int main() {
   Domain domain(-L/2, -L/2, L/2, L/2);
   Ensemble ensemble("ensemble/tissue_127.off", domain);
   Solver solver(domain, dx, Reactions::turing);
-  solver.u = solver.noisy_ic(1, 0.1);
+  solver.c = solver.noisy_ic(1, 0.1);
   Interpolator interpolator(ensemble, solver);
   ensemble.output(0); // print the initial state
   solver.output(0); // print the initial state

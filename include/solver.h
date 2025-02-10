@@ -44,22 +44,22 @@ struct Solver {
     double dx; // grid spacing
     double t; // time
     std::vector<Boundary> boundary; // boundary conditions (one Boundary per species)
-    Reaction R = [](const std::vector<double>& u, const std::vector<double>& k, double t) { return std::vector<double>(NUM_SPECIES, 0.0); }; // reaction term
+    Reaction R = [](const std::vector<double>& c, const std::vector<double>& k, double t) { return std::vector<double>(NUM_SPECIES, 0.0); }; // reaction term
     Grid<int> parent_idx; // polygon idx
-    Grid<std::vector<double>> u; // concentrations
-    Grid<std::vector<double>> unew; // temporary grid for updating concentrations
+    Grid<std::vector<double>> c; // concentrations
+    Grid<std::vector<double>> cnew; // temporary grid for updating concentrations
     Grid<std::vector<double>> D; // diffusion coefficients
     Grid<std::vector<double>> p; // production rates
     Grid<std::vector<double>> k; // kinetic coefficients
     Grid<Point> velocity; // velocity field
-    Grid<std::vector<Point>> grad_u; // concentration gradient
+    Grid<std::vector<Point>> grad_c; // concentration gradient
 
     Solver(Domain& domain, const double dx, Reaction R) : t(0), domain(domain), R(R), dx(dx) {
         this->boundary = Boundary::zeroFlux(NUM_SPECIES);
         this->Nx = domain.width() / dx + 1;
         this->Ny = domain.height() / dx + 1;
-        this->u = Grid<std::vector<double>>(Nx, Ny, std::vector<double>(NUM_SPECIES, 0.0));
-        this->unew = Grid<std::vector<double>>(Nx, Ny, std::vector<double>(NUM_SPECIES, 0.0));
+        this->c = Grid<std::vector<double>>(Nx, Ny, std::vector<double>(NUM_SPECIES, 0.0));
+        this->cnew = Grid<std::vector<double>>(Nx, Ny, std::vector<double>(NUM_SPECIES, 0.0));
         
         std::cout << "solver dimensions: Nx=" << Nx << " Ny=" << Ny << " dx=" << dx << std::endl;
         std::cout << "domain: [" << domain.x0 << ", " << domain.x1 << "] x [" << domain.y0 << ", " << domain.y1 << "]" << std::endl;
@@ -69,7 +69,7 @@ struct Solver {
         D = Grid<std::vector<double>>(Nx, Ny, D0); // ToDo: Benchmark and maybe remove D,p,k grids (just use values from parent polygon)
         p = Grid<std::vector<double>>(Nx, Ny, p0);
         k = Grid<std::vector<double>>(Nx, Ny, k0);
-        grad_u = Grid<std::vector<Point>>(Nx, Ny, std::vector<Point>(NUM_SPECIES, Point(0, 0)));
+        grad_c = Grid<std::vector<Point>>(Nx, Ny, std::vector<Point>(NUM_SPECIES, Point(0, 0)));
         if (ADVECTION_DILUTION_EN) {
             velocity = Grid<Point>(Nx, Ny, Point(0, 0));
         }
@@ -77,7 +77,7 @@ struct Solver {
 
     // rescale all grids
     void rescale(size_t Nx_new, size_t Ny_new, int offset_x, int offset_y) {
-        u.rescale(Nx_new, Ny_new, offset_x, offset_y, std::vector<double>(NUM_SPECIES, 0.0));
+        c.rescale(Nx_new, Ny_new, offset_x, offset_y, std::vector<double>(NUM_SPECIES, 0.0));
         D.rescale(Nx_new, Ny_new, offset_x, offset_y, D0);
         p.rescale(Nx_new, Ny_new, offset_x, offset_y, p0);
         k.rescale(Nx_new, Ny_new, offset_x, offset_y, k0);
@@ -106,39 +106,39 @@ struct Solver {
         #pragma omp parallel for collapse(2)
         for (int i = 0; i < Nx; i++) {
             for (int j = 0; j < Ny; j++) {   
-                const std::vector<double> reaction = R(u(i, j), k(i, j), t);
+                const std::vector<double> reaction = R(c(i, j), k(i, j), t);
                 for (int sp = 0; sp < NUM_SPECIES; sp++) {
                     // dirichlet boundary conditions
-                    if      (i == 0     && boundary[sp].west.type  == BoundaryCondition::Type::Dirichlet) { unew(i, j)[sp] = boundary[sp].west.value; continue; } 
-                    else if (i == Nx-1  && boundary[sp].east.type  == BoundaryCondition::Type::Dirichlet) { unew(i, j)[sp] = boundary[sp].east.value; continue; } 
-                    else if (j == 0     && boundary[sp].south.type == BoundaryCondition::Type::Dirichlet) { unew(i, j)[sp] = boundary[sp].south.value; continue; } 
-                    else if (j == Ny-1  && boundary[sp].north.type == BoundaryCondition::Type::Dirichlet) { unew(i, j)[sp] = boundary[sp].north.value; continue; } 
+                    if      (i == 0     && boundary[sp].west.type  == BoundaryCondition::Type::Dirichlet) { cnew(i, j)[sp] = boundary[sp].west.value; continue; } 
+                    else if (i == Nx-1  && boundary[sp].east.type  == BoundaryCondition::Type::Dirichlet) { cnew(i, j)[sp] = boundary[sp].east.value; continue; } 
+                    else if (j == 0     && boundary[sp].south.type == BoundaryCondition::Type::Dirichlet) { cnew(i, j)[sp] = boundary[sp].south.value; continue; } 
+                    else if (j == Ny-1  && boundary[sp].north.type == BoundaryCondition::Type::Dirichlet) { cnew(i, j)[sp] = boundary[sp].north.value; continue; } 
                     else {
                         // account for neumann BDC
-                        const double n = (j == Ny-1) ? u(i, j-1)[sp] + 2*dx*boundary[sp].north.value : u(i, j+1)[sp]; 
-                        const double s = (j == 0)    ? u(i, j+1)[sp] - 2*dx*boundary[sp].south.value : u(i, j-1)[sp];
-                        const double e = (i == Nx-1) ? u(i-1, j)[sp] + 2*dx*boundary[sp].east.value  : u(i+1, j)[sp];
-                        const double w = (i == 0)    ? u(i+1, j)[sp] - 2*dx*boundary[sp].west.value  : u(i-1, j)[sp];
+                        const double n = (j == Ny-1) ? c(i, j-1)[sp] + 2*dx*boundary[sp].north.value : c(i, j+1)[sp]; 
+                        const double s = (j == 0)    ? c(i, j+1)[sp] - 2*dx*boundary[sp].south.value : c(i, j-1)[sp];
+                        const double e = (i == Nx-1) ? c(i-1, j)[sp] + 2*dx*boundary[sp].east.value  : c(i+1, j)[sp];
+                        const double w = (i == 0)    ? c(i+1, j)[sp] - 2*dx*boundary[sp].west.value  : c(i-1, j)[sp];
                         // calculate diffusion term
-                        const double diffusion = D(i, j)[sp] / (dx*dx) * (e + w + anisotropy[sp] * (n + s) - 2 * (1 + anisotropy[sp]) * u(i, j)[sp]);
+                        const double diffusion = D(i, j)[sp] / (dx*dx) * (e + w + anisotropy[sp] * (n + s) - 2 * (1 + anisotropy[sp]) * c(i, j)[sp]);
                         // update grid point
-                        unew(i, j)[sp] = u(i, j)[sp] + dt * (diffusion + reaction[sp] + p(i, j)[sp]); 
-                        grad_u(i, j)[sp] = {(e - w) / (2 * dx), (n - s) / (2 * dx)};
+                        cnew(i, j)[sp] = c(i, j)[sp] + dt * (diffusion + reaction[sp] + p(i, j)[sp]); 
+                        grad_c(i, j)[sp] = {(e - w) / (2 * dx), (n - s) / (2 * dx)};
                         
                         if(ADVECTION_DILUTION_EN) {
-                            const double advection = velocity(i, j) * grad_u(i, j)[sp]; // dot product
+                            const double advection = velocity(i, j) * grad_c(i, j)[sp]; // dot product
                             const double dvdx = (j == Ny-1 || j == 0) ? 0 : (velocity(i, j+1).y - velocity(i, j-1).y) / (2 * dx);
                             const double dvdy = (i == Nx-1 || i == 0) ? 0 : (velocity(i+1, j).x - velocity(i-1, j).x) / (2 * dx);
-                            const double dilution = u(i, j)[sp] * (dvdx + dvdy);
+                            const double dilution = c(i, j)[sp] * (dvdx + dvdy);
                             // update grid point
-                            unew(i, j)[sp] -= dt * (advection + dilution);
+                            cnew(i, j)[sp] -= dt * (advection + dilution);
                         }                    
                     }
                 }
             }
         }
         // update state
-        u.parallel_copy_from(unew); // parallelized assignment operator
+        c.parallel_copy_from(cnew); // parallelized assignment operator
         t += dt; // advance the time
     }
 
@@ -165,8 +165,8 @@ struct Solver {
         file << "</Points>" << std::endl;
         file << "<PointData Scalars=\"scalars\">" << std::endl; // start point data
         
-        if (Output::u) file << u.to_vtk("u");
-        if (Output::grad_u) file << grad_u.to_vtk("grad_u");
+        if (Output::c) file << c.to_vtk("c");
+        if (Output::grad_c) file << grad_c.to_vtk("grad_c");
         if (Output::parent_idx) file << parent_idx.to_vtk("parent_idx");
         if (Output::D) file << D.to_vtk("D");
         if (Output::k) file << k.to_vtk("k");

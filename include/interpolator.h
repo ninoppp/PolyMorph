@@ -29,7 +29,7 @@ struct Interpolator {
   // scatter coefficients D, k, p and velocity from polygons to grid points
   void scatter();
 
-  // gather concentration u from grid points to polygons
+  // gather concentration c from grid points to polygons
   // important: depends on scatter being called every iteration to build the parent_idx
   void gather();
 
@@ -143,31 +143,31 @@ void Interpolator::gather() {
   for (int p = Nr; p < ensemble.polygons.size(); p++) {
     auto& cell = ensemble.polygons[p];
     for (int sp = 0; sp < NUM_SPECIES; sp++){
-      cell.u[sp] = 0.0; // reset values
-      cell.grad_u[sp] = Point(0, 0); // reset values
+      cell.c[sp] = 0.0; // reset values
+      cell.grad_c[sp] = Point(0, 0); // reset values
       for (const Index& idx : cell.children) {
-        cell.u[sp] += solver.u(idx)[sp];
-        cell.grad_u[sp].add(1, solver.grad_u(idx)[sp]);
+        cell.c[sp] += solver.c(idx)[sp];
+        cell.grad_c[sp].add(1, solver.grad_c(idx)[sp]);
       }
       if (cell.children.size() > 0) { // avoid division by zero
-        cell.u[sp] /= cell.children.size();
-        cell.grad_u[sp] = 1.0 / cell.children.size() * cell.grad_u[sp];
+        cell.c[sp] /= cell.children.size();
+        cell.grad_c[sp] = 1.0 / cell.children.size() * cell.grad_c[sp];
       }
     }
   } 
-    // cell.u = std::vector<double>(NUM_SPECIES, 0.0); // TODO optimize memory usage here
-    // cell.grad_u = std::vector<Point>(NUM_SPECIES, Point(0, 0));
+    // cell.c = std::vector<double>(NUM_SPECIES, 0.0); // TODO optimize memory usage here
+    // cell.grad_c = std::vector<Point>(NUM_SPECIES, Point(0, 0));
     // // TODO switch inner outer loop to simplify
     // for (const Index& idx : cell.children) {
     //   for (int i = 0; i < NUM_SPECIES; i++){
-    //     cell.u[i] += solver.u(idx)[i];
-    //     cell.grad_u[i].add(1, solver.grad_u(idx)[i]);
+    //     cell.c[i] += solver.c(idx)[i];
+    //     cell.grad_c[i].add(1, solver.grad_c(idx)[i]);
     //   }
     // }
     // if (cell.children.size() > 0) { // avoid division by zero if cells exceed RD box
     //   for (int i = 0; i < NUM_SPECIES; i++) {
-    //     cell.u[i] /= cell.children.size();
-    //     cell.grad_u[i] = 1.0 / cell.children.size() * cell.grad_u[i];
+    //     cell.c[i] /= cell.children.size();
+    //     cell.grad_c[i] = 1.0 / cell.children.size() * cell.grad_c[i];
     //   }
     // } 
     // store gradient at vertices
@@ -176,7 +176,7 @@ void Interpolator::gather() {
     //     const int i = std::round((vertex.r.x - solver.domain.x0) / solver.dx);
     //     const int j = std::round((vertex.r.y - solver.domain.y0) / solver.dx);
     //     if (i >= 0 && i < solver.Nx && j >= 0 && j < solver.Ny) {
-    //       vertex.grad_u = solver.grad_u(i, j);
+    //       vertex.grad_c = solver.grad_c(i, j);
     //     }
     //   }
     // }

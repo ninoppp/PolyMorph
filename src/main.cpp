@@ -24,15 +24,15 @@ int main(int argc, char* argv[]) {
         return std::vector<bool> {p.global_index() == 0}; // starting cell (index 0) produces. Vector for multiple species
     }; 
     // define lambdas for concentration effects on cell behavior
-    ensemble.cellTypeEffect = [](const Polygon& self, const std::vector<double>& u, const std::vector<Point>& grad_u, double t) { 
-        if (u[0] < 0.005) return 1; // differentiate cell type if concentration falls below threshold
+    ensemble.cellTypeEffect = [](const Polygon& self, const std::vector<double>& c, const std::vector<Point>& grad_c, double t) { 
+        if (c[0] < 0.005) return 1; // differentiate cell type if concentration falls below threshold
         else return 0; 
     };
-    ensemble.growthRateEffect = [](const Polygon& self, const std::vector<double>& u, const std::vector<Point>& grad_u, double t) { 
-        if (u[0] < 0.005) return 0.0; // stop growth if concentration falls below threshold
+    ensemble.growthRateEffect = [](const Polygon& self, const std::vector<double>& c, const std::vector<Point>& grad_c, double t) { 
+        if (c[0] < 0.005) return 0.0; // stop growth if concentration falls below threshold
         else return self.alpha; 
     };
-    ensemble.accelerationEffect = [](const Polygon& self, const std::vector<double>& u, const std::vector<Point>& grad_u, double t) { 
+    ensemble.accelerationEffect = [](const Polygon& self, const std::vector<double>& c, const std::vector<Point>& grad_c, double t) { 
         return Point(0, 0); // no acceleration effect
     };
     

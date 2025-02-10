@@ -69,7 +69,7 @@ constexpr int RNG_SEED = 90178009; // random number generator seed
 
 // define what to write to vtk files for visualization/debugging. disable things to save space 
 namespace Output { 
-    constexpr bool u = true; // concentration
+    constexpr bool c = true; // concentration
     constexpr bool D = true; // diffusion coefficient
     constexpr bool p = true; // production rate
     constexpr bool k = true; // kinetic coefficients
@@ -77,7 +77,7 @@ namespace Output {
     constexpr bool threshold = true; // threshold
     constexpr bool cell_type = true; // boolean polygon cell_type 
     constexpr bool velocity = true; // velocity field
-    constexpr bool grad_u = true; // concentration gradient
+    constexpr bool grad_c = true; // concentration gradient
 }; 
 
 #endif

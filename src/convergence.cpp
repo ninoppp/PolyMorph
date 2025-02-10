@@ -70,7 +70,7 @@ int main(int argc, char* argv[]) {
             solver.step(dt);
             if (s % 1000 == 0) {
                 
-                auto sol = grid_to_vec(solver.u);
+                auto sol = grid_to_vec(solver.c);
                 double rmse = RMSE(sol, dx);
                 double inf_norm = infinity_norm(sol, dx);
                 std::stringstream ss;
@@ -81,7 +81,7 @@ int main(int argc, char* argv[]) {
                 }
             }   
         }
-        auto sol = grid_to_vec(solver.u);
+        auto sol = grid_to_vec(solver.c);
         double rmse = RMSE(sol, dx);
         double inf_norm = infinity_norm(sol, dx);
         file << dx << "," << rmse << "," << inf_norm << std::endl;
