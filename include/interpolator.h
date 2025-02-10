@@ -142,44 +142,19 @@ void Interpolator::gather() {
   #pragma omp parallel for
   for (int p = Nr; p < ensemble.polygons.size(); p++) {
     auto& cell = ensemble.polygons[p];
+    const int num_children = cell.children.size();
+    if (num_children == 0) continue; // skip if no interior grid points
+    const double inv_size = 1.0 / num_children;
+
     for (int sp = 0; sp < NUM_SPECIES; sp++){
       cell.c[sp] = 0.0; // reset values
       cell.grad_c[sp] = Point(0, 0); // reset values
       for (const Index& idx : cell.children) {
-        cell.c[sp] += solver.c(idx)[sp];
-        cell.grad_c[sp].add(1, solver.grad_c(idx)[sp]);
-      }
-      if (cell.children.size() > 0) { // avoid division by zero
-        cell.c[sp] /= cell.children.size();
-        cell.grad_c[sp] = 1.0 / cell.children.size() * cell.grad_c[sp];
+        cell.c[sp] += inv_size * solver.c(idx)[sp];
+        cell.grad_c[sp].add(inv_size, solver.grad_c(idx)[sp]);
       }
     }
   } 
-    // cell.c = std::vector<double>(NUM_SPECIES, 0.0); // TODO optimize memory usage here
-    // cell.grad_c = std::vector<Point>(NUM_SPECIES, Point(0, 0));
-    // // TODO switch inner outer loop to simplify
-    // for (const Index& idx : cell.children) {
-    //   for (int i = 0; i < NUM_SPECIES; i++){
-    //     cell.c[i] += solver.c(idx)[i];
-    //     cell.grad_c[i].add(1, solver.grad_c(idx)[i]);
-    //   }
-    // }
-    // if (cell.children.size() > 0) { // avoid division by zero if cells exceed RD box
-    //   for (int i = 0; i < NUM_SPECIES; i++) {
-    //     cell.c[i] /= cell.children.size();
-    //     cell.grad_c[i] = 1.0 / cell.children.size() * cell.grad_c[i];
-    //   }
-    // } 
-    // store gradient at vertices
-    // if (CHEMOTAXIS_EN) {
-    //   for (auto& vertex : cell.vertices) {
-    //     const int i = std::round((vertex.r.x - solver.domain.x0) / solver.dx);
-    //     const int j = std::round((vertex.r.y - solver.domain.y0) / solver.dx);
-    //     if (i >= 0 && i < solver.Nx && j >= 0 && j < solver.Ny) {
-    //       vertex.grad_c = solver.grad_c(i, j);
-    //     }
-    //   }
-    // }
 }
 
 std::size_t Interpolator::find_parent(Point grid_point) {

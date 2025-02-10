@@ -102,6 +102,10 @@ struct Solver {
             }
         }
 
+        // precompute
+        double two_dx = 2 * dx; 
+        double dx2 = dx * dx; 
+
         // Forward Euler with central differences
         #pragma omp parallel for collapse(2)
         for (int i = 0; i < Nx; i++) {
@@ -115,20 +119,20 @@ struct Solver {
                     else if (j == Ny-1  && boundary[sp].north.type == BoundaryCondition::Type::Dirichlet) { cnew(i, j)[sp] = boundary[sp].north.value; continue; } 
                     else {
                         // account for neumann BDC
-                        const double n = (j == Ny-1) ? c(i, j-1)[sp] + 2*dx*boundary[sp].north.value : c(i, j+1)[sp]; 
-                        const double s = (j == 0)    ? c(i, j+1)[sp] - 2*dx*boundary[sp].south.value : c(i, j-1)[sp];
-                        const double e = (i == Nx-1) ? c(i-1, j)[sp] + 2*dx*boundary[sp].east.value  : c(i+1, j)[sp];
-                        const double w = (i == 0)    ? c(i+1, j)[sp] - 2*dx*boundary[sp].west.value  : c(i-1, j)[sp];
+                        const double n = (j == Ny-1) ? c(i, j-1)[sp] + two_dx*boundary[sp].north.value : c(i, j+1)[sp]; 
+                        const double s = (j == 0)    ? c(i, j+1)[sp] - two_dx*boundary[sp].south.value : c(i, j-1)[sp];
+                        const double e = (i == Nx-1) ? c(i-1, j)[sp] + two_dx*boundary[sp].east.value  : c(i+1, j)[sp];
+                        const double w = (i == 0)    ? c(i+1, j)[sp] - two_dx*boundary[sp].west.value  : c(i-1, j)[sp];
                         // calculate diffusion term
-                        const double diffusion = D(i, j)[sp] / (dx*dx) * (e + w + anisotropy[sp] * (n + s) - 2 * (1 + anisotropy[sp]) * c(i, j)[sp]);
+                        const double diffusion = D(i, j)[sp] / dx2 * (e + w + anisotropy[sp] * (n + s) - 2 * (1 + anisotropy[sp]) * c(i, j)[sp]);
                         // update grid point
                         cnew(i, j)[sp] = c(i, j)[sp] + dt * (diffusion + reaction[sp] + p(i, j)[sp]); 
-                        grad_c(i, j)[sp] = {(e - w) / (2 * dx), (n - s) / (2 * dx)};
+                        grad_c(i, j)[sp] = {(e - w) / two_dx, (n - s) / two_dx};
                         
                         if(ADVECTION_DILUTION_EN) {
                             const double advection = velocity(i, j) * grad_c(i, j)[sp]; // dot product
-                            const double dvdx = (j == Ny-1 || j == 0) ? 0 : (velocity(i, j+1).y - velocity(i, j-1).y) / (2 * dx);
-                            const double dvdy = (i == Nx-1 || i == 0) ? 0 : (velocity(i+1, j).x - velocity(i-1, j).x) / (2 * dx);
+                            const double dvdx = (j == Ny-1 || j == 0) ? 0 : (velocity(i, j+1).y - velocity(i, j-1).y) / two_dx;
+                            const double dvdy = (i == Nx-1 || i == 0) ? 0 : (velocity(i+1, j).x - velocity(i-1, j).x) / two_dx;
                             const double dilution = c(i, j)[sp] * (dvdx + dvdy);
                             // update grid point
                             cnew(i, j)[sp] -= dt * (advection + dilution);
