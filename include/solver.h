@@ -32,6 +32,10 @@ struct Boundary { // ToDo: currently BC is same for all species
             {BoundaryCondition::Type::Neumann, 0}
         };
     }
+
+    static std::vector<Boundary> zeroFlux(size_t n) {
+        return std::vector<Boundary>(n, zeroFlux());
+    }
 };
 
 struct Solver { 
@@ -39,7 +43,7 @@ struct Solver {
     int Nx, Ny; // number of grid points
     double dx; // grid spacing
     double t; // time
-    Boundary boundary; // boundary conditions
+    std::vector<Boundary> boundary; // boundary conditions (one Boundary per species)
     Reaction R = [](const std::vector<double>& u, const std::vector<double>& k, double t) { return std::vector<double>(NUM_SPECIES, 0.0); }; // reaction term
     Grid<int> parent_idx; // polygon idx
     Grid<std::vector<double>> u; // concentrations
@@ -51,7 +55,7 @@ struct Solver {
     Grid<std::vector<Point>> grad_u; // concentration gradient
 
     Solver(Domain& domain, const double dx, Reaction R) : t(0), domain(domain), R(R), dx(dx) {
-        this->boundary = Boundary::zeroFlux();
+        this->boundary = Boundary::zeroFlux(NUM_SPECIES);
         this->Nx = domain.width() / dx + 1;
         this->Ny = domain.height() / dx + 1;
         this->u = Grid<std::vector<double>>(Nx, Ny, std::vector<double>(NUM_SPECIES, 0.0));
@@ -105,16 +109,16 @@ struct Solver {
                 const std::vector<double> reaction = R(u(i, j), k(i, j), t);
                 for (int sp = 0; sp < NUM_SPECIES; sp++) {
                     // dirichlet boundary conditions
-                    if      (i == 0     && boundary.west.type  == BoundaryCondition::Type::Dirichlet) { unew(i, j)[sp] = boundary.west.value; continue; } 
-                    else if (i == Nx-1  && boundary.east.type  == BoundaryCondition::Type::Dirichlet) { unew(i, j)[sp] = boundary.east.value; continue; } 
-                    else if (j == 0     && boundary.south.type == BoundaryCondition::Type::Dirichlet) { unew(i, j)[sp] = boundary.south.value; continue; } 
-                    else if (j == Ny-1  && boundary.north.type == BoundaryCondition::Type::Dirichlet) { unew(i, j)[sp] = boundary.north.value; continue; } 
+                    if      (i == 0     && boundary[sp].west.type  == BoundaryCondition::Type::Dirichlet) { unew(i, j)[sp] = boundary[sp].west.value; continue; } 
+                    else if (i == Nx-1  && boundary[sp].east.type  == BoundaryCondition::Type::Dirichlet) { unew(i, j)[sp] = boundary[sp].east.value; continue; } 
+                    else if (j == 0     && boundary[sp].south.type == BoundaryCondition::Type::Dirichlet) { unew(i, j)[sp] = boundary[sp].south.value; continue; } 
+                    else if (j == Ny-1  && boundary[sp].north.type == BoundaryCondition::Type::Dirichlet) { unew(i, j)[sp] = boundary[sp].north.value; continue; } 
                     else {
                         // account for neumann BDC
-                        const double n = (j == Ny-1) ? u(i, j-1)[sp] + 2*dx*boundary.north.value : u(i, j+1)[sp]; 
-                        const double s = (j == 0)    ? u(i, j+1)[sp] - 2*dx*boundary.south.value : u(i, j-1)[sp];
-                        const double e = (i == Nx-1) ? u(i-1, j)[sp] + 2*dx*boundary.east.value  : u(i+1, j)[sp];
-                        const double w = (i == 0)    ? u(i+1, j)[sp] - 2*dx*boundary.west.value  : u(i-1, j)[sp];
+                        const double n = (j == Ny-1) ? u(i, j-1)[sp] + 2*dx*boundary[sp].north.value : u(i, j+1)[sp]; 
+                        const double s = (j == 0)    ? u(i, j+1)[sp] - 2*dx*boundary[sp].south.value : u(i, j-1)[sp];
+                        const double e = (i == Nx-1) ? u(i-1, j)[sp] + 2*dx*boundary[sp].east.value  : u(i+1, j)[sp];
+                        const double w = (i == 0)    ? u(i+1, j)[sp] - 2*dx*boundary[sp].west.value  : u(i-1, j)[sp];
                         // calculate diffusion term
                         const double diffusion = D(i, j)[sp] / (dx*dx) * (e + w + anisotropy[sp] * (n + s) - 2 * (1 + anisotropy[sp]) * u(i, j)[sp]);
                         // update grid point

@@ -18,7 +18,7 @@ int main(int argc, char* argv[]) {
     Interpolator interpolator(ensemble, solver); // init interpolator
     
     // set boundary conditions (default: zero-flux)
-    solver.boundary.west = {BoundaryCondition::Type::Dirichlet, 0}; 
+    solver.boundary[0].west = {BoundaryCondition::Type::Dirichlet, 0}; 
     
     // define production lambda (default no cell-based production)
     ensemble.is_producing = [](const Polygon& p) { 
