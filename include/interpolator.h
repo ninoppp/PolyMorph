@@ -12,8 +12,11 @@ struct Interpolator {
   Ensemble& ensemble;
   Solver& solver;
   int istart, jstart, iend, jend; // limits of the grid points to be updated (within ensemble bounds)
-  
-  Interpolator(Ensemble& ensemble, Solver& solver) : ensemble(ensemble), solver(solver) {}
+  Grid<int>& prev_idx; // stores the polygon index of the cell in which a grid point lies (its parent)
+  Grid<int> new_idx;  // negative indices indicate a background node. ToDo: could make this in place
+  Interpolator(Ensemble& ensemble, Solver& solver) : ensemble(ensemble), solver(solver), prev_idx(solver.parent_idx) {
+    new_idx = Grid<int>(solver.Nx, solver.Ny, -1);
+  }
   
   // scatter coefficients D, k, p and velocity from polygons to grid points
   void scatter();
@@ -36,9 +39,6 @@ struct Interpolator {
 };
 
 void Interpolator::scatter() {
-  Grid<int>& prev_idx = solver.parent_idx; // stores the polygon index of the cell in which a grid point lies (its parent)
-  Grid<int> new_idx(solver.Nx, solver.Ny, -1); // negative indices indicate a background node. ToDo: could make this in place
-  
   istart = std::max(int((ensemble.x0 - solver.domain.x0) / solver.dx) + 1, 0);
   jstart = std::max(int((ensemble.y0 - solver.domain.y0) / solver.dx) + 1, 0);
   iend = std::min(int((ensemble.x1 - solver.domain.x0) / solver.dx), solver.Nx);
@@ -81,7 +81,7 @@ void Interpolator::scatter() {
         }
       }
     }
-    solver.parent_idx = new_idx; // ToDo: could make this in place
+    solver.parent_idx.parallel_copy_from(new_idx); // ToDo: could mby do this inplace?
 
     // interpolate remaining velocity field
     if (ADVECTION_DILUTION_EN) {
@@ -114,34 +114,46 @@ void Interpolator::gather() {
   for (auto& cell : ensemble.polygons) {
     cell.children.clear();
   }
-
+  // cannot easily parallelize this part
   for (int i = istart; i < iend; i++) {
     for (int j = jstart; j < jend; j++) {
       if (solver.parent_idx(i, j) >= int(Nr)) { // skip background nodes
-        ensemble.polygons[solver.parent_idx(i, j)].children.push_back(Index(i, j)); // cannot parallelize this part
+        ensemble.polygons[solver.parent_idx(i, j)].children.push_back(Index(i, j)); 
       }
     }
   }
-  // accumulate data from children
+  // accumulate average concentration and concentration gradient from children
   #pragma omp parallel for
   for (int p = Nr; p < ensemble.polygons.size(); p++) {
     auto& cell = ensemble.polygons[p];
-    // average concentration & gradient
-    cell.u = std::vector<double>(NUM_SPECIES, 0.0); // TODO optimize memory usage here
-    cell.grad_u = std::vector<Point>(NUM_SPECIES, Point(0, 0));
-    // TODO switch inner outer loop to simplify
-    for (const Index& idx : cell.children) {
-      for (int i = 0; i < NUM_SPECIES; i++){
-        cell.u[i] += solver.u(idx)[i];
-        cell.grad_u[i].add(1, solver.grad_u(idx)[i]);
+    for (int sp = 0; sp < NUM_SPECIES; sp++){
+      cell.u[sp] = 0.0; // reset values
+      cell.grad_u[sp] = Point(0, 0); // reset values
+      for (const Index& idx : cell.children) {
+        cell.u[sp] += solver.u(idx)[sp];
+        cell.grad_u[sp].add(1, solver.grad_u(idx)[sp]);
+      }
+      if (cell.children.size() > 0) { // avoid division by zero
+        cell.u[sp] /= cell.children.size();
+        cell.grad_u[sp] = 1.0 / cell.children.size() * cell.grad_u[sp];
       }
     }
-    if (cell.children.size() > 0) { // avoid division by zero if cells exceed RD box
-      for (int i = 0; i < NUM_SPECIES; i++) {
-        cell.u[i] /= cell.children.size();
-        cell.grad_u[i] = 1.0 / cell.children.size() * cell.grad_u[i];
-      }
-    } 
+  } 
+    // cell.u = std::vector<double>(NUM_SPECIES, 0.0); // TODO optimize memory usage here
+    // cell.grad_u = std::vector<Point>(NUM_SPECIES, Point(0, 0));
+    // // TODO switch inner outer loop to simplify
+    // for (const Index& idx : cell.children) {
+    //   for (int i = 0; i < NUM_SPECIES; i++){
+    //     cell.u[i] += solver.u(idx)[i];
+    //     cell.grad_u[i].add(1, solver.grad_u(idx)[i]);
+    //   }
+    // }
+    // if (cell.children.size() > 0) { // avoid division by zero if cells exceed RD box
+    //   for (int i = 0; i < NUM_SPECIES; i++) {
+    //     cell.u[i] /= cell.children.size();
+    //     cell.grad_u[i] = 1.0 / cell.children.size() * cell.grad_u[i];
+    //   }
+    // } 
     // store gradient at vertices
     // if (CHEMOTAXIS_EN) {
     //   for (auto& vertex : cell.vertices) {
@@ -152,7 +164,6 @@ void Interpolator::gather() {
     //     }
     //   }
     // }
-  }
 }
 
 std::size_t Interpolator::find_parent(Point grid_point) {

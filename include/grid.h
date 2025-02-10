@@ -9,7 +9,7 @@
 
 #include "geometry.h"
 
-template<typename T> // make sure to use double and not float, might break things otherwise
+template<typename T>
 struct Grid {
     std::vector<std::vector<T>> data;
     Grid (size_t Nx, size_t Ny) : data(Nx, std::vector<T>(Ny)) {}
@@ -49,7 +49,7 @@ void Grid<T>::parallel_copy_from(const Grid<T>& other) {
     if (this != &other) {
         #pragma omp parallel for
         for (size_t i = 0; i < data.size(); i++) {
-            data[i] = other.data[i];
+            data[i] = other.data[i]; // note: we are copying vectors here
         }
     }
 }

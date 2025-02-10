@@ -12,7 +12,7 @@ int main(int argc, char* argv[]) {
     // set up core components
     double L = 30;
     Domain domain(-L/2, -L/2, L/2, L/2); // initialize rectangular domain
-    Ensemble ensemble("ensemble/test.off", domain); // init ensemble with input file
+    Ensemble ensemble("ensemble/default.off", domain); // init ensemble with input file
     Reaction reaction = Reactions::linearDegradation; // define reaction model
     Solver solver(domain, dx, reaction); // init solver
     Interpolator interpolator(ensemble, solver); // init interpolator
