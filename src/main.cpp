@@ -7,7 +7,7 @@
 int main(int argc, char* argv[]) {
     welcome();
     validate_parameters(); // checks that correct number of kinetic parameters are set
-    write_config();
+    write_config(); // write cfg file to save parameters
     
     // set up core components
     double L = 30;
@@ -16,16 +16,19 @@ int main(int argc, char* argv[]) {
     Reaction reaction = Reactions::linearDegradation; // define reaction model
     Solver solver(domain, dx, reaction); // init solver
     Interpolator interpolator(ensemble, solver); // init interpolator
-    //interpolator.ext_interpolation_method = InterpolationMethod::ZERO; // interpolation for exterior nodes (interior is always IDW)
+    interpolator.ext_interpolation_method = InterpolationMethod::ZERO; // interpolation for exterior nodes (interior is always IDW)
+    
     // set boundary conditions (default: zero-flux)
-    solver.boundary[0].west = {BoundaryCondition::Type::Dirichlet, 0}; 
+    //solver.boundary[1].west = {BoundaryCondition::Type::Dirichlet, 0.01}; 
     // define production lambda (default no cell-based production)
     ensemble.is_producing = [](const Polygon& p) { 
-        return std::vector<bool> {p.global_index() == 0}; // starting cell (index 0) produces. Vector for multiple species
+       //return std::vector<bool> {p.global_index() == 0, false, false};
+       return std::vector<bool>(NUM_SPECIES, p.global_index() == 0); // starting cell (index 0) produces
     }; 
     // define lambdas for concentration effects on cell behavior
     ensemble.cellTypeEffect = [](const Polygon& self, const std::vector<double>& c, const std::vector<Point>& grad_c, double t) { 
         if (c[0] < 0.005) return 1; // differentiate cell type if concentration falls below threshold
+        //else if (c[0] + c[1] + c[2] > 0.6) return 2;
         else return 0; 
     };
     ensemble.growthRateEffect = [](const Polygon& self, const std::vector<double>& c, const std::vector<Point>& grad_c, double t) { 
@@ -50,4 +53,5 @@ int main(int argc, char* argv[]) {
         solver.output(f); // print frame
     }
     ensemble.write_OFF("final_state.off"); // save final state, can reuse as input later
+    goodbye();
 }

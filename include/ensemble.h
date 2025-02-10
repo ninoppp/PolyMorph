@@ -480,6 +480,8 @@ struct Ensemble {
       }
       // Update chemical production
       const std::vector<bool> producing = is_producing(polygons[p]); // which species are produced by the cell
+      if (producing.size() != NUM_SPECIES)
+        std::cerr << "Error: producing vector has wrong size" << std::endl;
       for (int i = 0; i < NUM_SPECIES; i++) {
         if (producing[i] && polygons[p].p[i] == 0) {
           polygons[p].p[i] = sample(p_dist[i], rng);
@@ -624,13 +626,13 @@ struct Ensemble {
       file << "        </DataArray>\n";
     }
     if (Output::grad_c) {
-      file << "        <DataArray type=\"Float64\" Name=\"grad_u_x\" NumberOfComponents=\"" << NUM_SPECIES << "\" format=\"ascii\">\n";
+      file << "        <DataArray type=\"Float64\" Name=\"gradient_x\" NumberOfComponents=\"" << NUM_SPECIES << "\" format=\"ascii\">\n";
       for (auto& p : polygons) 
         for (int i = 0; i < NUM_SPECIES; i++)
           file << p.grad_c[i].x << " ";
       file << "\n";
       file << "        </DataArray>\n";
-      file << "        <DataArray type=\"Float64\" Name=\"grad_u_y\" NumberOfComponents=\"" << NUM_SPECIES << "\" format=\"ascii\">\n";
+      file << "        <DataArray type=\"Float64\" Name=\"gradient_y\" NumberOfComponents=\"" << NUM_SPECIES << "\" format=\"ascii\">\n";
       for (auto& p : polygons) 
         for (int i = 0; i < NUM_SPECIES; i++)
           file << p.grad_c[i].y << " ";
@@ -777,7 +779,6 @@ struct Ensemble {
             file << "\n";
         }
         file.close();
-
     }
 };
 

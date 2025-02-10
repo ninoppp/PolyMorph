@@ -51,6 +51,7 @@ void validate_parameters() {
     assert(k_mu.size() == NUM_KIN && k_CV.size() == NUM_KIN);
     assert(k0.size() == NUM_KIN);
     assert(threshold_mu.size() == threshold_CV.size());
+    assert(anisotropy.size() == NUM_SPECIES);
 }
 
 template <typename T>
@@ -161,6 +162,11 @@ void welcome() {
             << "--------------------------" << std::endl;
     std::cout << "simulation started at " << getCurrentDateTime() << std::endl;
     std::cout << "max threads = " << omp_get_max_threads() << std::endl;
+}
+
+void goodbye() {
+    std::cout << "Simulation finished at " << getCurrentDateTime() << std::endl;
+    std::cout << "Goodbye." << std::endl; 
 }
 
 // saving simluations parameters

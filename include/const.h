@@ -12,11 +12,11 @@ constexpr double lmin = 0.02; // [L] minimum edge length
 constexpr double lmax = 0.2; // [L] maximum edge length
 constexpr double Q = 1; // [-] isoparametric ratio
 constexpr double alpha_mu = 1; // [L^2/T] mean area growth rate
-constexpr double alpha_CV = 0.2; // [-] coefficient of variation of area growth rate
+constexpr double alpha_CV = 0.1; // [-] coefficient of variation of area growth rate
 constexpr double beta = 0.8; // [-] minimum area fraction for growth
 constexpr double Amin = 0; // [L^2] minimum area
 constexpr double Amax_mu = M_PI; // [L^2] mean maximum area
-constexpr double Amax_CV = 0; // [-] coefficient of variation of maximum area
+constexpr double Amax_CV = 0.1; // [-] coefficient of variation of maximum area
 constexpr double gam = 1e4; // [L/T^2] line tension per vertex mass
 constexpr double ka = 1e5; // [1/(L^2*T^2)] area stiffness per vertex mass
 constexpr double kl = 1e4; // [L/T^2] edge contractility stiffness per vertex mass
@@ -42,23 +42,39 @@ constexpr int Nr = 0; // number of rigid polygons (keep as signed int or things 
 constexpr double drmax = h + sh + ss; // maximum interaction distance
 
 // -- New PolyMorph parameters --
-constexpr bool ADVECTION_DILUTION_EN = false; // enable advection-dilution and calculate velocity field
+constexpr bool ADVECTION_DILUTION_EN = true; // enable advection-dilution and calculate velocity field
 constexpr bool RESIZE_GRID_EN = false; // enable resizing of grid if domain changes/grows (not optimized. can be computationally expensive)
 constexpr int NUM_SPECIES = 1; // [-] number of diffusable species (defines size of D,p vectors)
 constexpr int NUM_KIN = 1; // [-] number of kinetic coefficients (defines size of k vectors)
 
 const std::vector<double> k0 =   {1}; // [?] reaction coefficients background
 const std::vector<double> k_mu = {1}; // [?] reaction coefficients mean
-const std::vector<double> k_CV = {0}; // [-] reaction coefficients CV
+const std::vector<double> k_CV = {0.3}; // [-] reaction coefficients CV
 const std::vector<double> D0 =   {32}; // [L^2/T] diffusivity background (recommended to not be zero)
 const std::vector<double> D_mu = {32}; // [L^2/T] diffusivity mean
-const std::vector<double> D_CV = {0}; // [-] diffusivity CV
+const std::vector<double> D_CV = {0.3}; // [-] diffusivity CV
 const std::vector<double> p0 =   {0}; // [1/(L^2*T)] production rate background (usually zero)
 const std::vector<double> p_mu = {1}; // [1/(L^2*T)] production rate mean
-const std::vector<double> p_CV = {0}; // [-] production rate CV
+const std::vector<double> p_CV = {0.3}; // [-] production rate CV
 const std::vector<double> threshold_mu = {0.001}; // [1/L^2] concentration threshold mean (can use any number of thresholds, but define your ensemble.set_flag accordingly!)
-const std::vector<double> threshold_CV = {0.0}; // [-] threshold CV
+const std::vector<double> threshold_CV = {0.3}; // [-] threshold CV
 const std::vector<double> anisotropy = {1.0}; // [-] diffusion anisotropy (default 1)
+
+// constexpr int NUM_SPECIES = 3; // [-] number of diffusable species (defines size of D,p vectors)
+// constexpr int NUM_KIN = 3; // [-] number of kinetic coefficients (defines size of k vectors)
+
+// const std::vector<double> k0 =   {1, 1, 0}; // [?] reaction coefficients background
+// const std::vector<double> k_mu = {1, 1, 0}; // [?] reaction coefficients mean
+// const std::vector<double> k_CV = {0.3, 0.3, 0}; // [-] reaction coefficients CV
+// const std::vector<double> D0 =   {32, 32, 32}; // [L^2/T] diffusivity background (recommended to not be zero)
+// const std::vector<double> D_mu = {32, 32, 32}; // [L^2/T] diffusivity mean
+// const std::vector<double> D_CV = {0.3, 0.3, 0.3}; // [-] diffusivity CV
+// const std::vector<double> p0 =   {0, 0, 1}; // [1/(L^2*T)] production rate background (usually zero)
+// const std::vector<double> p_mu = {1, 0, 0}; // [1/(L^2*T)] production rate mean
+// const std::vector<double> p_CV = {0.3, 0, 0}; // [-] production rate CV
+// const std::vector<double> threshold_mu = {0.001, 0, 0}; // [1/L^2] concentration threshold mean (can use any number of thresholds, but define your ensemble.set_flag accordingly!)
+// const std::vector<double> threshold_CV = {0.3, 0, 0}; // [-] threshold CV
+// const std::vector<double> anisotropy = {1.0, 1.0, 1.0}; // [-] diffusion anisotropy (default 1)
 
 constexpr double dx = 0.3; // [L] grid spacing for solver
 constexpr double dist_cutoff_factor = 2.0; // [-] used to cut off lognormal dists at mu*factor to maintain stability. only used for diffusivity D atm.
@@ -67,14 +83,14 @@ constexpr double domain_bd_stiffness = kr / 2; // [1/T^2] domain boundary stiffn
 
 constexpr int RNG_SEED = 90178009; // random number generator seed
 
-// define what to write to vtk files for visualization/debugging. disable things to save space 
+// choose what to write to VTK files for visualization/debugging. disable things to save space 
 namespace Output { 
     constexpr bool c = true; // concentration
     constexpr bool D = true; // diffusion coefficient
     constexpr bool p = true; // production rate
     constexpr bool k = true; // kinetic coefficients
     constexpr bool parent_idx = true; // polygon idx grid
-    constexpr bool threshold = true; // threshold
+    constexpr bool threshold = false; // threshold
     constexpr bool cell_type = true; // boolean polygon cell_type 
     constexpr bool velocity = true; // velocity field
     constexpr bool grad_c = true; // concentration gradient
