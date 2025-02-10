@@ -16,15 +16,13 @@ int main(int argc, char* argv[]) {
     Reaction reaction = Reactions::linearDegradation; // define reaction model
     Solver solver(domain, dx, reaction); // init solver
     Interpolator interpolator(ensemble, solver); // init interpolator
-    
+    //interpolator.ext_interpolation_method = InterpolationMethod::ZERO; // interpolation for exterior nodes (interior is always IDW)
     // set boundary conditions (default: zero-flux)
     solver.boundary[0].west = {BoundaryCondition::Type::Dirichlet, 0}; 
-    
     // define production lambda (default no cell-based production)
     ensemble.is_producing = [](const Polygon& p) { 
         return std::vector<bool> {p.global_index() == 0}; // starting cell (index 0) produces. Vector for multiple species
     }; 
-
     // define lambdas for concentration effects on cell behavior
     ensemble.cellTypeEffect = [](const Polygon& self, const std::vector<double>& u, const std::vector<Point>& grad_u, double t) { 
         if (u[0] < 0.005) return 1; // differentiate cell type if concentration falls below threshold

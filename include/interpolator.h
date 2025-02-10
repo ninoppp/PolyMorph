@@ -7,13 +7,21 @@
 #include "ensemble.h"
 #include "utils.h"
 
+enum class InterpolationMethod {
+  IDW, // inverse distance weighting, good but slightly more expensive
+  BILINEAR, // bilinear interpolation, cheaper but some artifacts
+  ZERO // set velocity to zero outside of tissue, most efficient
+};
+
 // takes care of the data scattering and gathering between ensemble and solver
 struct Interpolator {
   Ensemble& ensemble;
   Solver& solver;
+  InterpolationMethod ext_interpolation_method = InterpolationMethod::ZERO;
   int istart, jstart, iend, jend; // limits of the grid points to be updated (within ensemble bounds)
   Grid<int>& prev_idx; // stores the polygon index of the cell in which a grid point lies (its parent)
   Grid<int> new_idx;  // negative indices indicate a background node. ToDo: could make this in place
+  
   Interpolator(Ensemble& ensemble, Solver& solver) : ensemble(ensemble), solver(solver), prev_idx(solver.parent_idx) {
     new_idx = Grid<int>(solver.Nx, solver.Ny, -1);
   }
@@ -28,14 +36,14 @@ struct Interpolator {
   // Search algorithm to find parent polygon for a grid point.
   std::size_t find_parent(Point grid_point);
 
-  // returns the interpolated velocity at a grid point inside a parent polygon
-  Point interior_vel_interpolation(const Point& grid_point, const int parent_idx);
+  // returns the interpolated velocity at a grid point inside a parent polygon using IDW
+  Point interior_IDW_vel_interpolation(const Point& grid_point, const int parent_idx);
 
-  // bilinear interpolation (partly extrapolation) of velocity field at background nodes
-  Point bilinear_vel_interpolation(int i, int j);
+  // IDW interpolation of velocity field at background nodes
+  Point ext_IDW_vel_interpolation(int i, int j, double cutoff_radius);
 
-  // inverse distance weighting interpolation of velocity field at background nodes
-  Point IDW_vel_interpolation(int i, int j, double cutoff_radius);
+  // bilinear interpolation of velocity field at background nodes
+  Point ext_bilinear_vel_interpolation(int i, int j);
 };
 
 void Interpolator::scatter() {
@@ -76,7 +84,7 @@ void Interpolator::scatter() {
           solver.k(i, j) = ensemble.polygons[new_idx(i, j)].k;
           solver.p(i, j) = ensemble.polygons[new_idx(i, j)].p;
           if (ADVECTION_DILUTION_EN) {
-            solver.velocity(i, j) = interior_vel_interpolation(grid_point, new_idx(i, j));
+            solver.velocity(i, j) = interior_IDW_vel_interpolation(grid_point, new_idx(i, j));
           }
         }
       }
@@ -101,7 +109,15 @@ void Interpolator::scatter() {
       for (int i = 1; i < solver.Nx - 1; i++) {
         for (int j = 1; j < solver.Ny - 1; j++) {
           if (solver.parent_idx(i, j) < 0) { // only treat real background nodes. No velocity in rigid polygons
-            solver.velocity(i, j) = IDW_vel_interpolation(i, j, velocity_cutoff_radius); // <- change between IDW and bilinear interpolation method here. can also just set zero
+            if (ext_interpolation_method == InterpolationMethod::BILINEAR) {
+              solver.velocity(i, j) = ext_bilinear_vel_interpolation(i, j);
+            } else if (ext_interpolation_method == InterpolationMethod::IDW) {
+              solver.velocity(i, j) = ext_IDW_vel_interpolation(i, j, IDW_cutoff_radius);
+            } else if (ext_interpolation_method == InterpolationMethod::ZERO) {
+              solver.velocity(i, j) = Point(0, 0);
+            } else {
+              std::cerr << "Unknown interpolation method" << std::endl;
+            }
           } 
         }
       }
@@ -188,7 +204,7 @@ std::size_t Interpolator::find_parent(Point grid_point) {
   return -2; // background node (reached boundary of ensemble box)
 }
 
-Point Interpolator::interior_vel_interpolation(const Point& grid_point, const int parent_idx) {
+Point Interpolator::interior_IDW_vel_interpolation(const Point& grid_point, const int parent_idx) {
   const Polygon& parent = ensemble.polygons[parent_idx];
   std::vector<double> weights;
   double total_weight = 0;
@@ -207,7 +223,7 @@ Point Interpolator::interior_vel_interpolation(const Point& grid_point, const in
   return vel;
 }
 
-Point Interpolator::bilinear_vel_interpolation(int i, int j) {
+Point Interpolator::ext_bilinear_vel_interpolation(int i, int j) {
   // find first non-background node or boundary node in each direction
   int i_left = i - 1;
   while (i_left > 0 && solver.parent_idx(i_left, j) < 0) {
@@ -243,7 +259,7 @@ Point Interpolator::bilinear_vel_interpolation(int i, int j) {
   return vel;
 }
 
-Point Interpolator::IDW_vel_interpolation(int i, int j, double cutoff_radius) { // maybe interpolate with vertices inside the local box
+Point Interpolator::ext_IDW_vel_interpolation(int i, int j, double cutoff_radius) { // maybe interpolate with vertices inside the local box
   int cutoff_index = cutoff_radius / solver.dx;
   double total_weight = 1e-6 * h; // avoid division by zero
   Point velocity = Point(0, 0);

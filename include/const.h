@@ -62,7 +62,7 @@ const std::vector<double> anisotropy = {1.0}; // [-] diffusion anisotropy (defau
 
 constexpr double dx = 0.3; // [L] grid spacing for solver
 constexpr double dist_cutoff_factor = 2.0; // [-] used to cut off lognormal dists at mu*factor to maintain stability. only used for diffusivity D atm.
-constexpr double velocity_cutoff_radius = 3.0 * Amax_mu; // [L] radius for IDW interpolation of velocity field. Coupled to Amax to account for length scale
+constexpr double IDW_cutoff_radius = 3.0 * Amax_mu; // [L] radius for IDW interpolation of velocity field. Coupled to Amax to account for length scale
 constexpr double domain_bd_stiffness = kr / 2; // [1/T^2] domain boundary stiffness (too high can cause instabilities)
 
 constexpr int RNG_SEED = 90178009; // random number generator seed
