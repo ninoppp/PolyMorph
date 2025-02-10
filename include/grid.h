@@ -11,7 +11,7 @@
 
 template<typename T>
 struct Grid {
-    std::vector<std::vector<T>> data;
+    std::vector<std::vector<T>> data; // 2D grid of type T
     Grid (size_t Nx, size_t Ny) : data(Nx, std::vector<T>(Ny)) {}
     Grid (size_t Nx, size_t Ny, T value) : data(Nx, std::vector<T>(Ny, value)) {}
     Grid () {}
@@ -22,8 +22,8 @@ struct Grid {
     size_t sizeX() const { return data.size(); }
     size_t sizeY() const { return data.empty() ? 0 : data[0].size(); }
     size_t sizeZ() const; // only defined for T=vector
-    void parallel_copy_from(const Grid<T>& other);
-    std::string to_vtk(std::string name);
+    void parallel_copy_from(const Grid<T>& other); // parallelized assignment operator
+    std::string to_vtk(std::string name); // convert to VTK format (DataArray)
     void rescale(size_t Nx, size_t Ny, int offset_x, int offset_y, T fill_value);
 };
 
@@ -42,8 +42,7 @@ size_t Grid<std::vector<Point>>::sizeZ() const {
     return data[0][0].size();
 }
 
-// parallelized assignment operator
-// assumes equal grid sizes. only used for updating concentration grid during solver step
+// parallelized assignment operator for large grids of same size
 template<typename T>
 void Grid<T>::parallel_copy_from(const Grid<T>& other) {
     if (this != &other) {
@@ -88,7 +87,7 @@ std::string Grid<std::vector<double>>::to_vtk(std::string name) {
     return xml.str();
 }
 
-template<> // for Point grids
+template<> // for Point (2D vector) grids
 std::string Grid<Point>::to_vtk(std::string name) {
     std::stringstream xml;
     xml << "<DataArray type=\"Float64\" Name=\"" << name 
@@ -104,7 +103,7 @@ std::string Grid<Point>::to_vtk(std::string name) {
     return xml.str();
 }
 
-template<> // for gradient grids
+template<> // for gradient (vector of 2D vectors) grids
 std::string Grid<std::vector<Point>>::to_vtk(std::string name) {
     std::stringstream xml;
     xml << "<DataArray type=\"Float64\" Name=\"" << name 

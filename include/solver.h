@@ -17,14 +17,14 @@ struct BoundaryCondition {
         Neumann
     };
 
-    Type type;
+    Type type; // Dirichlet or Neumann
     double value; // value at boundary (Dirichlet case) or derivative at boundary (Neumann case)
 };
 
-struct Boundary { // ToDo: currently BC is same for all species
+struct Boundary { // boundary conditions for one species
     BoundaryCondition north, south, east, west;
     
-    static Boundary zeroFlux() {
+    static Boundary zeroFlux() { // default boundary condition
         return {
             {BoundaryCondition::Type::Neumann, 0},
             {BoundaryCondition::Type::Neumann, 0},
@@ -33,18 +33,18 @@ struct Boundary { // ToDo: currently BC is same for all species
         };
     }
 
-    static std::vector<Boundary> zeroFlux(size_t n) {
+    static std::vector<Boundary> zeroFlux(size_t n) { // default boundary conditions for n species
         return std::vector<Boundary>(n, zeroFlux());
     }
 };
 
 struct Solver { 
-    Domain& domain;
+    Domain& domain; // rectangular simulation domain
     int Nx, Ny; // number of grid points
     double dx; // grid spacing
     double t; // time
     std::vector<Boundary> boundary; // boundary conditions (one Boundary per species)
-    Reaction R = [](const std::vector<double>& c, const std::vector<double>& k, double t) { return std::vector<double>(NUM_SPECIES, 0.0); }; // reaction term
+    Reaction R; // reaction term
     Grid<int> parent_idx; // polygon idx
     Grid<std::vector<double>> c; // concentrations
     Grid<std::vector<double>> cnew; // temporary grid for updating concentrations
@@ -60,16 +60,18 @@ struct Solver {
         this->Ny = domain.height() / dx + 1;
         this->c = Grid<std::vector<double>>(Nx, Ny, std::vector<double>(NUM_SPECIES, 0.0));
         this->cnew = Grid<std::vector<double>>(Nx, Ny, std::vector<double>(NUM_SPECIES, 0.0));
+        this->grad_c = Grid<std::vector<Point>>(Nx, Ny, std::vector<Point>(NUM_SPECIES, Point(0, 0)));
+        this->R = [](const std::vector<double>& c, const std::vector<double>& k, double t) { return std::vector<double>(NUM_SPECIES, 0.0); };
         
         std::cout << "solver dimensions: Nx=" << Nx << " Ny=" << Ny << " dx=" << dx << std::endl;
         std::cout << "domain: [" << domain.x0 << ", " << domain.x1 << "] x [" << domain.y0 << ", " << domain.y1 << "]" << std::endl;
 
         // initialize with background values
         parent_idx = Grid<int>(Nx, Ny, -2);
-        D = Grid<std::vector<double>>(Nx, Ny, D0); // ToDo: Benchmark and maybe remove D,p,k grids (just use values from parent polygon)
+        D = Grid<std::vector<double>>(Nx, Ny, D0);
         p = Grid<std::vector<double>>(Nx, Ny, p0);
         k = Grid<std::vector<double>>(Nx, Ny, k0);
-        grad_c = Grid<std::vector<Point>>(Nx, Ny, std::vector<Point>(NUM_SPECIES, Point(0, 0)));
+        
         if (ADVECTION_DILUTION_EN) {
             velocity = Grid<Point>(Nx, Ny, Point(0, 0));
         }
@@ -181,29 +183,7 @@ struct Solver {
         file << "</Piece>" << std::endl;
         file << "</StructuredGrid>" << std::endl;
         file << "</VTKFile>" << std::endl;
-        file.close();  
-
-        //std::cout << "Solver frame with: (Nx,Ny) =" << Nx << "," << Ny << std::endl
-        //    << "Nx*dx=" << Nx*dx << " domain width=" << domain.width() << std::endl;  
-
-        //if (frame == Nf) output_pvd(); // output pvd file on last frame. Necessary for varying grid sizes          
-    }
-
-    /// @deprecated
-    void output_pvd() {  // ToDo remove or fix visualization  
-        std::ofstream file("rd_frame.pvd");
-        file << "<?xml version=\"1.0\"?>" << std::endl;
-        file << "<VTKFile type=\"Collection\" version=\"0.1\">" << std::endl;
-        file << "<Collection>" << std::endl;
-        for (std::size_t f = 0; f <= Nf; ++f) {
-            char filename [19]; 
-            snprintf(filename, 19, "rd_frame%06zu.vts", f);
-            file << "<DataSet timestep=\"" << f << "\" file=\"" << filename << "\"/>" << std::endl;
-        }
-        file << "</Collection>" << std::endl;
-        file << "</VTKFile>" << std::endl;
-        file << std::endl;
-        file.close();
+        file.close();          
     }
 
     // generate noisy initial condition

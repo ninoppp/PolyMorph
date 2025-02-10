@@ -13,13 +13,13 @@
 #include "geometry.h"
 #include "domain.h"
 
+// User defined Effect functions to control cell behavior based on concentration
 template <typename T>
 using ConcentrationEffect = std::function<T(const Polygon& self, const std::vector<double>& c, const std::vector<Point>& grad_c, double t)>;
 
-struct Ensemble
-{
+struct Ensemble {
   Domain& domain; // simulation domain
-  std::vector<Polygon> polygons; // list of polygons
+  std::vector<Polygon> polygons; // global list of polygons
   std::vector<Vertex*> first; // pointer to first vertex in each box
   std::size_t Nx, Ny; // number of boxes in x,y direction
   double x0, y0, x1, y1, bs; // box offset, box end, and size
@@ -44,11 +44,10 @@ struct Ensemble
   ConcentrationEffect<double> growthRateEffect = [](const Polygon& self, const std::vector<double>& c, const std::vector<Point>& grad_c, double t) { return self.alpha; };
   ConcentrationEffect<int> cellTypeEffect = [](const Polygon& self, const std::vector<double>& c, const std::vector<Point>& grad_c, double t) { return 0; };
 
-  std::function<std::vector<bool>(const Polygon&)> is_producing = [](const Polygon& p) { return std::vector(NUM_SPECIES, false); }; // TODO: maybe integrate in effect system
-  //std::function<int(const Polygon&)> set_flag = [](const Polygon& p) { return p.c[0] < p.threshold[0]; }; // TODO: remove in favor of cellTypeEffect
+  std::function<std::vector<bool>(const Polygon&)> is_producing = [](const Polygon& p) { return std::vector(NUM_SPECIES, false); };
 
-  Ensemble(const char* name, Domain& domain, int seed=RNG_SEED) : t(0), domain(domain)
-  {
+  Ensemble(const char* name, Domain& domain, int seed=RNG_SEED) : t(0), domain(domain) {
+    // initialize random number generator
     rng.seed(seed);
     // read OFF file header
     std::ifstream file(name);
@@ -69,11 +68,9 @@ struct Ensemble
     
     // read all polygons
     polygons.resize(Np);
-    for (std::size_t p = 0, j; p < Np; ++p)
-    {
+    for (std::size_t p = 0, j; p < Np; ++p) {
       file >> Nv;
-      for (std::size_t i = 0; i < Nv; ++i)
-      {
+      for (std::size_t i = 0; i < Nv; ++i) {
         file >> j;
         polygons[p].vertices.push_back({points[j], {0, 0}, {0, 0}, p});
       }
@@ -81,13 +78,13 @@ struct Ensemble
       polygons[p].A0 = polygons[p].area(); // use the initial area as target area
       polygons[p].Amax = sample(Amax_dist, rng);
       polygons[p].alpha = sample(alpha_dist, rng);
-      // PolyMorph extension
+
       polygons[p].D = sample(D_dist, rng, true);
       polygons[p].k = sample(k_dist, rng);
       polygons[p].threshold = sample(threshold_dist, rng);
       polygons[p].p = std::vector<double>(NUM_SPECIES, 0);
       polygons[p].c = std::vector<double>(NUM_SPECIES, 0);
-      // end PolyMorph extension
+
       for (std::size_t i = Nv - 1, j = 0; j < Nv; i = j++)
         polygons[p].vertices[i].l0 = (polygons[p].vertices[j].r - polygons[p].vertices[i].r).length(); // edge rest length
     }
@@ -496,8 +493,8 @@ struct Ensemble
     t += dt; // advance the time
   }
   
-  void boxes()
-  {
+  // place all vertices into boxes
+  void boxes() { 
     // compute the global bounding box and maximum squared edge length
     double xmin = polygons[0].vertices[0].r.x, xmax = xmin;
     double ymin = polygons[0].vertices[0].r.y, ymax = ymin;
@@ -537,8 +534,8 @@ struct Ensemble
     }
   }
   
-  void interaction(Vertex* v0, Vertex* v1, Vertex* v1n0, Vertex* v1n1)
-  {
+  // polygon-polygon interaction
+  void interaction(Vertex* v0, Vertex* v1, Vertex* v1n0, Vertex* v1n1) {
     // select the closer of the two edges
     Vertex* v1n [2] = {v1n0, v1n1}; // pointers to neighbors of vertex 1
     double xi [2], xit [2], dr2 [2];
@@ -618,7 +615,6 @@ struct Ensemble
       file << p.A << " ";
     file << "\n";
     file << "        </DataArray>\n";
-    // polymorph extension
     if (Output::c) {
       file << "        <DataArray type=\"Float64\" Name=\"c\" NumberOfComponents=\"" << NUM_SPECIES << "\" format=\"ascii\">\n";
       for (auto& p : polygons) 
@@ -680,7 +676,6 @@ struct Ensemble
       file << "\n";
       file << "        </DataArray>\n";
     }
-    // end polymorph extension
     file << "        <DataArray type=\"Float64\" Name=\"perimeter\" format=\"ascii\">\n";
     for (auto& p : polygons)
       file << p.perimeter() << " ";
@@ -738,6 +733,7 @@ struct Ensemble
     file << "</VTKFile>\n";
   }
 
+  // write the current ensemble state to file for later entry point
   void write_OFF(std::string filename) const {
         std::ofstream file(filename);
         if (!file.is_open()) {

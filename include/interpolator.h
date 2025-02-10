@@ -8,22 +8,23 @@
 #include "utils.h"
 
 enum class InterpolationMethod {
-  IDW, // inverse distance weighting, good but slightly more expensive
-  BILINEAR, // bilinear interpolation, cheaper but some artifacts
-  ZERO // set velocity to zero outside of tissue, most efficient
+  IDW, // inverse distance weighting: good but expensive (adjust cutoff_radius in const.h)
+  BILINEAR, // bilinear interpolation: cheaper but some artifacts
+  ZERO // set velocity to zero outside of tissue: most efficient when only tissue interior is needed
 };
 
-// takes care of the data scattering and gathering between ensemble and solver
+// This class takes care of the data scattering and gathering between ensemble and solver
 struct Interpolator {
   Ensemble& ensemble;
   Solver& solver;
-  InterpolationMethod ext_interpolation_method = InterpolationMethod::ZERO;
   int istart, jstart, iend, jend; // limits of the grid points to be updated (within ensemble bounds)
-  Grid<int>& prev_idx; // stores the polygon index of the cell in which a grid point lies (its parent)
-  Grid<int> new_idx;  // negative indices indicate a background node. ToDo: could make this in place
+  Grid<int>& prev_idx; // stores index of polygon in which a grid point lies. Negative indices indicate a background node.
+  Grid<int> new_idx;  // temporary grid to store the new parent_idx
+  InterpolationMethod ext_interpolation_method; // velocity interpolation method for exterior gridpoints (not inside polygons)
   
   Interpolator(Ensemble& ensemble, Solver& solver) : ensemble(ensemble), solver(solver), prev_idx(solver.parent_idx) {
     new_idx = Grid<int>(solver.Nx, solver.Ny, -1);
+    ext_interpolation_method = InterpolationMethod::ZERO; // default method
   }
   
   // scatter coefficients D, k, p and velocity from polygons to grid points

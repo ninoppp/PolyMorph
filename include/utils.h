@@ -16,7 +16,7 @@
 // Macro to include function name in log messages
 #define LOG(message) log(message, __func__)
 
-// easier to read than a pair
+// grid indices
 struct Index {
   int i; 
   int j;
