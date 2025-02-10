@@ -5,11 +5,11 @@ Coupling [PolyHoop](https://www.sciencedirect.com/science/article/pii/S001046552
 
 ## Abstract
 
-PolyMorph is an extension of PolyHoop, a 2D mechanical tissue simulation software for soft particle dynamics developed by Vetter et al. PolyMorph adds a numerical solver for reaction-diffusion equations on top of it which allows, among other things, the modeling of morphogenetic problems with realistic cell shapes. 
+PolyMorph is an extension of PolyHoop, a 2D mechanical tissue simulation software for soft particle dynamics developed by Vetter et al. PolyMorph adds a numerical solver for reaction-diffusion equations on top of it which allows, among other things, the modeling of morphogenetic problems with realistic cell shapes.
 
-The simulation software is programmed in C++. It makes use of finite-difference approximations, explicit Euler time integration, scatter-gather interpolation between Eulerian and Lagrangian reference frames and shared memory parallelism with OpenMP. 
+The simulation software is programmed in C++. It makes use of finite-difference approximations, explicit Euler time integration, scatter-gather interpolation between Eulerian and Lagrangian reference frames, and shared memory parallelism with OpenMP.
 
-The solver's correctness and convergence was verified and its computational performance quantified through parallel scaling analysis and runtime comparison to the purely mechanical simulation. The coupled system is then used to study patterning precision with noisy morphogen gradients and the results are compared to previous findings.
+The solver's correctness and convergence were verified, and its computational performance quantified through parallel scaling analysis and runtime comparison to the purely mechanical simulation. The coupled system is then used to study patterning precision with noisy morphogen gradients, and the results are compared to previous findings.
 
 ## Usage Instructions: Quick Start 
 ```shell
